@@ -9,14 +9,14 @@ import { siteOverlay } from './site'
 
 const overlayDir = path.dirname(fileURLToPath(import.meta.url))
 
-describe('closed overlay (this repo)', () => {
+describe('self-host overlay (root.mom)', () => {
   it('writes current production identity', () => {
     const resolved = mergeSite(siteOverlay)
     expect(resolved).toMatchObject({
-      apiUrl: 'https://mx.innei.in/api/v3',
-      siteUrl: 'https://innei.in',
-      siteHosts: ['innei.in', 'www.innei.in'],
-      privacyUrl: 'https://innei.in/privacy',
+      apiUrl: 'https://api.root.mom/api/v3',
+      siteUrl: 'https://root.mom',
+      siteHosts: ['root.mom', 'www.root.mom'],
+      privacyUrl: 'https://root.mom/privacy',
       scheme: 'yohaku',
       bundleId: 'in.innei',
       bundledOwner: {

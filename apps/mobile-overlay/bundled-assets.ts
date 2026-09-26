@@ -1,1 +1,1 @@
-export const bundledOwnerAvatar = require('./owner-avatar.jpg')
+export const bundledOwnerAvatar = null
