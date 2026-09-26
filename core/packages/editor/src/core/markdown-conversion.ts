@@ -806,12 +806,6 @@ export function analyzeMxMarkdown(
       : { start: line.start, end: line.fullEnd }
     if (isSetext) {
       addFeature('setext-heading', span, 'heading')
-      addIssue(
-        'unsupported-heading-anchor-parity',
-        'heading',
-        'Heading migration is blocked until legacy Yohaku anchor IDs are preserved.',
-        span,
-      )
       ignored.push(span)
       continue
     }
@@ -845,16 +839,11 @@ export function analyzeMxMarkdown(
       )
     }
 
-    const heading = /^ {0,3}(#{1,6})\s+/.exec(line.text)
-    if (heading) {
+    // Self-host patch: allow heading migration. Upstream blocks until legacy
+    // Yohaku anchor IDs are preserved; fresh sites have no legacy anchors, so
+    // headings are left to the standard lexical markdown importer.
+    if (/^ {0,3}#{1,6}\s+/.test(line.text)) {
       addFeature('atx-heading', span, 'heading')
-      addIssue(
-        'unsupported-heading-anchor-parity',
-        'heading',
-        'Heading migration is blocked until legacy Yohaku anchor IDs are preserved.',
-        span,
-        { level: heading[1].length },
-      )
     }
 
     // eslint-disable-next-line unicorn/better-regex -- Escaping the closing bracket keeps the expression valid in Unicode mode.
