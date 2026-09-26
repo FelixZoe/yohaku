@@ -1,0 +1,75 @@
+name: Build Unsigned iOS IPA
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ios-ipa
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build rich-content css
+        run: pnpm --filter @yohaku/rich-content build:css
+
+      - name: Expo prebuild (ios)
+        working-directory: apps/mobile
+        env:
+          EXPO_NO_TELEMETRY: 1
+        run: npx expo prebuild -p ios
+
+      - name: Resolve workspace and scheme
+        id: xcode
+        working-directory: apps/mobile
+        run: |
+          WORKSPACE=$(ls ios/*.xcworkspace | head -1)
+          echo "workspace=$WORKSPACE" >> "$GITHUB_OUTPUT"
+          SCHEME=$(xcodebuild -list -workspace "$WORKSPACE" 2>/dev/null | awk '/Schemes:/{f=1;next} f&&NF{print $1; exit}')
+          echo "scheme=$SCHEME" >> "$GITHUB_OUTPUT"
+          echo "workspace=$WORKSPACE scheme=$SCHEME"
+
+      - name: Xcode build (unsigned, device)
+        working-directory: apps/mobile
+        run: |
+          xcodebuild \
+            -workspace "${{ steps.xcode.outputs.workspace }}" \
+            -scheme "${{ steps.xcode.outputs.scheme }}" \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            -quiet \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
+
+      - name: Package unsigned IPA
+        working-directory: apps/mobile
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/*.app Payload/
+          zip -qry Yohaku-unsigned.ipa Payload
+          ls -lh Yohaku-unsigned.ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Yohaku-unsigned-ipa
+          path: apps/mobile/Yohaku-unsigned.ipa
+          retention-days: 30
