@@ -44,10 +44,16 @@ jobs:
 
       - name: "Patch expo-modules-jsi (upstream bug: SWIFT_RETURNS_RETAINED on constructors)"
         run: |
-          FILE=$(find node_modules/.pnpm -path "*expo-modules-jsi*/apple/Sources/ExpoModulesJSI-Cxx/include/RuntimeScheduler.h" | head -1)
-          echo "patching $FILE"
-          sed -i.bak 's/^  SWIFT_RETURNS_RETAINED RuntimeScheduler/  RuntimeScheduler/' "$FILE"
-          ! grep -n "SWIFT_RETURNS" "$FILE"
+          COUNT=0
+          while IFS= read -r FILE; do
+            echo "patching $FILE"
+            sed -i.bak 's/^  SWIFT_RETURNS_RETAINED RuntimeScheduler/  RuntimeScheduler/' "$FILE"
+            COUNT=$((COUNT+1))
+          done < <(find node_modules/.pnpm -path "*expo-modules-jsi*/apple/Sources/ExpoModulesJSI-Cxx/include/RuntimeScheduler.h" 2>/dev/null)
+          echo "patched $COUNT file(s)"
+          [ "$COUNT" -gt 0 ]
+          LEFT=$(find node_modules/.pnpm -path "*expo-modules-jsi*/apple/Sources/ExpoModulesJSI-Cxx/include/RuntimeScheduler.h" -exec grep -l "SWIFT_RETURNS" {} \; 2>/dev/null)
+          [ -z "$LEFT" ]
 
       - name: Build rich-content css
         run: pnpm --filter @yohaku/rich-content build:css
