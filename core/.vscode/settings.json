@@ -1,0 +1,22 @@
+{
+  "editor.formatOnSave": true,
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "material-icon-theme.activeIconPack": "nest",
+  "cSpell.words": ["qaqdmin"],
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-workflow.json": "file:///Users/xiaoxun/github/innei-repo/mx-space/mx-server/.github/workflows/build.yml"
+  },
+  "typescript.preferences.preferTypeOnlyAutoImports": false
+}

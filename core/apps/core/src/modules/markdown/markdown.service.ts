@@ -1,0 +1,286 @@
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common'
+import { omit } from 'es-toolkit/compat'
+import { dump } from 'js-yaml'
+import { escapeHtml } from 'xss'
+
+import { AppErrorCode, createAppException } from '~/common/errors'
+import { CollectionRefTypes } from '~/constants/db.constant'
+import { DatabaseService } from '~/processors/database/database.service'
+import { AssetService } from '~/processors/helper/helper.asset.service'
+import { getPublicText } from '~/processors/helper/lexical-truncate.util'
+import { ContentFormat } from '~/shared/types/content-format.type'
+
+import { CategoryService } from '../category/category.service'
+import { NoteService } from '../note/note.service'
+import { type NoteModel } from '../note/note.types'
+import { PageService } from '../page/page.service'
+import { PostService } from '../post/post.service'
+import { type PostModel } from '../post/post.types'
+import type { MarkdownYAMLProperty } from './markdown.interface'
+import type { DatatypeDto } from './markdown.schema'
+import { markdownToHtml } from './markdown.util'
+
+@Injectable()
+export class MarkdownService {
+  private readonly logger = new Logger(MarkdownService.name)
+
+  constructor(
+    private readonly assetService: AssetService,
+    private readonly categoryService: CategoryService,
+    private readonly postService: PostService,
+    private readonly noteService: NoteService,
+    private readonly pageService: PageService,
+    private readonly databaseService: DatabaseService,
+  ) {}
+
+  async insertPostsToDb(data: DatatypeDto[]) {
+    let count = 1
+    const categoryNameAndId = (
+      await this.categoryService.findAllCategory()
+    ).map((c) => {
+      return { name: c.name, id: c.id, slug: c.slug }
+    })
+
+    const insertOrCreateCategory = async (name?: string) => {
+      if (!name) {
+        return
+      }
+
+      const hasCategory = categoryNameAndId.find(
+        (c) => name === c.name || name === c.slug,
+      )
+
+      if (!hasCategory) {
+        const newCategoryDoc = await this.categoryService.create(name, name)
+        categoryNameAndId.push({
+          name: newCategoryDoc.name,
+          id: newCategoryDoc.id,
+          slug: newCategoryDoc.slug,
+        })
+        return newCategoryDoc
+      } else {
+        return hasCategory
+      }
+    }
+    const genDate = this.genDate
+    const models = [] as PostModel[]
+    const defaultCategory = categoryNameAndId[0]
+    if (!defaultCategory) {
+      throw new InternalServerErrorException('Category does not exist')
+    }
+    for (const item of data) {
+      if (!item.meta) {
+        models.push({
+          title: `Untitled-${count++}`,
+          slug: String(Date.now()),
+          text: item.text,
+          ...genDate(item),
+          categoryId: defaultCategory.id,
+        } as any as PostModel)
+      } else {
+        const category = await insertOrCreateCategory(
+          item.meta.categories?.shift(),
+        )
+        models.push({
+          title: item.meta.title,
+          slug: item.meta.slug || item.meta.title,
+          text: item.text,
+          ...genDate(item),
+          categoryId: category?.id ?? defaultCategory.id,
+          tags: item.meta.tags || [],
+        } as PostModel)
+      }
+    }
+    return await Promise.all(
+      models.map((model) =>
+        this.postService.create({
+          ...model,
+          contentFormat: model.contentFormat ?? ContentFormat.Markdown,
+        } as any),
+      ),
+    ).catch(() => {
+      this.logger.warn('Failed to import one post')
+    })
+  }
+
+  async insertNotesToDb(data: DatatypeDto[]) {
+    const models = [] as NoteModel[]
+    for (const item of data) {
+      models.push({
+        title: item.meta?.title ?? 'Untitled note',
+        text: item.text,
+        ...this.genDate(item),
+      } as NoteModel)
+    }
+
+    return await Promise.all(
+      models.map((model) =>
+        this.noteService.create({
+          ...model,
+          contentFormat: model.contentFormat ?? ContentFormat.Markdown,
+        } as any),
+      ),
+    )
+  }
+
+  private readonly genDate = (item: DatatypeDto) => {
+    const { meta } = item
+    if (!meta) {
+      return {
+        createdAt: new Date(),
+        modifiedAt: new Date(),
+      }
+    }
+    const { date, updated } = meta
+    return {
+      createdAt: date ? new Date(date) : new Date(),
+      modifiedAt: updated
+        ? new Date(updated)
+        : date
+          ? new Date(date)
+          : new Date(),
+    }
+  }
+
+  async extractAllArticle() {
+    const [posts, notes, pages] = await Promise.all([
+      this.postService.findRecent(100),
+      this.noteService.findRecent(100),
+      this.pageService.findAll(),
+    ])
+    return {
+      posts,
+      notes,
+      pages,
+    }
+  }
+
+  async generateArchive({
+    documents,
+    options = {},
+  }: {
+    documents: MarkdownYAMLProperty[]
+    options: { slug?: boolean }
+  }) {
+    const JSZip = (await import('jszip')).default
+    const zip = new JSZip()
+
+    for (const document of documents) {
+      // Notes set meta.slug to nid (a number) — coerce so .concat works.
+      const name = String(
+        options.slug ? document.meta.slug : document.meta.title,
+      )
+      zip.file(name.concat('.md').replaceAll('/', '-'), document.text)
+    }
+    return zip
+  }
+
+  markdownBuilder(
+    property: MarkdownYAMLProperty,
+    includeYAMLHeader?: boolean,
+    showHeader?: boolean,
+  ) {
+    const {
+      meta: { createdAt, modifiedAt, title },
+      text,
+    } = property
+    if (!includeYAMLHeader) {
+      return `${showHeader ? `# ${title}\n\n` : ''}${text.trim()}`
+    }
+    const header = {
+      date: createdAt,
+      updated: modifiedAt,
+      title,
+      ...omit(property.meta, ['createdAt', 'modifiedAt', 'title']),
+    }
+    const toYaml = dump(header, { skipInvalid: true })
+    return `
+---
+${toYaml.trim()}
+---
+
+${showHeader ? `# ${title}\n\n` : ''}
+${text.trim()}
+`.trim()
+  }
+
+  /**
+   * Render a single article by its ID.
+   * @param id
+   * @returns
+   */
+  async renderArticle(id: string, options: { asOwner?: boolean } = {}) {
+    const result = await this.databaseService.findGlobalById(id)
+
+    if (!result || result.type === CollectionRefTypes.Recently)
+      throw createAppException(AppErrorCode.DOCUMENT_NOT_FOUND, { id })
+
+    const text = options.asOwner
+      ? result.document.text
+      : getPublicText(result.document)
+
+    return {
+      html: this.renderMarkdownContent(text),
+      ...result,
+      document: result.document,
+    }
+  }
+
+  /**
+   * Render Markdown text to HTML.
+   * @param text
+   * @returns
+   */
+  public renderMarkdownContent(text: string) {
+    return markdownToHtml(text)
+  }
+
+  async getRenderedMarkdownHtmlStructure(
+    html: string,
+    title: string,
+    theme = 'newsprint',
+  ) {
+    const style = await this.assetService.getAsset('/markdown/markdown.css', {
+      encoding: 'utf8',
+    })
+
+    const themeStyleSheet = await this.assetService.getAsset(
+      `/markdown/theme/${theme}.css`,
+      { encoding: 'utf-8' },
+    )
+    return {
+      body: [`<article><h1>${escapeHtml(title)}</h1>${html}</article>`],
+      extraScripts: [
+        '<script src="https://lf26-cdn-tos.bytecdntp.com/cdn/expire-1-M/mermaid/8.9.0/mermaid.min.js"></script>',
+        '<script src="https://lf26-cdn-tos.bytecdntp.com/cdn/expire-1-M/prism/1.23.0/components/prism-core.min.js"></script>',
+        '<script src="https://lf26-cdn-tos.bytecdntp.com/cdn/expire-1-M/prism/1.23.0/plugins/autoloader/prism-autoloader.min.js"></script>',
+        '<script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/prism/1.23.0/plugins/line-numbers/prism-line-numbers.min.js"></script>',
+        '<script src="https://lf6-cdn-tos.bytecdntp.com/cdn/expire-1-M/KaTeX/0.15.2/katex.min.js" async defer></script>',
+      ],
+      script: [
+        `window.mermaid.initialize({theme: 'default',startOnLoad: false})`,
+        `window.mermaid.init(undefined, '.mermaid')`,
+        `window.onload = () => { document.querySelectorAll('.katex-render').forEach(el => { window.katex.render(el.innerHTML, el, {
+          throwOnError: false,
+        }) }) }`,
+      ],
+      link: [
+        '<link href="https://cdn.jsdelivr.net/gh/PrismJS/prism-themes@master/themes/prism-one-light.css" rel="stylesheet" />',
+        '<link href="https://lf26-cdn-tos.bytecdntp.com/cdn/expire-1-M/prism/1.23.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />',
+        // katex
+        '<link href="https://lf9-cdn-tos.bytecdntp.com/cdn/expire-1-M/KaTeX/0.15.2/katex.min.css" rel="stylesheet" />',
+      ],
+      style: [style, themeStyleSheet],
+    }
+  }
+
+  getMarkdownEjsRenderTemplate() {
+    return this.assetService.getAsset('/render/markdown.ejs', {
+      encoding: 'utf8',
+    }) as Promise<string>
+  }
+}

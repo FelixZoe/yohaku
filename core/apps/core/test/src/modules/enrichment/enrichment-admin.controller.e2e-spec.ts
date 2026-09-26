@@ -1,0 +1,435 @@
+import { createE2EApp } from 'test/helper/create-e2e-app'
+import { defineProvider } from 'test/helper/defineProvider'
+import { authPassHeader } from 'test/mock/guard/auth.guard'
+import { vi } from 'vitest'
+
+import { apiRoutePrefix } from '~/common/decorators/api-controller.decorator'
+import { ConfigsService } from '~/modules/configs/configs.service'
+import { EnrichmentController } from '~/modules/enrichment/enrichment.controller'
+import { EnrichmentRepository } from '~/modules/enrichment/enrichment.repository'
+import { EnrichmentService } from '~/modules/enrichment/enrichment.service'
+import { EnrichmentDeferredError } from '~/modules/enrichment/enrichment.types'
+import { EnrichmentCaptureRepository } from '~/modules/enrichment/enrichment-capture.repository'
+import { CaptureStorageService } from '~/modules/enrichment/providers/open-graph/capture-storage.service'
+
+const baseRow = {
+  id: 'row-1',
+  provider: 'open-graph',
+  externalId: 'og:example',
+  url: 'https://example.com/post',
+  locale: '',
+  normalized: {
+    title: 'Hello',
+    url: 'https://example.com/post',
+    category: 'web',
+    fetchedAt: '2026-01-01T00:00:00Z',
+  },
+  raw: null,
+  fetchedAt: new Date('2026-01-01T00:00:00Z'),
+  expiresAt: null,
+  failureCount: 0,
+  lastError: null,
+  createdAt: new Date('2026-01-01T00:00:00Z'),
+}
+
+const baseCaptureRow = {
+  enrichmentId: 'row-1',
+  objectKey: 'enrichment-captures/row-1.webp',
+  bytes: 2048,
+  width: 1280,
+  height: 720,
+  thumbhash: 'LKO2?U%2',
+  palette: { dominant: '#112233' },
+  createdAt: new Date('2026-01-01T00:00:00Z'),
+  lastAccessedAt: new Date('2026-01-01T00:00:00Z'),
+}
+
+interface ConfigState {
+  fetchMode: 'fetch' | 'browser'
+  captureEnabled: boolean
+}
+
+const configState: ConfigState = {
+  fetchMode: 'fetch',
+  captureEnabled: false,
+}
+
+const enrichmentRepositoryMock = {
+  findById: vi.fn(),
+  clearCapture: vi.fn(async () => undefined),
+}
+
+const captureRepositoryMock = {
+  findByEnrichmentId: vi.fn(),
+  getQuotaUsage: vi.fn(async () => ({ count: 3, totalBytes: 4096 })),
+  listJoined: vi.fn(),
+}
+
+const captureStorageMock = {
+  delete: vi.fn(async () => undefined),
+  touchAccess: vi.fn(async () => undefined),
+  getPublicUrlFor: vi.fn(
+    async (objectKey: string) => `https://cdn.example.test/${objectKey}`,
+  ),
+}
+
+const enrichmentServiceMock = {
+  getOne: vi.fn(),
+  resolve: vi.fn(),
+  search: vi.fn(),
+  refresh: vi.fn(async () => baseRow.normalized),
+  probe: vi.fn(),
+  matchUrlToRef: vi.fn(),
+}
+
+const configsServiceMock = {
+  get: vi.fn(async (key: string) => {
+    if (key === 'url') return { webUrl: 'https://blog.example.com' }
+    if (key === 'thirdPartyServiceIntegration') {
+      return {
+        openGraph: {
+          fetchMode: configState.fetchMode,
+          screenshot: {
+            enabled: configState.captureEnabled,
+            maxItems: 500,
+            maxTotalBytes: 100 * 1024 * 1024,
+          },
+        },
+      }
+    }
+    return {}
+  }),
+}
+
+const providers = [
+  defineProvider({
+    provide: EnrichmentService,
+    useValue: enrichmentServiceMock as unknown as EnrichmentService,
+  }),
+  defineProvider({
+    provide: EnrichmentRepository,
+    useValue: enrichmentRepositoryMock as unknown as EnrichmentRepository,
+  }),
+  defineProvider({
+    provide: EnrichmentCaptureRepository,
+    useValue: captureRepositoryMock as unknown as EnrichmentCaptureRepository,
+  }),
+  defineProvider({
+    provide: CaptureStorageService,
+    useValue: captureStorageMock as unknown as CaptureStorageService,
+  }),
+  defineProvider({
+    provide: ConfigsService,
+    useValue: configsServiceMock as unknown as ConfigsService,
+  }),
+]
+
+describe('EnrichmentController admin endpoints (e2e)', () => {
+  const proxy = createE2EApp({
+    controllers: [EnrichmentController],
+    providers,
+  })
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    configState.fetchMode = 'fetch'
+    configState.captureEnabled = false
+    enrichmentRepositoryMock.findById.mockResolvedValue(baseRow)
+    enrichmentRepositoryMock.clearCapture.mockResolvedValue(undefined)
+    captureRepositoryMock.findByEnrichmentId.mockResolvedValue(baseCaptureRow)
+    captureRepositoryMock.getQuotaUsage.mockResolvedValue({
+      count: 3,
+      totalBytes: 4096,
+    })
+    captureRepositoryMock.listJoined.mockResolvedValue({
+      data: [
+        {
+          enrichmentId: 'row-1',
+          provider: 'open-graph',
+          externalId: 'og:example',
+          url: 'https://example.com/post',
+          title: 'Hello',
+          objectKey: 'enrichment-captures/row-1.webp',
+          bytes: 2048,
+          width: 1280,
+          height: 720,
+          thumbhash: null,
+          palette: null,
+          createdAt: new Date('2026-01-01T00:00:00Z'),
+          lastAccessedAt: new Date('2026-01-01T00:00:00Z'),
+        },
+      ],
+      pagination: {
+        currentPage: 1,
+        totalPage: 1,
+        total: 1,
+        size: 20,
+        hasNextPage: false,
+        hasPrevPage: false,
+      },
+    })
+    captureStorageMock.delete.mockResolvedValue(undefined)
+    captureStorageMock.getPublicUrlFor.mockImplementation(
+      async (objectKey: string) => `https://cdn.example.test/${objectKey}`,
+    )
+    enrichmentServiceMock.refresh.mockResolvedValue(baseRow.normalized as any)
+    enrichmentServiceMock.search.mockResolvedValue([baseRow.normalized] as any)
+  })
+
+  test('returns no content when a public lookup is cooling down', async () => {
+    enrichmentServiceMock.getOne.mockRejectedValueOnce(
+      new EnrichmentDeferredError(),
+    )
+    const res = await proxy.app.inject({
+      method: 'GET',
+      url: `${apiRoutePrefix}/enrichment/open-graph/example`,
+      headers: { origin: 'https://blog.example.com' },
+    })
+    expect(res.statusCode).toBe(204)
+    expect(res.body).toBe('')
+  })
+
+  describe('auth gating', () => {
+    const endpoints: Array<{
+      method: 'GET' | 'POST' | 'DELETE'
+      url: string
+      body?: unknown
+    }> = [
+      { method: 'GET', url: 'enrichment/admin/by-id/row-1' },
+      { method: 'GET', url: 'enrichment/admin/captures' },
+      { method: 'GET', url: 'enrichment/admin/captures/quota' },
+      { method: 'GET', url: 'enrichment/search/tmdb?query=Dune' },
+      { method: 'DELETE', url: 'enrichment/admin/captures/row-1' },
+      {
+        method: 'POST',
+        url: 'enrichment/admin/captures/row-1/recapture',
+      },
+      {
+        method: 'POST',
+        url: 'enrichment/admin/probe',
+        body: { url: 'https://example.com' },
+      },
+    ]
+
+    test.each(endpoints)(
+      'rejects $method $url without auth',
+      async ({ method, url, body }) => {
+        const res = await proxy.app.inject({
+          method,
+          url: `${apiRoutePrefix}/${url}`,
+          ...(body ? { payload: body } : {}),
+        })
+        expect(res.statusCode).toBe(401)
+      },
+    )
+  })
+
+  test('GET search/:provider returns normalized media results', async () => {
+    const res = await proxy.app.inject({
+      method: 'GET',
+      url: `${apiRoutePrefix}/enrichment/search/tmdb?query=Dune&size=6`,
+      headers: authPassHeader,
+    })
+
+    expect(res.statusCode).toBe(200)
+    expect(res.json().data).toEqual([
+      expect.objectContaining({ title: 'Hello', category: 'web' }),
+    ])
+    expect(enrichmentServiceMock.search).toHaveBeenCalledWith(
+      'tmdb',
+      'Dune',
+      undefined,
+      6,
+    )
+  })
+
+  test('GET admin/by-id/:id returns row with capture', async () => {
+    const res = await proxy.app.inject({
+      method: 'GET',
+      url: `${apiRoutePrefix}/enrichment/admin/by-id/row-1`,
+      headers: authPassHeader,
+    })
+    expect(res.statusCode).toBe(200)
+    const body = res.json()
+    expect(body.data.id).toBe('row-1')
+    expect(body.data.capture).toBeTruthy()
+    expect(body.data.capture.object_key).toBe('enrichment-captures/row-1.webp')
+  })
+
+  test('GET admin/by-id/:id 404 when missing', async () => {
+    enrichmentRepositoryMock.findById.mockResolvedValueOnce(null)
+    const res = await proxy.app.inject({
+      method: 'GET',
+      url: `${apiRoutePrefix}/enrichment/admin/by-id/nope`,
+      headers: authPassHeader,
+    })
+    expect(res.statusCode).toBe(404)
+  })
+
+  test('GET admin/captures returns list with public_url', async () => {
+    const res = await proxy.app.inject({
+      method: 'GET',
+      url: `${apiRoutePrefix}/enrichment/admin/captures?page=1&size=20&sort=last_accessed&order=desc`,
+      headers: authPassHeader,
+    })
+    expect(res.statusCode).toBe(200)
+    const body = res.json()
+    expect(body.data).toHaveLength(1)
+    expect(body.data[0].public_url).toBe(
+      'https://cdn.example.test/enrichment-captures/row-1.webp',
+    )
+    expect(body.meta.pagination.total).toBe(1)
+  })
+
+  test('GET admin/captures returns publicUrl empty when storage unconfigured', async () => {
+    captureStorageMock.getPublicUrlFor.mockRejectedValueOnce(
+      new Error('not configured'),
+    )
+    const res = await proxy.app.inject({
+      method: 'GET',
+      url: `${apiRoutePrefix}/enrichment/admin/captures`,
+      headers: authPassHeader,
+    })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().data[0].public_url).toBe('')
+  })
+
+  test('GET admin/captures/quota reflects config + usage', async () => {
+    configState.fetchMode = 'browser'
+    configState.captureEnabled = true
+    const res = await proxy.app.inject({
+      method: 'GET',
+      url: `${apiRoutePrefix}/enrichment/admin/captures/quota`,
+      headers: authPassHeader,
+    })
+    expect(res.statusCode).toBe(200)
+    const body = res.json()
+    expect(body.data.used.count).toBe(3)
+    expect(body.data.used.total_bytes).toBe(4096)
+    expect(body.data.cap.max_items).toBe(500)
+    expect(body.data.enabled).toBe(true)
+    expect(body.data.fetch_mode).toBe('browser')
+  })
+
+  test('DELETE admin/captures/:id 204 even when not present', async () => {
+    const res = await proxy.app.inject({
+      method: 'DELETE',
+      url: `${apiRoutePrefix}/enrichment/admin/captures/row-1`,
+      headers: authPassHeader,
+    })
+    expect(res.statusCode).toBe(204)
+    expect(captureStorageMock.delete).toHaveBeenCalledWith('row-1')
+    expect(enrichmentRepositoryMock.clearCapture).toHaveBeenCalledWith('row-1')
+  })
+
+  test('POST admin/captures/:id/recapture 409 when fetchMode != browser', async () => {
+    configState.fetchMode = 'fetch'
+    configState.captureEnabled = true
+    const res = await proxy.app.inject({
+      method: 'POST',
+      url: `${apiRoutePrefix}/enrichment/admin/captures/row-1/recapture`,
+      headers: authPassHeader,
+    })
+    expect(res.statusCode).toBe(409)
+    const body = res.json()
+    expect(body.error.code).toBe('ENRICHMENT_BROWSER_MODE_REQUIRED')
+  })
+
+  test('POST admin/captures/:id/recapture 409 when capture disabled', async () => {
+    configState.fetchMode = 'browser'
+    configState.captureEnabled = false
+    const res = await proxy.app.inject({
+      method: 'POST',
+      url: `${apiRoutePrefix}/enrichment/admin/captures/row-1/recapture`,
+      headers: authPassHeader,
+    })
+    expect(res.statusCode).toBe(409)
+    const body = res.json()
+    expect(body.error.code).toBe('ENRICHMENT_SCREENSHOT_DISABLED')
+  })
+
+  test('POST admin/captures/:id/recapture 404 for unknown id', async () => {
+    enrichmentRepositoryMock.findById.mockResolvedValueOnce(null)
+    const res = await proxy.app.inject({
+      method: 'POST',
+      url: `${apiRoutePrefix}/enrichment/admin/captures/missing/recapture`,
+      headers: authPassHeader,
+    })
+    expect(res.statusCode).toBe(404)
+  })
+
+  test('POST admin/captures/:id/recapture happy path returns capture', async () => {
+    configState.fetchMode = 'browser'
+    configState.captureEnabled = true
+    const captureImage = {
+      url: 'https://cdn.example.test/enrichment-captures/row-1.webp',
+      width: 1280,
+      height: 720,
+      thumbhash: 'L_X',
+    }
+    enrichmentRepositoryMock.findById
+      .mockResolvedValueOnce(baseRow)
+      .mockResolvedValueOnce({
+        ...baseRow,
+        normalized: { ...baseRow.normalized, captureImage } as any,
+      })
+
+    const res = await proxy.app.inject({
+      method: 'POST',
+      url: `${apiRoutePrefix}/enrichment/admin/captures/row-1/recapture`,
+      headers: authPassHeader,
+    })
+    expect(res.statusCode).toBe(200)
+    expect(enrichmentServiceMock.refresh).toHaveBeenCalledWith(
+      'open-graph',
+      'og:example',
+      '',
+      { url: 'https://example.com/post', force: true },
+    )
+    const body = res.json()
+    expect(body.data.url).toBe(captureImage.url)
+  })
+
+  test('POST admin/probe forwards useCache=true and returns result', async () => {
+    enrichmentServiceMock.probe.mockResolvedValueOnce({
+      matched: { provider: 'open-graph', externalId: 'og:abc' },
+      result: { title: 'cached', url: 'https://example.com' },
+      cached: true,
+    })
+    const res = await proxy.app.inject({
+      method: 'POST',
+      url: `${apiRoutePrefix}/enrichment/admin/probe`,
+      headers: authPassHeader,
+      payload: { url: 'https://example.com', useCache: true },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(enrichmentServiceMock.probe).toHaveBeenCalledWith(
+      'https://example.com',
+      true,
+    )
+    const body = res.json()
+    expect(body.data.cached).toBe(true)
+    expect(body.data.result.title).toBe('cached')
+  })
+
+  test('POST admin/probe with useCache=false default', async () => {
+    enrichmentServiceMock.probe.mockResolvedValueOnce({
+      matched: null,
+      result: null,
+      cached: false,
+      error: { code: 'unknown_provider', message: 'no match' },
+    })
+    const res = await proxy.app.inject({
+      method: 'POST',
+      url: `${apiRoutePrefix}/enrichment/admin/probe`,
+      headers: authPassHeader,
+      payload: { url: 'https://example.com' },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(enrichmentServiceMock.probe).toHaveBeenCalledWith(
+      'https://example.com',
+      false,
+    )
+    expect(res.json().data.error.code).toBe('unknown_provider')
+  })
+})

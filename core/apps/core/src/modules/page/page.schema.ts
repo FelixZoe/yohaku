@@ -1,0 +1,54 @@
+import { z } from 'zod'
+
+import { zCoerceInt, zEntityId, zNonEmptyString, zPrefer } from '~/common/zod'
+import { MarkdownToLexicalMigrationDescriptorSchema } from '~/modules/content-migration/content-migration.schema'
+import {
+  validateLexicalCreateContentPair,
+  WriteBaseSchema,
+} from '~/shared/schema'
+import { ImageArraySchema } from '~/shared/schema/image.schema'
+
+/**
+ * Page schema for API validation
+ */
+const PageBaseSchema = WriteBaseSchema.extend({
+  slug: zNonEmptyString,
+  subtitle: z.string().nullable().optional(),
+  order: z.preprocess(
+    (val) =>
+      typeof val === 'string' ? Number.parseInt(val, 10) : (val as number),
+    z.number().int().min(0).default(1),
+  ),
+  images: ImageArraySchema.optional(),
+  migration: MarkdownToLexicalMigrationDescriptorSchema.optional(),
+})
+
+export const PageSchema = PageBaseSchema.superRefine(
+  validateLexicalCreateContentPair,
+)
+
+/**
+ * Page reorder sequence item schema
+ */
+export const PageReorderSeqSchema = z.object({
+  id: zEntityId,
+  order: zCoerceInt.min(1),
+})
+
+/**
+ * Page reorder schema
+ */
+export const PageReorderSchema = z.object({
+  seq: z.array(PageReorderSeqSchema),
+})
+
+export type PageReorderDto = z.infer<typeof PageReorderSchema>
+
+/**
+ * Page detail query schema
+ */
+export const PageDetailQuerySchema = z.object({
+  prefer: zPrefer,
+})
+
+export type PageDetailQueryDto = z.infer<typeof PageDetailQuerySchema>

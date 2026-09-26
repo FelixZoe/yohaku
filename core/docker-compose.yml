@@ -1,0 +1,111 @@
+# Shared env block — mx-migrate boots a full Nest context (it now runs the
+# combined schema + app-data migration phases), so it must receive the same
+# config the runtime app needs (Redis, snowflake worker id, jwt secret, …).
+x-mx-env: &mx-env
+  TZ: Asia/Shanghai
+  NODE_ENV: production
+  REDIS_HOST: redis
+  PG_HOST: postgres
+  PG_PORT: '5432'
+  PG_USER: mx
+  PG_PASSWORD: mx
+  PG_DATABASE: mx_core
+  SNOWFLAKE_WORKER_ID: '1'
+  ALLOWED_ORIGINS: localhost
+  JWT_SECRET: YOUR_SUPER_SECURED_JWT_SECRET_STRING
+
+# Bound crash artifacts and stdout/stderr even during dependency outages.
+x-runtime-safety: &runtime-safety
+  ulimits:
+    core:
+      soft: 0
+      hard: 0
+  logging:
+    driver: json-file
+    options:
+      max-size: '10m'
+      max-file: '3'
+
+services:
+  app:
+    <<: *runtime-safety
+    container_name: mx-server
+    image: innei/mx-server:latest
+    environment: *mx-env
+    volumes:
+      - ./data/mx-space:/root/.mx-space
+    ports:
+      - '2333:2333'
+    depends_on:
+      mx-migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+    networks:
+      - mx-space
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, curl, -f, 'http://127.0.0.1:2333/api/v3/ping']
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+  # One-shot release-phase migration runner. Runs schema migrations (drizzle)
+  # then app-data migrations (Nest-bootstrapped registry). Exits 0; the `app`
+  # service waits for completion via `service_completed_successfully` before
+  # starting. See docs/superpowers/specs/2026-05-05-database-migration-release-phase-design.md.
+  mx-migrate:
+    <<: *runtime-safety
+    container_name: mx-migrate
+    image: innei/mx-server:latest
+    command: ['node', 'migrate.mjs']
+    environment: *mx-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - mx-space
+    restart: 'no'
+
+  postgres:
+    <<: *runtime-safety
+    container_name: postgres
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=mx
+      - POSTGRES_PASSWORD=mx
+      - POSTGRES_DB=mx_core
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U mx -d mx_core']
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - mx-space
+    restart: unless-stopped
+
+  redis:
+    <<: *runtime-safety
+    image: redis:alpine
+    container_name: redis
+    volumes:
+      - ./data/redis:/data
+    healthcheck:
+      test: [CMD-SHELL, 'redis-cli ping | grep PONG']
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 3s
+    networks:
+      - mx-space
+    restart: unless-stopped
+
+networks:
+  mx-space:
+    driver: bridge

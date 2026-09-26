@@ -38,11 +38,13 @@ jobs:
         id: xcode
         working-directory: apps/mobile
         run: |
-          WORKSPACE=$(ls ios/*.xcworkspace | head -1)
+          WORKSPACE=$(ls -d ios/*.xcworkspace | head -1)
           echo "workspace=$WORKSPACE" >> "$GITHUB_OUTPUT"
-          SCHEME=$(xcodebuild -list -workspace "$WORKSPACE" 2>/dev/null | awk '/Schemes:/{f=1;next} f&&NF{print $1; exit}')
+          SCHEMES=$(xcodebuild -list -workspace "$WORKSPACE" 2>/dev/null | sed -n '/Schemes:/,$p' | tail -n +2 | sed 's/^[[:space:]]*//' | grep -v '^$')
+          SCHEME=$(echo "$SCHEMES" | grep -iv 'notification' | head -1)
+          [ -z "$SCHEME" ] && SCHEME=$(echo "$SCHEMES" | head -1)
           echo "scheme=$SCHEME" >> "$GITHUB_OUTPUT"
-          echo "workspace=$WORKSPACE scheme=$SCHEME"
+          echo "workspace=$WORKSPACE scheme=$SCHEME (all: $SCHEMES)"
 
       - name: Xcode build (unsigned, device)
         working-directory: apps/mobile

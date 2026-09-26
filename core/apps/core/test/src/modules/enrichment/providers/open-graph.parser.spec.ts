@@ -1,0 +1,90 @@
+import { describe, expect, it } from 'vitest'
+
+import { parseOpenGraph } from '~/modules/enrichment/providers/open-graph/og-parser'
+
+function parse(head: string, url = 'https://example.com/article') {
+  return parseOpenGraph(
+    `<html><head>${head}</head><body></body></html>`,
+    url,
+    url,
+  )
+}
+
+describe('parseOpenGraph — thumbnailImage', async () => {
+  it('resolves og:image and records advertised dimensions', async () => {
+    const { result } = await parse(`
+      <meta property="og:title" content="A Post" />
+      <meta property="og:image" content="https://cdn.example.com/og.png" />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+    `)
+    expect(result.thumbnailImage).toEqual({
+      url: 'https://cdn.example.com/og.png',
+      alt: undefined,
+      width: 1200,
+      height: 630,
+    })
+  })
+
+  it('keeps the thumbnailImage without dimensions when none are advertised', async () => {
+    const { result } = await parse(`
+      <meta property="og:image" content="https://cdn.example.com/og.png" />
+    `)
+    expect(result.thumbnailImage?.url).toBe('https://cdn.example.com/og.png')
+    expect(result.thumbnailImage?.width).toBeUndefined()
+    expect(result.thumbnailImage?.height).toBeUndefined()
+  })
+
+  it('ignores non-numeric / non-positive image dimensions', async () => {
+    const { result } = await parse(`
+      <meta property="og:image" content="https://cdn.example.com/og.png" />
+      <meta property="og:image:width" content="wide" />
+      <meta property="og:image:height" content="0" />
+    `)
+    expect(result.thumbnailImage?.width).toBeUndefined()
+    expect(result.thumbnailImage?.height).toBeUndefined()
+  })
+
+  it('falls back to twitter:image when no og:image is present', async () => {
+    const { result } = await parse(`
+      <meta name="twitter:image" content="https://cdn.example.com/tw.png" />
+    `)
+    expect(result.thumbnailImage?.url).toBe('https://cdn.example.com/tw.png')
+  })
+
+  it('absolutizes a relative thumbnailImage url', async () => {
+    const { result } = await parse(
+      `<meta property="og:image" content="/static/og.png" />`,
+      'https://example.com/blog/post',
+    )
+    expect(result.thumbnailImage?.url).toBe('https://example.com/static/og.png')
+  })
+
+  it('does NOT use an apple-touch-icon / favicon as the thumbnailImage', async () => {
+    const { result } = await parse(`
+      <link rel="apple-touch-icon" href="https://example.com/touch.png" />
+      <link rel="icon" href="https://example.com/favicon.ico" />
+    `)
+    expect(result.thumbnailImage).toBeUndefined()
+  })
+})
+
+describe('parseOpenGraph — icon links', async () => {
+  it('surfaces discovered icons in result.links', async () => {
+    const { result } = await parse(`
+      <link rel="apple-touch-icon" href="https://example.com/touch.png" />
+      <link rel="icon" href="/favicon.ico" />
+    `)
+    expect(result.links).toEqual([
+      { rel: 'apple-touch-icon', url: 'https://example.com/touch.png' },
+      { rel: 'icon', url: 'https://example.com/favicon.ico' },
+    ])
+  })
+
+  it('leaves links undefined when the page advertises no icons', async () => {
+    const { result } = await parse(
+      `<meta property="og:title" content="A Post" />`,
+    )
+    expect(result.links).toBeUndefined()
+  })
+})

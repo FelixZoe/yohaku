@@ -1,0 +1,142 @@
+import { Injectable } from '@nestjs/common'
+
+import type { EnrichmentResult, UrlMatchResult } from '../../enrichment.types'
+import { ImageMetaService } from '../image-meta.service'
+import { ENRICHMENT_CATEGORIES } from '../provider.constants'
+import type { EnrichmentProvider } from '../provider.interface'
+import {
+  buildOgImageUrl,
+  GitHubClient,
+  OG_IMAGE_HEIGHT,
+  OG_IMAGE_WIDTH,
+} from './github.client'
+
+@Injectable()
+export class GitHubDiscussionProvider implements EnrichmentProvider {
+  readonly name = 'gh-discussion'
+  readonly displayName = 'GitHub Discussion'
+  readonly category = ENRICHMENT_CATEGORIES.GITHUB
+  readonly priority = 6
+  readonly defaultTtl = 3600
+  readonly featureGateConfigKey = 'github'
+  readonly requiredConfigKeys = ['token']
+
+  constructor(
+    private readonly client: GitHubClient,
+    private readonly imageMeta: ImageMetaService,
+  ) {}
+
+  matchUrl(url: URL): UrlMatchResult | null {
+    if (url.hostname !== 'github.com') return null
+    const parts = url.pathname.split('/').filter(Boolean)
+    if (parts.length !== 4 || parts[2] !== 'discussions') return null
+    return {
+      id: `${parts[0]}/${parts[1]}/discussions/${parts[3]}`,
+      fullUrl: url.href,
+      subtype: 'discussion',
+    }
+  }
+
+  isValidId(id: string): boolean {
+    return /^[^/]+\/[^/]+\/discussions\/\d+$/.test(id)
+  }
+
+  async fetch(id: string): Promise<EnrichmentResult> {
+    const [owner, repo, , number] = id.split('/')
+    const octokit = await this.client.getOctokit()
+    const query = `
+      query($owner: String!, $name: String!, $number: Int!) {
+        repository(owner: $owner, name: $name) {
+          discussion(number: $number) {
+            title
+            body
+            url
+            createdAt
+            updatedAt
+            author { login avatarUrl }
+            comments { totalCount }
+          }
+        }
+      }
+    `
+    const data = await octokit.graphql<{
+      repository: {
+        discussion: {
+          title: string
+          body: string | null
+          url: string
+          createdAt: string | null
+          updatedAt: string | null
+          author: { login: string; avatarUrl: string } | null
+          comments: { totalCount: number }
+        } | null
+      } | null
+    }>(query, { owner, name: repo, number: Number(number) })
+
+    const discussion = data?.repository?.discussion
+    if (!discussion) throw new Error(`Discussion not found: ${id}`)
+
+    const avatarUrl = discussion.author?.avatarUrl ?? null
+    const ogUrl = buildOgImageUrl(
+      discussion.updatedAt,
+      owner,
+      repo,
+      'discussions',
+      number,
+    )
+    const [avatarMeta, ogMeta] = await Promise.all([
+      avatarUrl ? this.imageMeta.fetchAndExtract(avatarUrl) : null,
+      this.imageMeta.fetchAndExtract(ogUrl),
+    ])
+
+    return {
+      title: discussion.title,
+      description: (discussion.body || '').slice(0, 300) || undefined,
+      thumbnailImage: avatarUrl
+        ? {
+            url: avatarUrl,
+            alt: discussion.author!.login,
+            ...avatarMeta,
+          }
+        : undefined,
+      previewImage: {
+        url: ogUrl,
+        ...ogMeta,
+        width: OG_IMAGE_WIDTH,
+        height: OG_IMAGE_HEIGHT,
+        alt: `${discussion.title} · Discussion #${number} · ${owner}/${repo}`,
+      },
+      url: discussion.url,
+      category: this.category,
+      subtype: 'discussion',
+      publishedAt: discussion.createdAt || undefined,
+      fetchedAt: '',
+      attributes: [
+        {
+          key: 'repo',
+          value: `${owner}/${repo}`,
+          label: 'Repository',
+          format: 'text',
+        },
+        {
+          key: 'number',
+          value: Number(number),
+          label: 'Number',
+          format: 'number',
+        },
+        {
+          key: 'author',
+          value: discussion.author?.login || '',
+          label: 'Author',
+          format: 'text',
+        },
+        {
+          key: 'comments',
+          value: discussion.comments.totalCount || 0,
+          label: 'Comments',
+          format: 'number',
+        },
+      ],
+    }
+  }
+}

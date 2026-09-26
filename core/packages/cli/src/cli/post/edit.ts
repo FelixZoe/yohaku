@@ -1,0 +1,177 @@
+import { Args, Command } from '@effect/cli'
+import { Effect } from 'effect'
+
+import { openAdminDraftEdit } from '../../domain/admin-link'
+import { coerceMeta, parseEnvelope } from '../../domain/envelope'
+import { ValidationXml } from '../../domain/errors'
+import { buildPostPayload } from '../../domain/payload'
+import { Api, type ApiService } from '../../services/Api'
+import { Editor } from '../../services/Editor'
+import { Lexical } from '../../services/Lexical'
+import { Renderer } from '../../services/Renderer'
+import { Resolver } from '../../services/Resolver'
+import {
+  normalizeData,
+  publishSavedDraft,
+  saveDraftPayload,
+} from '../draft/_shared'
+import {
+  postWriteOptions,
+  resolveCategoryRefs,
+  toPostFlagInputs,
+} from './_flags'
+
+const slugOrId = Args.text({ name: 'slugOrId' })
+
+const escapeXml = (s: string): string =>
+  s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+
+interface PostForEditor {
+  id?: string
+  title?: string
+  slug?: string
+  contentFormat?: string
+  content?: string
+  summary?: string
+  isPublished?: boolean
+  tags?: string[]
+}
+
+const materializeForEditor = (slugOrId: string) =>
+  Effect.gen(function* () {
+    const api = yield* Api
+    const resolver = yield* Resolver
+    const lexical = yield* Lexical
+    const path = yield* resolver.resolvePostReadPath(slugOrId)
+    const post = normalizeData<PostForEditor>(
+      yield* api.request(path, { query: { prefer: 'lexical' } }),
+    )
+    const isLexical = post.contentFormat === 'lexical'
+    let innerXml: string
+    if (isLexical && post.content) {
+      const state = JSON.parse(post.content)
+      innerXml = yield* lexical.payloadToLitexml(state)
+    } else {
+      innerXml = post.content ?? ''
+    }
+    const tagsXml = (post.tags ?? [])
+      .map((t) => `    <tag>${escapeXml(t)}</tag>`)
+      .join('\n')
+    return `<mxpost>
+  <meta>
+    <title>${escapeXml(post.title ?? '')}</title>
+    <slug>${escapeXml(post.slug ?? '')}</slug>
+    <state>${post.isPublished ? 'publish' : 'draft'}</state>
+    ${post.summary ? `<summary>${escapeXml(post.summary)}</summary>` : ''}
+    ${tagsXml ? `<tags>\n${tagsXml}\n    </tags>` : ''}
+  </meta>
+  <content>
+${innerXml}
+  </content>
+</mxpost>
+`
+  })
+
+const metaFromEnvelope = (
+  meta: Record<string, unknown>,
+): Record<string, unknown> => {
+  const overlay: Record<string, unknown> = {}
+  const m = coerceMeta(meta)
+  if (m.title !== undefined) overlay.title = m.title
+  if (m.slug !== undefined) overlay.slug = m.slug
+  if (m.summary !== undefined) overlay.summary = m.summary
+  if (m.state !== undefined) overlay.isPublished = m.state === 'publish'
+  if (m.tags !== undefined) overlay.tags = m.tags
+  return overlay
+}
+
+const submitPostPayload = (
+  api: ApiService,
+  id: string,
+  payload: Record<string, unknown>,
+  publishedFallback: boolean,
+) =>
+  Effect.gen(function* () {
+    const shouldPublish =
+      typeof payload.isPublished === 'boolean'
+        ? payload.isPublished
+        : publishedFallback
+    const draftPayload = { ...payload }
+    delete draftPayload.isPublished
+    const saved = yield* saveDraftPayload(api, 'post', draftPayload, id)
+    return {
+      ...saved,
+      response: shouldPublish
+        ? yield* publishSavedDraft(api, saved.draft)
+        : saved.response,
+    }
+  })
+
+export const edit = Command.make(
+  'edit',
+  { slugOrId, ...postWriteOptions },
+  ({ slugOrId, ...rest }) =>
+    Effect.gen(function* () {
+      const flags = toPostFlagInputs(rest)
+      const api = yield* Api
+      const editor = yield* Editor
+      const renderer = yield* Renderer
+      const resolver = yield* Resolver
+      const id = yield* resolver.resolvePostId(slugOrId)
+      const current = normalizeData<PostForEditor>(
+        yield* api.request(`/posts/${id}`),
+      )
+
+      // Editor round-trip path: no --file and no --content → spawn $EDITOR.
+      if (!flags.file && flags.content === undefined) {
+        const xml = yield* materializeForEditor(slugOrId)
+        const next = yield* editor.openEditor({
+          filename: `post-${slugOrId}.xml`,
+          initialContent: xml,
+        })
+        if (next.trim() === xml.trim()) {
+          yield* renderer.emitInfo('no changes')
+          return
+        }
+        const parsed = yield* Effect.try({
+          try: () => parseEnvelope(next, 'post'),
+          catch: (err) =>
+            err instanceof ValidationXml
+              ? err
+              : new ValidationXml({ message: String(err), cause: err }),
+        })
+        const built = yield* buildPostPayload({
+          ...flags,
+          content: parsed.contentXml,
+          format: flags.format ?? 'lexical',
+        })
+        const payload = { ...built.payload, ...metaFromEnvelope(parsed.meta) }
+        const resolved = yield* resolveCategoryRefs(payload)
+        const saved = yield* submitPostPayload(
+          api,
+          id,
+          resolved,
+          current.isPublished !== false,
+        )
+        yield* renderer.emitSuccess(rest.silent ? { ok: true } : saved.response)
+        if (rest.open && saved.draft.id) {
+          yield* openAdminDraftEdit('posts', saved.draft.id, id)
+        }
+        return
+      }
+
+      // Non-interactive path: build from flags / file.
+      const built = yield* buildPostPayload(flags)
+      const resolved = yield* resolveCategoryRefs(built.payload)
+      const saved = yield* submitPostPayload(
+        api,
+        id,
+        resolved,
+        current.isPublished !== false,
+      )
+      yield* renderer.emitSuccess(rest.silent ? { ok: true } : saved.response)
+      if (rest.open && saved.draft.id) {
+        yield* openAdminDraftEdit('posts', saved.draft.id, id)
+      }
+    }),
+).pipe(Command.withDescription('edit a post via $EDITOR or flags'))

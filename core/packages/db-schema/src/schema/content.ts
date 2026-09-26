@@ -1,0 +1,400 @@
+import { sql } from 'drizzle-orm'
+import type { AnyPgColumn } from 'drizzle-orm/pg-core'
+import {
+  boolean,
+  check,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  unique,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core'
+
+import { readers } from './auth'
+import { createdAt, pkText, refText, tsCol, updatedAt } from './columns'
+
+export const categories = pgTable(
+  'categories',
+  {
+    id: pkText(),
+    createdAt: createdAt(),
+    name: text('name').notNull(),
+    slug: text('slug').notNull(),
+    type: integer('type').notNull().default(0),
+  },
+  (table) => [
+    uniqueIndex('categories_name_uniq').on(table.name),
+    uniqueIndex('categories_slug_uniq').on(table.slug),
+  ],
+)
+
+export const topics = pgTable(
+  'topics',
+  {
+    id: pkText(),
+    createdAt: createdAt(),
+    name: text('name').notNull(),
+    slug: text('slug').notNull(),
+    description: text('description').notNull().default(''),
+    introduce: text('introduce'),
+    icon: text('icon'),
+  },
+  (table) => [
+    uniqueIndex('topics_name_uniq').on(table.name),
+    uniqueIndex('topics_slug_uniq').on(table.slug),
+  ],
+)
+
+export const posts = pgTable(
+  'posts',
+  {
+    id: pkText(),
+    createdAt: createdAt(),
+    title: text('title').notNull(),
+    slug: text('slug').notNull(),
+    text: text('text'),
+    content: text('content'),
+    contentFormat: text('content_format').notNull(),
+    summary: text('summary'),
+    images: jsonb('images').$type<unknown[]>(),
+    meta: jsonb('meta').$type<Record<string, unknown>>(),
+    tags: text('tags')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    modifiedAt: tsCol('modified_at'),
+    categoryId: refText('category_id')
+      .notNull()
+      .references(() => categories.id, { onDelete: 'restrict' }),
+    copyright: boolean('copyright').notNull().default(true),
+    isPublished: boolean('is_published').notNull().default(true),
+    isPremium: boolean('is_premium').notNull().default(false),
+    readCount: integer('read_count').notNull().default(0),
+    likeCount: integer('like_count').notNull().default(0),
+    pinAt: tsCol('pin_at'),
+    pinOrder: integer('pin_order'),
+  },
+  (table) => [
+    uniqueIndex('posts_slug_uniq').on(table.slug),
+    index('posts_modified_at_idx').on(table.modifiedAt),
+    index('posts_created_at_idx').on(table.createdAt),
+    index('posts_category_id_idx').on(table.categoryId),
+    index('posts_published_created_at_idx')
+      .on(
+        table.isPublished,
+        table.pinAt.desc().nullsLast(),
+        table.createdAt.desc(),
+      )
+      .concurrently(),
+    index('posts_category_published_created_idx')
+      .on(
+        table.categoryId,
+        table.isPublished,
+        table.pinAt.desc().nullsLast(),
+        table.createdAt.desc(),
+      )
+      .concurrently(),
+    index('posts_tags_gin_idx').using('gin', table.tags).concurrently(),
+  ],
+)
+
+export const postRelatedPosts = pgTable(
+  'post_related_posts',
+  {
+    postId: refText('post_id')
+      .notNull()
+      .references((): AnyPgColumn => posts.id, { onDelete: 'cascade' }),
+    relatedPostId: refText('related_post_id')
+      .notNull()
+      .references((): AnyPgColumn => posts.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull().default(0),
+  },
+  (table) => [
+    uniqueIndex('post_related_posts_pk').on(table.postId, table.relatedPostId),
+    index('post_related_posts_related_idx').on(table.relatedPostId),
+  ],
+)
+
+export const notes = pgTable(
+  'notes',
+  {
+    id: pkText(),
+    createdAt: createdAt(),
+    nid: integer('nid').notNull().generatedByDefaultAsIdentity(),
+    title: text('title'),
+    slug: text('slug'),
+    text: text('text'),
+    content: text('content'),
+    contentFormat: text('content_format').notNull(),
+    images: jsonb('images').$type<unknown[]>(),
+    meta: jsonb('meta').$type<Record<string, unknown>>(),
+    isPublished: boolean('is_published').notNull().default(true),
+    password: text('password'),
+    publicAt: tsCol('public_at'),
+    mood: text('mood'),
+    weather: text('weather'),
+    bookmark: boolean('bookmark').notNull().default(false),
+    coordinates: jsonb('coordinates').$type<{
+      latitude: number
+      longitude: number
+    } | null>(),
+    location: text('location'),
+    readCount: integer('read_count').notNull().default(0),
+    likeCount: integer('like_count').notNull().default(0),
+    topicId: refText('topic_id').references(() => topics.id, {
+      onDelete: 'set null',
+    }),
+    modifiedAt: tsCol('modified_at'),
+  },
+  (table) => [
+    uniqueIndex('notes_nid_uniq').on(table.nid),
+    uniqueIndex('notes_slug_uniq')
+      .on(table.slug)
+      .where(sql`${table.slug} is not null`),
+    index('notes_nid_desc_idx').on(table.nid),
+    index('notes_modified_at_idx').on(table.modifiedAt),
+    index('notes_created_at_idx').on(table.createdAt),
+    index('notes_topic_id_idx').on(table.topicId),
+    index('notes_published_public_created_idx')
+      .on(table.isPublished, table.createdAt.desc(), table.publicAt)
+      .concurrently(),
+  ],
+)
+
+export const pages = pgTable(
+  'pages',
+  {
+    id: pkText(),
+    createdAt: createdAt(),
+    title: text('title').notNull(),
+    slug: text('slug').notNull(),
+    subtitle: text('subtitle'),
+    text: text('text'),
+    content: text('content'),
+    contentFormat: text('content_format').notNull(),
+    images: jsonb('images').$type<unknown[]>(),
+    meta: jsonb('meta').$type<Record<string, unknown>>(),
+    order: integer('order').notNull().default(1),
+    modifiedAt: tsCol('modified_at'),
+  },
+  (table) => [
+    uniqueIndex('pages_slug_uniq').on(table.slug),
+    index('pages_order_idx').on(table.order),
+  ],
+)
+
+/**
+ * Polymorphic content reference (`Post` | `Note` | `Page` | `Recently`).
+ * The actual reference is validated by repository code.
+ */
+export const recentlies = pgTable(
+  'recentlies',
+  {
+    id: pkText(),
+    createdAt: createdAt(),
+    content: text('content').notNull().default(''),
+    type: text('type').notNull(),
+    metadata: jsonb('metadata').$type<Record<string, unknown> | null>(),
+    refType: text('ref_type'),
+    refId: refText('ref_id'),
+    commentsIndex: integer('comments_index').notNull().default(0),
+    allowComment: boolean('allow_comment').notNull().default(true),
+    modifiedAt: tsCol('modified_at'),
+    up: integer('up').notNull().default(0),
+    down: integer('down').notNull().default(0),
+  },
+  (table) => [
+    index('recentlies_ref_idx').on(table.refType, table.refId),
+    index('recentlies_created_at_idx').on(table.createdAt),
+  ],
+)
+
+export const contentDocuments = pgTable(
+  'content_documents',
+  {
+    id: pkText(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    refType: text('ref_type').notNull(),
+    refId: refText('ref_id'),
+    publishedRevisionId: refText('published_revision_id').references(
+      (): AnyPgColumn => contentRevisions.id,
+      { onDelete: 'set null' },
+    ),
+  },
+  (table) => [
+    uniqueIndex('content_documents_ref_uniq')
+      .on(table.refType, table.refId)
+      .where(sql`${table.refId} is not null`),
+  ],
+)
+
+export const contentRevisions = pgTable(
+  'content_revisions',
+  {
+    id: pkText(),
+    documentId: refText('document_id')
+      .notNull()
+      .references(() => contentDocuments.id, { onDelete: 'cascade' }),
+    parentRevisionId: refText('parent_revision_id').references(
+      (): AnyPgColumn => contentRevisions.id,
+      { onDelete: 'restrict' },
+    ),
+    createdAt: createdAt(),
+    title: text('title').notNull().default(''),
+    text: text('text').notNull().default(''),
+    content: text('content'),
+    contentFormat: text('content_format').notNull(),
+    images: jsonb('images').$type<unknown[]>(),
+    meta: jsonb('meta').$type<Record<string, unknown>>(),
+    typeSpecificData: jsonb('type_specific_data').$type<Record<
+      string,
+      unknown
+    > | null>(),
+  },
+  (table) => [
+    index('content_revisions_document_idx').on(table.documentId),
+    index('content_revisions_parent_idx').on(table.parentRevisionId),
+  ],
+)
+
+export const drafts = pgTable(
+  'drafts',
+  {
+    id: pkText(),
+    documentId: refText('document_id')
+      .notNull()
+      .references(() => contentDocuments.id, { onDelete: 'cascade' }),
+    baseRevisionId: refText('base_revision_id')
+      .notNull()
+      .references(() => contentRevisions.id, { onDelete: 'restrict' }),
+    headRevisionId: refText('head_revision_id')
+      .notNull()
+      .references(() => contentRevisions.id, { onDelete: 'restrict' }),
+    status: text('status').notNull().default('active'),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    check(
+      'drafts_status_check',
+      sql`${table.status} in ('active', 'archived')`,
+    ),
+    index('drafts_document_status_idx').on(table.documentId, table.status),
+    index('drafts_updated_at_idx').on(table.updatedAt),
+  ],
+)
+
+export const contentDocumentShares = pgTable(
+  'content_document_shares',
+  {
+    id: pkText(),
+    documentId: refText('document_id')
+      .notNull()
+      .references(() => contentDocuments.id, { onDelete: 'cascade' }),
+    token: text('token').notNull(),
+    mode: text('mode').notNull(),
+    revisionId: refText('revision_id').references(() => contentRevisions.id, {
+      onDelete: 'restrict',
+    }),
+    draftId: refText('draft_id').references(() => drafts.id, {
+      onDelete: 'cascade',
+    }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    unique('content_document_shares_document_uniq').on(table.documentId),
+    unique('content_document_shares_token_uniq').on(table.token),
+    check(
+      'content_document_shares_target_check',
+      sql`(${table.mode} = 'pinned' and ${table.revisionId} is not null and ${table.draftId} is null)
+        or (${table.mode} = 'follow' and ${table.draftId} is not null and ${table.revisionId} is null)`,
+    ),
+  ],
+)
+
+export const contentPublicationEvents = pgTable(
+  'content_publication_events',
+  {
+    id: pkText(),
+    documentId: refText('document_id')
+      .notNull()
+      .references(() => contentDocuments.id, { onDelete: 'cascade' }),
+    revisionId: refText('revision_id')
+      .notNull()
+      .references(() => contentRevisions.id, { onDelete: 'restrict' }),
+    previousRevisionId: refText('previous_revision_id').references(
+      () => contentRevisions.id,
+      { onDelete: 'restrict' },
+    ),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    index('content_publication_events_document_idx').on(
+      table.documentId,
+      table.createdAt,
+    ),
+  ],
+)
+
+/**
+ * Self-referential thread structure plus polymorphic ref to content (Post/Note/Page/Recently).
+ */
+export const comments = pgTable(
+  'comments',
+  {
+    id: pkText(),
+    createdAt: createdAt(),
+    refType: text('ref_type').notNull(),
+    refId: refText('ref_id').notNull(),
+    author: text('author'),
+    mail: text('mail'),
+    url: text('url'),
+    text: text('text').notNull(),
+    state: integer('state').notNull().default(0),
+    moderationStatus: text('moderation_status'),
+    moderationReceiptHash: text('moderation_receipt_hash'),
+    moderationAttempts: integer('moderation_attempts').notNull().default(0),
+    parentCommentId: refText('parent_comment_id').references(
+      (): AnyPgColumn => comments.id,
+      { onDelete: 'cascade' },
+    ),
+    rootCommentId: refText('root_comment_id').references(
+      (): AnyPgColumn => comments.id,
+      { onDelete: 'cascade' },
+    ),
+    replyCount: integer('reply_count').notNull().default(0),
+    latestReplyAt: tsCol('latest_reply_at'),
+    isDeleted: boolean('is_deleted').notNull().default(false),
+    deletedAt: tsCol('deleted_at'),
+    ip: text('ip'),
+    agent: text('agent'),
+    pin: boolean('pin').notNull().default(false),
+    location: text('location'),
+    isWhispers: boolean('is_whispers').notNull().default(false),
+    avatar: text('avatar'),
+    authProvider: text('auth_provider'),
+    meta: text('meta'),
+    readerId: text('reader_id').references((): AnyPgColumn => readers.id, {
+      onDelete: 'set null',
+    }),
+    editedAt: tsCol('edited_at'),
+    anchor: jsonb('anchor').$type<Record<string, unknown> | null>(),
+    isOwnerReply: boolean('is_owner_reply').notNull().default(false),
+    countryCode: text('country_code'),
+  },
+  (table) => [
+    index('comments_thread_idx').on(
+      table.refType,
+      table.refId,
+      table.parentCommentId,
+      table.pin,
+      table.createdAt,
+    ),
+    index('comments_root_idx').on(table.rootCommentId, table.createdAt),
+    index('comments_reader_idx').on(table.readerId),
+  ],
+)

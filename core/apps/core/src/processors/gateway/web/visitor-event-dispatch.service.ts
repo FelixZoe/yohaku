@@ -1,0 +1,558 @@
+import { Injectable, Logger, type OnModuleInit } from '@nestjs/common'
+
+import {
+  collectVisitorEventHandlers,
+  hasVisitorScope,
+  OnVisitorEvent,
+} from '~/common/decorators/visitor-event.decorator'
+import {
+  BusinessEvents,
+  SERVERLESS_EVENT_PREFIX,
+} from '~/constants/business-event.constant'
+import { buildArticleRoomName } from '~/modules/activity/activity.util'
+import { type NoteModel } from '~/modules/note/note.types'
+import { type PageModel } from '~/modules/page/page.types'
+import { type PostModel } from '~/modules/post/post.types'
+import { isInFreeWindow } from '~/modules/post/post-paywall.util'
+import { EventManagerService } from '~/processors/helper/helper.event.service'
+import { EventPayloadEnricherService } from '~/processors/helper/helper.event-payload.service'
+import {
+  applyTranslationEntriesInPlace,
+  type EntryMaps,
+  type EntryRule,
+  TranslationService,
+} from '~/processors/helper/helper.translation.service'
+import {
+  getPublicContent,
+  getPublicText,
+} from '~/processors/helper/lexical-truncate.util'
+
+import { GatewayService } from '../gateway.service'
+import { WebEventsGateway } from './events.gateway'
+
+const POST_ENTRY_RULES: ReadonlyArray<EntryRule> = [
+  {
+    path: 'category.name',
+    keyPath: 'category.name',
+    mode: 'entity',
+    idField: 'id',
+  },
+]
+
+const NOTE_ENTRY_RULES: ReadonlyArray<EntryRule> = [
+  { path: 'topic.name', keyPath: 'topic.name', mode: 'entity', idField: 'id' },
+  {
+    path: 'topic.introduce',
+    keyPath: 'topic.introduce',
+    mode: 'entity',
+    idField: 'id',
+  },
+  {
+    path: 'topic.description',
+    keyPath: 'topic.description',
+    mode: 'entity',
+    idField: 'id',
+  },
+  { path: 'mood', keyPath: 'note.mood', mode: 'dict' },
+  { path: 'weather', keyPath: 'note.weather', mode: 'dict' },
+]
+
+const emptyEntryMaps = (): EntryMaps => ({
+  dictMaps: new Map(),
+  entityMaps: new Map(),
+})
+
+@Injectable()
+export class VisitorEventDispatchService implements OnModuleInit {
+  private readonly logger = new Logger(VisitorEventDispatchService.name)
+
+  constructor(
+    private readonly enricher: EventPayloadEnricherService,
+    private readonly webGateway: WebEventsGateway,
+    private readonly eventManager: EventManagerService,
+    private readonly translationService: TranslationService,
+    private readonly gatewayService: GatewayService,
+  ) {}
+
+  onModuleInit() {
+    const handlers = collectVisitorEventHandlers(this)
+
+    this.logger.log(
+      `Registered ${handlers.size} visitor event handlers: [${[...handlers.keys()].join(', ')}]`,
+    )
+
+    this.eventManager.registerHandler(((
+      event: string,
+      data: any,
+      scope: any,
+    ) => {
+      if (!hasVisitorScope(scope)) return
+      const handler = handlers.get(event as BusinessEvents)
+      if (handler) {
+        this.logger.log(`Dispatching visitor event [${event}]`)
+        Promise.resolve()
+          .then(() => handler(data))
+          .catch((err) => {
+            this.logger.error(
+              `Visitor event handler error [${event}]: ${err.message}`,
+              err.stack,
+            )
+          })
+      } else if (event.startsWith(SERVERLESS_EVENT_PREFIX)) {
+        const payload =
+          data &&
+          typeof data === 'object' &&
+          'data' in data &&
+          Object.keys(data).length === 1
+            ? (data as any).data
+            : data
+        this.webGateway.broadcast(event as any, payload)
+      }
+    }) as any)
+  }
+
+  // --- Post ---
+
+  private toPublicPostPayload<T extends Record<string, any>>(doc: T): T {
+    if (!doc?.isPremium || isInFreeWindow(doc.meta)) return doc
+    return {
+      ...doc,
+      text: getPublicText(doc),
+      content: getPublicContent(doc),
+    }
+  }
+
+  @OnVisitorEvent(BusinessEvents.POST_CREATE)
+  async onPostCreate(payload: { id: string }) {
+    const doc = await this.enricher.enrichPayload(
+      BusinessEvents.POST_CREATE,
+      payload,
+    )
+    if (!doc || doc === payload) return
+    this.webGateway.broadcast(
+      BusinessEvents.POST_CREATE,
+      this.toPublicPostPayload(doc),
+    )
+  }
+
+  @OnVisitorEvent(BusinessEvents.POST_UPDATE)
+  async onPostUpdate(payload: { id: string }) {
+    const doc = await this.enricher.enrichPayload(
+      BusinessEvents.POST_UPDATE,
+      payload,
+    )
+    if (!doc || doc === payload) return
+
+    await this.broadcastWithTranslation(
+      BusinessEvents.POST_UPDATE,
+      doc,
+      buildArticleRoomName(doc.id),
+    )
+  }
+
+  @OnVisitorEvent(BusinessEvents.POST_DELETE)
+  onPostDelete(payload: { id: string }) {
+    this.webGateway.broadcast(BusinessEvents.POST_DELETE, payload.id, {
+      rooms: [buildArticleRoomName(payload.id)],
+    })
+  }
+
+  @OnVisitorEvent(BusinessEvents.POST_UNPUBLISH)
+  onPostUnpublish(payload: { id: string }) {
+    this.webGateway.broadcast(BusinessEvents.POST_UNPUBLISH, payload.id, {
+      rooms: [buildArticleRoomName(payload.id)],
+    })
+  }
+
+  @OnVisitorEvent(BusinessEvents.POST_REPUBLISH)
+  async onPostRepublish(payload: { id: string }) {
+    const doc = await this.enricher.enrichPayload(
+      BusinessEvents.POST_REPUBLISH,
+      payload,
+    )
+    if (!doc || doc === payload) return
+    this.webGateway.broadcast(
+      BusinessEvents.POST_REPUBLISH,
+      this.toPublicPostPayload(doc),
+    )
+  }
+
+  // --- Note ---
+
+  @OnVisitorEvent(BusinessEvents.NOTE_CREATE)
+  async onNoteCreate(payload: { id: string }) {
+    const doc = await this.enricher.enrichPayload(
+      BusinessEvents.NOTE_CREATE,
+      payload,
+    )
+    if (!doc || doc === payload) return
+
+    if (
+      doc.isPublished === false ||
+      doc.password ||
+      (doc.publicAt && new Date(doc.publicAt) > new Date())
+    ) {
+      return
+    }
+
+    this.webGateway.broadcast(BusinessEvents.NOTE_CREATE, doc)
+  }
+
+  @OnVisitorEvent(BusinessEvents.NOTE_UPDATE)
+  async onNoteUpdate(payload: { id: string }) {
+    const doc = await this.enricher.enrichPayload(
+      BusinessEvents.NOTE_UPDATE,
+      payload,
+    )
+    if (!doc || doc === payload) return
+
+    if (doc.password || doc.isPublished === false || doc.publicAt) return
+
+    await this.broadcastWithTranslation(
+      BusinessEvents.NOTE_UPDATE,
+      doc,
+      buildArticleRoomName(doc.id),
+    )
+  }
+
+  @OnVisitorEvent(BusinessEvents.NOTE_DELETE)
+  onNoteDelete(payload: { id: string }) {
+    this.webGateway.broadcast(BusinessEvents.NOTE_DELETE, payload.id, {
+      rooms: [buildArticleRoomName(payload.id)],
+    })
+  }
+
+  @OnVisitorEvent(BusinessEvents.NOTE_UNPUBLISH)
+  onNoteUnpublish(payload: { id: string }) {
+    this.webGateway.broadcast(BusinessEvents.NOTE_UNPUBLISH, payload.id, {
+      rooms: [buildArticleRoomName(payload.id)],
+    })
+  }
+
+  @OnVisitorEvent(BusinessEvents.NOTE_REPUBLISH)
+  async onNoteRepublish(payload: { id: string }) {
+    const doc = await this.enricher.enrichPayload(
+      BusinessEvents.NOTE_REPUBLISH,
+      payload,
+    )
+    if (!doc || doc === payload) return
+
+    if (
+      doc.isPublished === false ||
+      doc.password ||
+      (doc.publicAt && new Date(doc.publicAt) > new Date())
+    ) {
+      return
+    }
+
+    this.webGateway.broadcast(BusinessEvents.NOTE_REPUBLISH, doc)
+  }
+
+  // --- Page ---
+
+  @OnVisitorEvent(BusinessEvents.PAGE_CREATE)
+  async onPageCreate(payload: { id: string }) {
+    const doc = await this.enricher.enrichPayload(
+      BusinessEvents.PAGE_CREATE,
+      payload,
+    )
+    if (!doc || doc === payload) return
+    this.webGateway.broadcast(BusinessEvents.PAGE_CREATE, doc)
+  }
+
+  @OnVisitorEvent(BusinessEvents.PAGE_UPDATE)
+  async onPageUpdate(payload: { id: string }) {
+    const doc = await this.enricher.enrichPayload(
+      BusinessEvents.PAGE_UPDATE,
+      payload,
+    )
+    if (!doc || doc === payload) return
+
+    await this.broadcastWithTranslation(
+      BusinessEvents.PAGE_UPDATE,
+      doc,
+      buildArticleRoomName(doc.id),
+    )
+  }
+
+  @OnVisitorEvent(BusinessEvents.PAGE_DELETE)
+  onPageDelete(payload: { id: string }) {
+    this.webGateway.broadcast(BusinessEvents.PAGE_DELETE, payload.id, {
+      rooms: [buildArticleRoomName(payload.id)],
+    })
+  }
+
+  // --- Non-content events (pass-through) ---
+
+  @OnVisitorEvent(BusinessEvents.COMMENT_CREATE)
+  onCommentCreate(data: any) {
+    this.webGateway.broadcast(BusinessEvents.COMMENT_CREATE, data)
+  }
+
+  @OnVisitorEvent(BusinessEvents.COMMENT_UPDATE)
+  onCommentUpdate(data: any) {
+    this.webGateway.broadcast(BusinessEvents.COMMENT_UPDATE, data)
+  }
+
+  @OnVisitorEvent(BusinessEvents.COMMENT_DELETE)
+  onCommentDelete(data: any) {
+    this.webGateway.broadcast(BusinessEvents.COMMENT_DELETE, data)
+  }
+
+  @OnVisitorEvent(BusinessEvents.CATEGORY_CREATE)
+  onCategoryCreate(data: any) {
+    this.webGateway.broadcast(BusinessEvents.CATEGORY_CREATE, data)
+  }
+
+  @OnVisitorEvent(BusinessEvents.CATEGORY_UPDATE)
+  onCategoryUpdate(data: any) {
+    this.webGateway.broadcast(BusinessEvents.CATEGORY_UPDATE, data)
+  }
+
+  @OnVisitorEvent(BusinessEvents.CATEGORY_DELETE)
+  onCategoryDelete(data: any) {
+    this.webGateway.broadcast(BusinessEvents.CATEGORY_DELETE, data)
+  }
+
+  @OnVisitorEvent(BusinessEvents.RECENTLY_CREATE)
+  onRecentlyCreate(data: any) {
+    this.webGateway.broadcast(BusinessEvents.RECENTLY_CREATE, data)
+  }
+
+  @OnVisitorEvent(BusinessEvents.RECENTLY_UPDATE)
+  onRecentlyUpdate(data: any) {
+    this.webGateway.broadcast(BusinessEvents.RECENTLY_UPDATE, data)
+  }
+
+  @OnVisitorEvent(BusinessEvents.RECENTLY_DELETE)
+  onRecentlyDelete(data: any) {
+    this.webGateway.broadcast(BusinessEvents.RECENTLY_DELETE, data)
+  }
+
+  // --- Say events (CRUD factory) ---
+
+  @OnVisitorEvent(BusinessEvents.SAY_CREATE)
+  onSayCreate(data: any) {
+    this.webGateway.broadcast(BusinessEvents.SAY_CREATE, data)
+  }
+
+  @OnVisitorEvent(BusinessEvents.SAY_UPDATE)
+  onSayUpdate(data: any) {
+    this.webGateway.broadcast(BusinessEvents.SAY_UPDATE, data)
+  }
+
+  @OnVisitorEvent(BusinessEvents.SAY_DELETE)
+  onSayDelete(data: any) {
+    this.webGateway.broadcast(BusinessEvents.SAY_DELETE, data)
+  }
+
+  // --- Topic events (CRUD factory) ---
+
+  @OnVisitorEvent(BusinessEvents.TOPIC_CREATE)
+  onTopicCreate(data: any) {
+    this.webGateway.broadcast(BusinessEvents.TOPIC_CREATE, data)
+  }
+
+  @OnVisitorEvent(BusinessEvents.TOPIC_UPDATE)
+  onTopicUpdate(data: any) {
+    this.webGateway.broadcast(BusinessEvents.TOPIC_UPDATE, data)
+  }
+
+  @OnVisitorEvent(BusinessEvents.TOPIC_DELETE)
+  onTopicDelete(data: any) {
+    this.webGateway.broadcast(BusinessEvents.TOPIC_DELETE, data)
+  }
+
+  // --- Utility events ---
+
+  @OnVisitorEvent(BusinessEvents.CONTENT_REFRESH)
+  onContentRefresh(data: any) {
+    this.webGateway.broadcast(BusinessEvents.CONTENT_REFRESH, data)
+  }
+
+  // --- Translation events ---
+
+  @OnVisitorEvent(BusinessEvents.TRANSLATION_CREATE)
+  async onTranslationCreate(data: any) {
+    if (!data.refId) return
+    this.webGateway.broadcast(
+      BusinessEvents.TRANSLATION_CREATE,
+      await this.toPublicTranslationPayload(data),
+      {
+        rooms: [buildArticleRoomName(data.refId)],
+      },
+    )
+  }
+
+  @OnVisitorEvent(BusinessEvents.TRANSLATION_UPDATE)
+  async onTranslationUpdate(data: any) {
+    if (!data.refId) return
+    this.webGateway.broadcast(
+      BusinessEvents.TRANSLATION_UPDATE,
+      await this.toPublicTranslationPayload(data),
+      {
+        rooms: [buildArticleRoomName(data.refId)],
+      },
+    )
+  }
+
+  private async toPublicTranslationPayload(data: any) {
+    const paywalled = await this.enricher.isPaywalledPost(
+      data.refType,
+      data.refId,
+    )
+    if (!paywalled) return data
+    const { text: _text, summary: _summary, ...rest } = data
+    return rest
+  }
+
+  // --- Helpers ---
+
+  private async broadcastWithTranslation(
+    event: BusinessEvents,
+    doc: PostModel | NoteModel | PageModel,
+    roomName: string,
+  ) {
+    const sockets = await this.webGateway.getSocketsOfRoom(roomName)
+    if (!sockets.length) return
+
+    const articleId = (doc as any).id || (doc as any).id?.toString()
+    const originalData = {
+      title: (doc as any).title,
+      text: (doc as any).text,
+      summary: (doc as any).summary,
+      tags: (doc as any).tags,
+    }
+
+    // Group sockets by lang
+    const langGroups = new Map<string | undefined, string[]>()
+    await Promise.all(
+      sockets.map(async (socket) => {
+        const meta = await this.gatewayService.getSocketMetadata(socket)
+        const lang = meta?.lang
+        const ids = langGroups.get(lang) || []
+        ids.push(socket.id)
+        langGroups.set(lang, ids)
+      }),
+    )
+
+    for (const [lang, socketIds] of langGroups) {
+      const [result, entryMaps] = await Promise.all([
+        this.translationService.translateArticle({
+          articleId,
+          targetLang: lang,
+          originalData,
+        }),
+        this.getEntryTranslationsForSocketPayload(doc, lang),
+      ])
+
+      const data = {
+        ...doc,
+        title: result.title,
+        text: result.text,
+        summary: result.summary,
+        tags: result.tags,
+        ...(result.content != null && { content: result.content }),
+        ...(result.contentFormat != null && {
+          contentFormat: result.contentFormat,
+        }),
+        isTranslated: result.isTranslated,
+        translationMeta: result.translationMeta,
+        availableTranslations: result.availableTranslations,
+        payloadLang: result.isTranslated
+          ? result.translationMeta?.targetLang
+          : (result.sourceLang ?? (doc as any).meta?.lang),
+      }
+
+      if (lang) {
+        applyTranslationEntriesInPlace(
+          data,
+          entryMaps,
+          this.getEntryRulesForSocketPayload(data),
+        )
+      }
+
+      // A connection id is addressable as a room, so lang groups fan out directly.
+      this.webGateway.broadcast(event, this.toPublicPostPayload(data), {
+        rooms: socketIds,
+      })
+    }
+  }
+
+  private getEntryRulesForSocketPayload(
+    doc: Record<string, any>,
+  ): ReadonlyArray<EntryRule> {
+    if (doc.category?.id) return POST_ENTRY_RULES
+    if (doc.topic?.id || doc.mood || doc.weather) return NOTE_ENTRY_RULES
+    return []
+  }
+
+  private async getEntryTranslationsForSocketPayload(
+    doc: PostModel | NoteModel | PageModel,
+    lang?: string,
+  ): Promise<EntryMaps> {
+    if (!lang) return emptyEntryMaps()
+
+    const entityMaps = new Map<EntryRule['keyPath'], Map<string, string>>()
+    const dictMaps = new Map<EntryRule['keyPath'], Map<string, string>>()
+    const lookups: Array<Promise<void>> = []
+    const payload = doc as Record<string, any>
+
+    if (payload.category?.id) {
+      lookups.push(
+        this.translationService
+          .getEntityTranslations('category.name', lang, [
+            String(payload.category.id),
+          ])
+          .then((map) => {
+            entityMaps.set('category.name', map)
+          }),
+      )
+    }
+
+    if (payload.topic?.id) {
+      const topicId = String(payload.topic.id)
+      lookups.push(
+        this.translationService
+          .getEntityTranslations('topic.name', lang, [topicId])
+          .then((map) => {
+            entityMaps.set('topic.name', map)
+          }),
+        this.translationService
+          .getEntityTranslations('topic.introduce', lang, [topicId])
+          .then((map) => {
+            entityMaps.set('topic.introduce', map)
+          }),
+        this.translationService
+          .getEntityTranslations('topic.description', lang, [topicId])
+          .then((map) => {
+            entityMaps.set('topic.description', map)
+          }),
+      )
+    }
+
+    if (payload.mood) {
+      lookups.push(
+        this.translationService
+          .getDictTranslations('note.mood', lang, [payload.mood])
+          .then((map) => {
+            dictMaps.set('note.mood', map)
+          }),
+      )
+    }
+
+    if (payload.weather) {
+      lookups.push(
+        this.translationService
+          .getDictTranslations('note.weather', lang, [payload.weather])
+          .then((map) => {
+            dictMaps.set('note.weather', map)
+          }),
+      )
+    }
+
+    await Promise.all(lookups)
+
+    return { dictMaps, entityMaps }
+  }
+}

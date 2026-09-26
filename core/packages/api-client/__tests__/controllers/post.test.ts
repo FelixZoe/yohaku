@@ -1,0 +1,100 @@
+import { mockRequestInstance } from '~/__tests__/helpers/instance'
+import { mockResponse } from '~/__tests__/helpers/response'
+import { PostController } from '~/controllers'
+
+describe('test post client', () => {
+  const client = mockRequestInstance(PostController)
+
+  it('should get post list', async () => {
+    mockResponse('/posts', { data: [] })
+
+    const data = await client.post.getList()
+    expect(data).toEqual({ data: [] })
+  })
+
+  it('should get post list filter filed', async () => {
+    const items = [
+      {
+        id: '61586f7e769f07b6852f3da0',
+        title: '终于可以使用 Docker 托管整个 Mix Space 了',
+        createdAt: '2021-10-02T14:41:02.742Z',
+        category: null,
+      },
+      {
+        id: '614c539cfdf566c5d93a383f',
+        title: '再遇 Docker，容器化 Node 应用',
+        createdAt: '2021-09-23T10:14:52.491Z',
+        category: null,
+      },
+    ]
+    const pagination = { page: 1, size: 1, total: 2, total_pages: 2 }
+    mockResponse('/posts?page=1&size=1', items, 'get', undefined, {
+      pagination,
+    })
+
+    const data = await client.post.getList(1, 1)
+    expect(data).toEqual({
+      data: items,
+      pagination: { page: 1, size: 1, total: 2, totalPages: 2 },
+    })
+  })
+
+  it('should get latest post', async () => {
+    mockResponse('/posts/latest', { title: '1' })
+    const data = await client.post.getLatest()
+    expect(data.title).toBe('1')
+  })
+
+  it('should get single post by id', async () => {
+    mockResponse('/posts/613c91d0326cfffc61923ea2', {
+      title: '1',
+    })
+
+    const data = await client.post.getPost('613c91d0326cfffc61923ea2')
+
+    expect(data).toStrictEqual({ title: '1' })
+    expect(data.$raw).toBeDefined()
+  })
+
+  it('should get single post by slug and category', async () => {
+    mockResponse('/posts/website/host-an-entire-Mix-Space-using-Docker', {
+      title: '1',
+    })
+
+    const data = await client.post.getPost(
+      'website',
+      'host-an-entire-Mix-Space-using-Docker',
+    )
+
+    expect(data).toStrictEqual({ title: '1' })
+    expect(data.$raw).toBeDefined()
+  })
+
+  it('should expose paywall meta for a locked premium post', async () => {
+    mockResponse(
+      '/posts/613c91d0326cfffc61923ea2',
+      { title: '1', is_premium: true },
+      'get',
+      undefined,
+      { paywall: { locked: true, preview_blocks: 2 } },
+    )
+
+    const data = await client.post.getPost('613c91d0326cfffc61923ea2')
+
+    expect(data.isPremium).toBe(true)
+    expect(data.$meta?.paywall).toEqual({ locked: true, previewBlocks: 2 })
+  })
+
+  it('GET /posts/get-url/:slug', async () => {
+    mockResponse('/posts/get-url/host-an-entire-Mix-Space-using-Docker', {
+      path: '/website/host-an-entire-Mix-Space-using-Docker',
+    })
+
+    const data = await client.post.getFullUrl(
+      'host-an-entire-Mix-Space-using-Docker',
+    )
+    expect(data).toStrictEqual({
+      path: '/website/host-an-entire-Mix-Space-using-Docker',
+    })
+  })
+})

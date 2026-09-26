@@ -24,3 +24,6 @@ out
 release.zip
 
 run
+
+# core backend subtree (built separately, not part of the web image)
+core

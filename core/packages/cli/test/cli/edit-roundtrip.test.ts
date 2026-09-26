@@ -1,0 +1,400 @@
+import { Effect, Exit, Layer, Option } from 'effect'
+import { describe, expect, it, vi } from 'vitest'
+
+import { edit as editNote } from '../../src/cli/note/edit'
+import { edit as editPage } from '../../src/cli/page/edit'
+import { edit as editPost } from '../../src/cli/post/edit'
+import { Api, type ApiService } from '../../src/services/Api'
+import { Editor, type EditorService } from '../../src/services/Editor'
+import { Lexical } from '../../src/services/Lexical'
+import { Renderer } from '../../src/services/Renderer'
+import { Resolver, type ResolverService } from '../../src/services/Resolver'
+import { makeMemFs, TestFsLive, TestPathLive } from '../helper/test-fs'
+
+const none = <A>() => Option.none<A>()
+
+const makeApi = (calls: string[]): ApiService => ({
+  request: (path) =>
+    Effect.sync(() => {
+      calls.push(path)
+      if (path.startsWith('/drafts/context/')) {
+        const [, , , refType, refId] = path.split('/')
+        return {
+          branches: [],
+          document: {
+            id: 'document-1',
+            publishedRevisionId: 'published-1',
+            refId,
+            refType,
+          },
+          publishedRevision: {
+            content: null,
+            contentFormat: 'markdown',
+            id: 'published-1',
+            images: [],
+            meta: null,
+            text: 'body',
+            title: 'Title',
+            typeSpecificData: {},
+          },
+        } as never
+      }
+      if (path === '/drafts') {
+        return {
+          document: {
+            id: 'document-1',
+            publishedRevisionId: 'published-1',
+            refId: '123456789012345',
+            refType: 'post',
+          },
+          headRevision: { id: 'revision-2' },
+          headRevisionId: 'revision-2',
+          id: 'branch-1',
+          relationToPublished: 'ancestor',
+          status: 'active',
+        } as never
+      }
+      if (path === '/publish-jobs') return { id: 'task-1' } as never
+      if (path.startsWith('/notes/')) {
+        return {
+          data: {
+            id: '123456789012346',
+            title: 'Note',
+            slug: 'note',
+            content_format: 'markdown',
+            content: 'note body',
+            is_published: false,
+            mood: 'calm',
+            weather: 'clear',
+          },
+          meta: {},
+        } as never
+      }
+      if (path.startsWith('/pages/')) {
+        return {
+          data: {
+            id: '123456789012347',
+            title: 'Page',
+            slug: 'page',
+            content_format: 'markdown',
+            content: 'page body',
+          },
+          meta: {},
+        } as never
+      }
+      return {
+        data: {
+          id: '123456789012345',
+          title: 'Post',
+          slug: 'post',
+          content_format: 'markdown',
+          content: 'post body',
+          summary: 'summary',
+          is_published: true,
+          tags: ['a', 'b'],
+        },
+        meta: {},
+      } as never
+    }),
+  raw: (path) =>
+    Effect.sync(() => {
+      calls.push(path)
+      return {}
+    }),
+})
+
+const makeResolver = (): ResolverService => ({
+  resolveCategory: () => Effect.succeed('cat-id'),
+  resolveTopic: () => Effect.succeed('topic-id'),
+  resolveCategoryRefs: (refs) => Effect.succeed(refs),
+  resolvePostId: () => Effect.succeed('123456789012345'),
+  resolvePostReadPath: () => Effect.succeed('/posts/post'),
+  resolveNoteId: () => Effect.succeed('123456789012346'),
+  resolveCategoryId: () => Effect.succeed('cat-id'),
+  resolveProjectId: () => Effect.succeed('123456789012347'),
+  invalidate: () => Effect.void,
+})
+
+const makeEditor = (
+  edit: (initial: string) => string = (initial) => initial,
+): EditorService => ({
+  openEditor: (opts) => Effect.succeed(edit(opts.initialContent)),
+  prompt: () => Effect.succeed(''),
+  confirm: () => Effect.succeed(true),
+  readFileOrStdin: () => Effect.succeed(''),
+})
+
+const buildLayer = (
+  calls: string[],
+  edit?: (initial: string) => string,
+) =>
+  Layer.mergeAll(
+    TestFsLive(makeMemFs()),
+    TestPathLive,
+    Layer.succeed(Api, makeApi(calls)),
+    Layer.succeed(Resolver, makeResolver()),
+    Layer.succeed(Editor, makeEditor(edit)),
+    Renderer.Default,
+    Lexical.Default,
+  )
+
+const commonPostOptions = {
+  title: none<string>(),
+  slug: none<string>(),
+  category: none<string>(),
+  content: none<string>(),
+  format: none<'lexical' | 'markdown'>(),
+  summary: none<string>(),
+  state: none<'publish' | 'draft'>(),
+  tags: none<string>(),
+  copyright: none<string>(),
+  pin: none<string>(),
+  pinOrder: none<number>(),
+  related: none<string>(),
+  meta: none<string>(),
+  file: none<string>(),
+  open: false,
+  silent: false,
+}
+
+const commonNoteOptions = {
+  title: none<string>(),
+  slug: none<string>(),
+  topic: none<string>(),
+  content: none<string>(),
+  format: none<'lexical' | 'markdown'>(),
+  state: none<'publish' | 'draft'>(),
+  mood: none<string>(),
+  weather: none<string>(),
+  publicAt: none<string>(),
+  password: none<string>(),
+  bookmark: none<string>(),
+  coords: none<string>(),
+  location: none<string>(),
+  images: none<string>(),
+  meta: none<string>(),
+  file: none<string>(),
+  open: false,
+  silent: false,
+}
+
+const commonPageOptions = {
+  title: none<string>(),
+  slug: none<string>(),
+  subtitle: none<string>(),
+  order: none<number>(),
+  content: none<string>(),
+  format: none<'lexical' | 'markdown'>(),
+  meta: none<string>(),
+  file: none<string>(),
+  open: false,
+  silent: false,
+}
+
+describe('edit command no-change round trip', () => {
+  it('post edit exits without update when editor content is unchanged', async () => {
+    const calls: string[] = []
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
+    try {
+      const exit = await Effect.runPromiseExit(
+        editPost
+          .handler({ slugOrId: 'post', ...commonPostOptions })
+          .pipe(
+            Effect.provide(
+              buildLayer(calls, (initial) => {
+                expect(initial).toContain('<title>Post</title>')
+                expect(initial).toContain('<state>publish</state>')
+                expect(initial).toContain('post body')
+                return initial
+              }),
+            ),
+          ),
+      )
+      expect(Exit.isSuccess(exit)).toBe(true)
+      expect(calls).toEqual(['/posts/123456789012345', '/posts/post'])
+    } finally {
+      stderr.mockRestore()
+    }
+  })
+
+  it('note edit exits without update when editor content is unchanged', async () => {
+    const calls: string[] = []
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
+    try {
+      const exit = await Effect.runPromiseExit(
+        editNote
+          .handler({ slugOrId: 'note', ...commonNoteOptions })
+          .pipe(
+            Effect.provide(
+              buildLayer(calls, (initial) => {
+                expect(initial).toContain('<title>Note</title>')
+                expect(initial).toContain('<state>draft</state>')
+                expect(initial).toContain('note body')
+                return initial
+              }),
+            ),
+          ),
+      )
+      expect(Exit.isSuccess(exit)).toBe(true)
+      expect(calls).toEqual([
+        '/notes/123456789012346',
+        '/notes/123456789012346',
+      ])
+    } finally {
+      stderr.mockRestore()
+    }
+  })
+
+  it('page edit exits without update when editor content is unchanged', async () => {
+    const calls: string[] = []
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
+    try {
+      const exit = await Effect.runPromiseExit(
+        editPage
+          .handler({ slugOrId: '123456789012347', ...commonPageOptions })
+          .pipe(
+            Effect.provide(
+              buildLayer(calls, (initial) => {
+                expect(initial).toContain('<title>Page</title>')
+                expect(initial).toContain('page body')
+                return initial
+              }),
+            ),
+          ),
+      )
+      expect(Exit.isSuccess(exit)).toBe(true)
+      expect(calls).toEqual(['/pages/123456789012347'])
+    } finally {
+      stderr.mockRestore()
+    }
+  })
+
+  it('post edit sends a PUT when edited envelope content changes', async () => {
+    const calls: string[] = []
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true)
+    try {
+      const exit = await Effect.runPromiseExit(
+        editPost
+          .handler({
+            slugOrId: 'post',
+            ...commonPostOptions,
+            format: Option.some('markdown'),
+          })
+          .pipe(
+            Effect.provide(
+              buildLayer(calls, () =>
+                `<mxpost>
+  <meta>
+    <title>Changed Post</title>
+    <slug>changed-post</slug>
+    <state>draft</state>
+    <summary>changed summary</summary>
+    <tags><tag>x</tag></tags>
+  </meta>
+  <content>
+changed body
+  </content>
+</mxpost>`,
+              ),
+            ),
+          ),
+      )
+      expect(Exit.isSuccess(exit)).toBe(true)
+      expect(calls).toEqual([
+        '/posts/123456789012345',
+        '/posts/post',
+        '/drafts/context/post/123456789012345',
+        '/drafts',
+      ])
+    } finally {
+      stdout.mockRestore()
+    }
+  })
+
+  it('note edit sends a PUT when edited envelope content changes', async () => {
+    const calls: string[] = []
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true)
+    try {
+      const exit = await Effect.runPromiseExit(
+        editNote
+          .handler({
+            slugOrId: 'note',
+            ...commonNoteOptions,
+            format: Option.some('markdown'),
+          })
+          .pipe(
+            Effect.provide(
+              buildLayer(calls, () =>
+                `<mxnote>
+  <meta>
+    <title>Changed Note</title>
+    <slug>changed-note</slug>
+    <topic>life</topic>
+    <state>publish</state>
+    <mood>focused</mood>
+    <weather>rain</weather>
+    <bookmark>true</bookmark>
+  </meta>
+  <content>
+changed note body
+  </content>
+</mxnote>`,
+              ),
+            ),
+          ),
+      )
+      expect(Exit.isSuccess(exit)).toBe(true)
+      expect(calls).toEqual([
+        '/notes/123456789012346',
+        '/notes/123456789012346',
+        '/drafts/context/note/123456789012346',
+        '/drafts',
+        '/publish-jobs',
+      ])
+    } finally {
+      stdout.mockRestore()
+    }
+  })
+
+  it('page edit sends a PUT when edited envelope content changes', async () => {
+    const calls: string[] = []
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true)
+    try {
+      const exit = await Effect.runPromiseExit(
+        editPage
+          .handler({
+            slugOrId: 'page',
+            ...commonPageOptions,
+            format: Option.some('markdown'),
+          })
+          .pipe(
+            Effect.provide(
+              buildLayer(calls, () =>
+                `<mxpost>
+  <meta>
+    <title>Changed Page</title>
+    <slug>changed-page</slug>
+    <subtitle>Sub</subtitle>
+    <order>2</order>
+  </meta>
+  <content>
+changed page body
+  </content>
+</mxpost>`,
+              ),
+            ),
+          ),
+      )
+      expect(Exit.isSuccess(exit)).toBe(true)
+      expect(calls).toEqual([
+        '/pages/slug/page',
+        '/pages/slug/page',
+        '/drafts/context/page/123456789012347',
+        '/drafts',
+        '/publish-jobs',
+      ])
+    } finally {
+      stdout.mockRestore()
+    }
+  })
+})

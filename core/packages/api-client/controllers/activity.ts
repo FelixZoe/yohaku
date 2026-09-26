@@ -1,0 +1,134 @@
+import type { IRequestAdapter } from '~/interfaces/adapter'
+import type { IController } from '~/interfaces/controller'
+import type { IRequestHandler } from '~/interfaces/request'
+import type { AuthUser } from '~/models'
+import type {
+  ActivityPresence,
+  LastYearPublication,
+  RecentActivities,
+  RoomsData,
+} from '~/models/activity'
+import { autoBind } from '~/utils/auto-bind'
+import { camelcaseKeys } from '~/utils/camelcase-keys'
+
+import type { HTTPClient } from '../core'
+
+declare module '@mx-space/api-client' {
+  interface HTTPClient<
+    T extends IRequestAdapter = IRequestAdapter,
+    ResponseWrapper = unknown,
+  > {
+    activity: ActivityController<ResponseWrapper>
+  }
+}
+
+/**
+ * @support core >= 4.3.0
+ */
+export class ActivityController<ResponseWrapper> implements IController {
+  base = 'activity'
+  name = 'activity'
+
+  constructor(private client: HTTPClient) {
+    autoBind(this)
+  }
+
+  public get proxy(): IRequestHandler<ResponseWrapper> {
+    return this.client.proxy(this.base)
+  }
+
+  likeIt(type: 'Post' | 'Note', id: string) {
+    return this.proxy.like.post<never>({
+      data: {
+        type: type.toLowerCase(),
+        id,
+      },
+    })
+  }
+
+  /**
+   *
+   * @support core >= 5.0.0
+   */
+  getPresence(roomName: string) {
+    return this.proxy.presence.get<{
+      presence: Record<string, ActivityPresence>
+      readers: Record<string, AuthUser>
+    }>({
+      params: {
+        room_name: roomName,
+      },
+      transformResponse: <T>(data: any): T => {
+        const payload = data as {
+          presence?: Record<string, unknown>
+          readers?: Record<string, unknown>
+        }
+
+        return {
+          presence: Object.fromEntries(
+            Object.entries(payload.presence ?? {}).map(([identity, value]) => [
+              identity,
+              camelcaseKeys<ActivityPresence>(value),
+            ]),
+          ),
+          readers: Object.fromEntries(
+            Object.entries(payload.readers ?? {}).map(([id, value]) => [
+              id,
+              camelcaseKeys<AuthUser>(value),
+            ]),
+          ),
+        } as T
+      },
+    })
+  }
+
+  /**
+   *
+   * @support core >= 5.0.0
+   */
+  updatePresence({
+    identity,
+    position,
+    roomName,
+    sid,
+    ts,
+    displayName,
+    readerId,
+    image,
+  }: {
+    roomName: string
+    position: number
+    identity: string
+    sid: string
+
+    displayName?: string
+    ts?: number
+    readerId?: string
+    image?: string
+  }) {
+    return this.proxy.presence.update.post({
+      data: {
+        identity,
+        position,
+        ts: ts || Date.now(),
+        roomName,
+        sid,
+        readerId,
+        displayName,
+        image,
+      },
+    })
+  }
+
+  async getRoomsInfo() {
+    return this.proxy.rooms.get<RoomsData>()
+  }
+
+  async getRecentActivities() {
+    return this.proxy.recent.get<RecentActivities>()
+  }
+
+  async getLastYearPublication(): Promise<LastYearPublication> {
+    return this.proxy(`last-year`).publication.get<LastYearPublication>()
+  }
+}

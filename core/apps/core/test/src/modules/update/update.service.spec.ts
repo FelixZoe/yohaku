@@ -1,0 +1,464 @@
+import { Test } from '@nestjs/testing'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { ConfigsService } from '~/modules/configs/configs.service'
+import { UpdateService } from '~/modules/update/update.service'
+import { UpdateDownloadService } from '~/modules/update/update-download.service'
+import { UpdateInstallService } from '~/modules/update/update-install.service'
+import { HttpService } from '~/processors/helper/helper.http.service'
+import { RedisService } from '~/processors/redis/redis.service'
+
+class FakeRedis {
+  private store = new Map<string, string | Buffer>()
+  private streams = new Map<string, Array<[string, string[]]>>()
+  private streamSeq = 0
+
+  async get(key: string) {
+    const val = this.store.get(key)
+    if (val instanceof Buffer) return val.toString()
+    return val ?? null
+  }
+
+  async getBuffer(key: string) {
+    const val = this.store.get(key)
+    if (val instanceof Buffer) return val
+    if (typeof val === 'string') return Buffer.from(val)
+    return null
+  }
+
+  async set(key: string, value: string | Buffer, ...args: any[]) {
+    const hasNx = args.includes('NX')
+    if (hasNx && this.store.has(key)) {
+      return null
+    }
+    this.store.set(key, value)
+    return 'OK'
+  }
+
+  async setex(key: string, _ttl: number, value: string | Buffer) {
+    this.store.set(key, value)
+    return 'OK'
+  }
+
+  async exists(key: string) {
+    return this.store.has(key) ? 1 : 0
+  }
+
+  async expire(_key: string, _seconds: number) {
+    return 1
+  }
+
+  async del(...keys: string[]) {
+    for (const key of keys) this.store.delete(key)
+    return keys.length
+  }
+
+  async eval(_script: string, _numKeys: number, ...args: any[]) {
+    const key = args[0] as string
+    const expectedValue = args[1] as string
+    const currentValue = this.store.get(key)
+    const currentStr =
+      currentValue instanceof Buffer ? currentValue.toString() : currentValue
+    if (currentStr === expectedValue) {
+      this.store.delete(key)
+      return 1
+    }
+    return 0
+  }
+
+  async xadd(key: string, ...args: (string | number)[]) {
+    const strArgs = args.map(String)
+    const starIndex = strArgs.lastIndexOf('*')
+    const fields = strArgs.slice(starIndex + 1)
+    const id = `${++this.streamSeq}-0`
+    const entries = this.streams.get(key) || []
+    entries.push([id, fields])
+    this.streams.set(key, entries)
+    return id
+  }
+
+  async xread(
+    _block: string,
+    _ms: number,
+    _streams: string,
+    key: string,
+    lastId: string,
+  ) {
+    const entries = this.streams.get(key) || []
+    const startIndex =
+      lastId === '0-0'
+        ? 0
+        : entries.findIndex((entry) => entry[0] === lastId) + 1
+
+    const nextEntries = entries.slice(Math.max(0, startIndex))
+    if (!nextEntries.length) return null
+    return [[key, nextEntries]]
+  }
+
+  _set(key: string, value: string | Buffer) {
+    this.store.set(key, value)
+  }
+
+  _has(key: string) {
+    return this.store.has(key)
+  }
+}
+
+function subscribeOnce(obs$: import('rxjs').Observable<string>) {
+  const messages: string[] = []
+  return new Promise<string[]>((resolve) => {
+    obs$.subscribe({
+      next: (msg) => messages.push(msg),
+      complete: () => resolve(messages),
+      error: () => resolve(messages),
+    })
+  })
+}
+
+function manifest(version: string, overrides: Record<string, unknown> = {}) {
+  return {
+    version,
+    file: `admin-${version}.zip`,
+    url: `https://admin-r2.example/admin-${version}.zip`,
+    tag: `admin-v${version}`,
+    ...overrides,
+  }
+}
+
+const originalGithubToken = process.env.GITHUB_TOKEN
+
+afterEach(() => {
+  if (originalGithubToken === undefined) {
+    delete process.env.GITHUB_TOKEN
+  } else {
+    process.env.GITHUB_TOKEN = originalGithubToken
+  }
+})
+
+describe('UpdateDownloadService', () => {
+  it('does not attach GitHub auth to non-GitHub manifest hosts', async () => {
+    process.env.GITHUB_TOKEN = 'env-token'
+    const fetch = vi.fn().mockResolvedValue({ ok: true })
+    const downloadService = new UpdateDownloadService(
+      { fetch } as any,
+      {
+        get: vi.fn().mockResolvedValue({ github: { token: 'stored-token' } }),
+      } as any,
+    )
+
+    await downloadService.fetchWithRetry(
+      'https://admin-r2.example/latest.json',
+      {
+        headers: { Accept: 'application/json' },
+      },
+    )
+
+    expect(fetch).toHaveBeenCalledWith(
+      'https://admin-r2.example/latest.json',
+      expect.objectContaining({
+        headers: { Accept: 'application/json' },
+      }),
+    )
+    expect(fetch.mock.calls[0]![1].headers).not.toHaveProperty('Authorization')
+  })
+
+  it('attaches GitHub auth to GitHub API hosts', async () => {
+    const fetch = vi.fn().mockResolvedValue({ ok: true })
+    const downloadService = new UpdateDownloadService(
+      { fetch } as any,
+      {
+        get: vi.fn().mockResolvedValue({ github: { token: 'stored-token' } }),
+      } as any,
+    )
+
+    await downloadService.fetchWithRetry(
+      'https://api.github.com/repos/mx-space/core/releases/latest',
+      {
+        headers: { Accept: 'application/vnd.github.v3+json' },
+      },
+    )
+
+    expect(fetch).toHaveBeenCalledWith(
+      'https://api.github.com/repos/mx-space/core/releases/latest',
+      expect.objectContaining({
+        headers: {
+          Accept: 'application/vnd.github.v3+json',
+          Authorization: 'Bearer stored-token',
+        },
+      }),
+    )
+  })
+})
+
+describe('UpdateService', () => {
+  let service: UpdateService
+  let downloadService: UpdateDownloadService
+  let installService: UpdateInstallService
+  let fakeRedis: FakeRedis
+
+  beforeEach(async () => {
+    fakeRedis = new FakeRedis()
+
+    const mockHttpService = {
+      fetch: vi.fn(),
+    }
+
+    const mockConfigsService = {
+      get: vi.fn().mockResolvedValue({ githubToken: '' }),
+    }
+
+    const module = await Test.createTestingModule({
+      providers: [
+        UpdateService,
+        UpdateDownloadService,
+        UpdateInstallService,
+        { provide: RedisService, useValue: { getClient: () => fakeRedis } },
+        { provide: HttpService, useValue: mockHttpService },
+        { provide: ConfigsService, useValue: mockConfigsService },
+      ],
+    }).compile()
+
+    service = module.get(UpdateService)
+    service.onModuleInit()
+    downloadService = module.get(UpdateDownloadService)
+    installService = module.get(UpdateInstallService)
+    vi.spyOn(installService, 'extractAndInstall').mockResolvedValue(undefined)
+  })
+
+  describe('leader election', () => {
+    it('first caller becomes leader and completes', async () => {
+      vi.spyOn(downloadService, 'fetchWithRetry').mockResolvedValue(
+        manifest('1.0.0'),
+      )
+      vi.spyOn(downloadService, 'downloadDirect').mockResolvedValue(
+        new ArrayBuffer(100),
+      )
+
+      const messages = await subscribeOnce(service.downloadAdminAsset('1.0.0'))
+
+      expect(messages.length).toBeGreaterThan(0)
+      expect(fakeRedis._has('update:admin:lock:1.0.0')).toBe(false)
+      expect(await fakeRedis.get('update:admin:done:1.0.0')).toBe('1.0.0')
+      expect(fakeRedis._has('update:admin:buffer:1.0.0')).toBe(true)
+    })
+
+    it('second caller becomes follower', async () => {
+      fakeRedis._set('update:admin:lock:1.0.0', 'other-instance')
+      fakeRedis._set('update:admin:done:1.0.0', '1.0.0')
+      fakeRedis._set('update:admin:buffer:1.0.0', Buffer.from('zip'))
+
+      const messages = await subscribeOnce(service.downloadAdminAsset('1.0.0'))
+
+      expect(
+        messages.some(
+          (m) =>
+            m.includes('Another instance') || m.includes('already completed'),
+        ),
+      ).toBe(true)
+    })
+
+    it('reuses the same in-flight job on the same instance', async () => {
+      vi.spyOn(downloadService, 'fetchWithRetry').mockResolvedValue(
+        manifest('1.0.1'),
+      )
+      const downloadSpy = vi
+        .spyOn(downloadService, 'downloadDirect')
+        .mockResolvedValue(new ArrayBuffer(100))
+
+      const stream1$ = service.downloadAdminAsset('1.0.1')
+      const stream2$ = service.downloadAdminAsset('1.0.1')
+
+      const [messages1, messages2] = await Promise.all([
+        subscribeOnce(stream1$),
+        subscribeOnce(stream2$),
+      ])
+
+      expect(messages1.length).toBeGreaterThan(0)
+      expect(messages2.length).toBeGreaterThan(0)
+      expect(downloadSpy).toHaveBeenCalledTimes(1)
+      expect(installService.extractAndInstall).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('cluster broadcast', () => {
+    it('marks target version once for a new local job', async () => {
+      vi.spyOn(downloadService, 'fetchWithRetry').mockResolvedValue(
+        manifest('1.2.0'),
+      )
+      vi.spyOn(downloadService, 'downloadDirect').mockResolvedValue(
+        new ArrayBuffer(100),
+      )
+
+      const messages = await subscribeOnce(
+        service.startClusterAdminAssetUpdate('1.2.0'),
+      )
+
+      expect(messages.length).toBeGreaterThan(0)
+      expect(await fakeRedis.get('update:admin:target')).toEqual(
+        expect.stringContaining('"version":"1.2.0"'),
+      )
+    })
+
+    it('starts local update when reconciling remote target version', async () => {
+      vi.spyOn(downloadService, 'fetchWithRetry').mockResolvedValue(
+        manifest('1.3.0'),
+      )
+      const downloadSpy = vi
+        .spyOn(downloadService, 'downloadDirect')
+        .mockResolvedValue(new ArrayBuffer(100))
+
+      fakeRedis._set(
+        'update:admin:target',
+        JSON.stringify({
+          version: '1.3.0',
+          sourceHost: 'remote-node',
+          sourceInstanceId: 'remote-instance',
+          emittedAt: Date.now(),
+        }),
+      )
+
+      await (service as any).reconcileTargetVersion()
+
+      const messages = await subscribeOnce(service.downloadAdminAsset('1.3.0'))
+
+      expect(messages.length).toBeGreaterThan(0)
+      expect(downloadSpy).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('follower behavior', () => {
+    it('installs from Redis buffer when already done', async () => {
+      fakeRedis._set('update:admin:lock:2.0.0', 'leader')
+      fakeRedis._set('update:admin:done:2.0.0', '2.0.0')
+      fakeRedis._set('update:admin:buffer:2.0.0', Buffer.from('zip'))
+
+      const messages = await subscribeOnce(service.downloadAdminAsset('2.0.0'))
+
+      expect(messages.some((m) => m.includes('Fetching buffer'))).toBe(true)
+      expect(installService.extractAndInstall).toHaveBeenCalled()
+    })
+
+    it('detects leader error', async () => {
+      fakeRedis._set('update:admin:lock:3.0.0', 'leader')
+      fakeRedis._set('update:admin:error:3.0.0', 'Boom')
+
+      const messages = await subscribeOnce(service.downloadAdminAsset('3.0.0'))
+
+      expect(messages.some((m) => m.includes('Leader failed'))).toBe(true)
+    })
+
+    it('detects leader error from stream', async () => {
+      fakeRedis._set('update:admin:lock:4.0.0', 'leader')
+
+      await fakeRedis.xadd(
+        'update:admin:stream:4.0.0',
+        'MAXLEN',
+        '~',
+        '200',
+        '*',
+        'type',
+        'error',
+        'data',
+        'Download exploded',
+      )
+
+      const messages = await subscribeOnce(service.downloadAdminAsset('4.0.0'))
+
+      expect(messages.some((m) => m.includes('Leader failed'))).toBe(true)
+    })
+  })
+
+  describe('leader error handling', () => {
+    it('writes error to Redis on failure', async () => {
+      vi.spyOn(downloadService, 'fetchWithRetry').mockRejectedValue(
+        new Error('Net error'),
+      )
+
+      const messages = await subscribeOnce(service.downloadAdminAsset('6.0.0'))
+
+      expect(messages.some((m) => m.includes('Download failed'))).toBe(true)
+      expect(await fakeRedis.get('update:admin:error:6.0.0')).toContain(
+        'Net error',
+      )
+    })
+
+    it('writes error when manifest is missing required fields', async () => {
+      vi.spyOn(downloadService, 'fetchWithRetry').mockResolvedValue({
+        version: '7.0.0',
+      })
+
+      const messages = await subscribeOnce(service.downloadAdminAsset('7.0.0'))
+
+      expect(messages.some((m) => m.includes('Download failed'))).toBe(true)
+      expect(await fakeRedis.get('update:admin:error:7.0.0')).toContain(
+        'latest.json missing required fields',
+      )
+    })
+
+    it('rejects a manifest version that differs from the requested version', async () => {
+      vi.spyOn(downloadService, 'fetchWithRetry').mockResolvedValue(
+        manifest('7.1.0'),
+      )
+      const downloadSpy = vi
+        .spyOn(downloadService, 'downloadDirect')
+        .mockResolvedValue(new ArrayBuffer(10))
+
+      const messages = await subscribeOnce(service.downloadAdminAsset('7.0.0'))
+
+      expect(messages.some((m) => m.includes('Download failed'))).toBe(true)
+      expect(await fakeRedis.get('update:admin:error:7.0.0')).toContain(
+        'Admin manifest version mismatch: requested 7.0.0, got 7.1.0',
+      )
+      expect(downloadSpy).not.toHaveBeenCalled()
+      expect(installService.extractAndInstall).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('getLatestAdminVersion', () => {
+    it('returns manifest version', async () => {
+      vi.spyOn(downloadService, 'fetchWithRetry').mockResolvedValue(
+        manifest('2.5.0'),
+      )
+      expect(await service.getLatestAdminVersion()).toBe('2.5.0')
+    })
+
+    it('throws when manifest fields missing', async () => {
+      vi.spyOn(downloadService, 'fetchWithRetry').mockResolvedValue({})
+      await expect(service.getLatestAdminVersion()).rejects.toThrow(
+        'latest.json missing required fields',
+      )
+    })
+  })
+
+  describe('install lock', () => {
+    it('acquires NX lock', async () => {
+      await (service as any).acquireInstallLock('test')
+      expect(fakeRedis._has('update:admin:install-lock')).toBe(true)
+    })
+
+    it('waits then acquires when held', async () => {
+      fakeRedis._set('update:admin:install-lock', 'other')
+      setTimeout(() => fakeRedis.del('update:admin:install-lock'), 100)
+      await (service as any).acquireInstallLock('test')
+      expect(fakeRedis._has('update:admin:install-lock')).toBe(true)
+    })
+  })
+
+  describe('stale state cleanup', () => {
+    it('leader cleans old done/error before starting', async () => {
+      fakeRedis._set('update:admin:done:8.0.0', 'stale')
+      fakeRedis._set('update:admin:error:8.0.0', 'stale error')
+
+      vi.spyOn(downloadService, 'fetchWithRetry').mockResolvedValue(
+        manifest('8.0.0'),
+      )
+      vi.spyOn(downloadService, 'downloadDirect').mockResolvedValue(
+        new ArrayBuffer(10),
+      )
+
+      await subscribeOnce(service.downloadAdminAsset('8.0.0'))
+
+      expect(await fakeRedis.get('update:admin:done:8.0.0')).toBe('8.0.0')
+    })
+  })
+})

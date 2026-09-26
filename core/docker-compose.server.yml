@@ -1,0 +1,132 @@
+# Shared env block — mx-migrate boots a full Nest context (it now runs the
+# combined schema + app-data migration phases), so it must receive the same
+# config the runtime app needs (Redis, snowflake worker id, jwt secret, …).
+x-mx-env: &mx-env
+  TZ: ${TZ:-Asia/Shanghai}
+  NODE_ENV: production
+  PORT: '2333'
+  ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-localhost:*}
+
+  # PostgreSQL (container in this compose)
+  PG_HOST: postgres
+  PG_PORT: '5432'
+  PG_USER: ${PG_USER:-mx}
+  PG_PASSWORD: ${PG_PASSWORD:-mx}
+  PG_DATABASE: ${PG_DATABASE:-mx_core}
+  SNOWFLAKE_WORKER_ID: ${SNOWFLAKE_WORKER_ID:-1}
+
+  # Redis (container in this compose)
+  REDIS_HOST: redis
+  REDIS_PORT: '6379'
+  # REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+
+  # Security (optional)
+  # ENCRYPT_KEY must be length 64 if ENCRYPT_ENABLE=true
+  ENCRYPT_ENABLE: ${ENCRYPT_ENABLE:-true}
+  ENCRYPT_KEY: ${ENCRYPT_KEY:-}
+  JWT_SECRET: ${JWT_SECRET:-}
+  JWT_EXPIRE: ${JWT_EXPIRE:-}
+
+  # Comma-separated HTTPS origins mx-core may contact for Push Relay.
+  MX_PUSH_RELAY_ORIGINS: ${MX_PUSH_RELAY_ORIGINS:-}
+
+  # Cache
+  DISABLE_CACHE: ${DISABLE_CACHE:-false}
+
+  # Debug (optional)
+  DEBUG: ${DEBUG:-false}
+  DEBUG_MEMORY_DUMP: ${DEBUG_MEMORY_DUMP:-false}
+
+# Bound crash artifacts and stdout/stderr even during dependency outages.
+x-runtime-safety: &runtime-safety
+  ulimits:
+    core:
+      soft: 0
+      hard: 0
+  logging:
+    driver: json-file
+    options:
+      max-size: '10m'
+      max-file: '3'
+
+services:
+  mx-core:
+    <<: *runtime-safety
+    # CI build this image, then ship it to your SERVER.
+    # e.g. ghcr.io/<org>/<repo>:<tag>
+    image: ${MX_CORE_IMAGE:-mx-core:latest}
+    container_name: mx-core
+    restart: unless-stopped
+
+    ports:
+      - '${MX_PORT:-2333}:2333'
+
+    environment: *mx-env
+
+    volumes:
+      # production data dir: ~/.mx-space
+      - ./data/mx-space:/root/.mx-space
+
+    depends_on:
+      mx-migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+
+    healthcheck:
+      test: [CMD, curl, -f, 'http://127.0.0.1:2333/api/v3/ping']
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+  # One-shot release-phase migration runner. Runs schema migrations (drizzle)
+  # then app-data migrations (Nest-bootstrapped registry). Exits 0; mx-core
+  # waits for completion via `service_completed_successfully` before starting.
+  # See docs/superpowers/specs/2026-05-05-database-migration-release-phase-design.md.
+  mx-migrate:
+    <<: *runtime-safety
+    image: ${MX_CORE_IMAGE:-mx-core:latest}
+    container_name: mx-migrate
+    command: ['node', 'migrate.mjs']
+    restart: 'no'
+    environment: *mx-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  redis:
+    <<: *runtime-safety
+    image: redis:8-alpine
+    container_name: mx-redis
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - ./data/redis:/data
+    healthcheck:
+      test: [CMD-SHELL, 'redis-cli ping | grep PONG']
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 3s
+
+  postgres:
+    <<: *runtime-safety
+    image: postgres:16-alpine
+    container_name: mx-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PG_USER:-mx}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-mx}
+      POSTGRES_DB: ${PG_DATABASE:-mx_core}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        ['CMD-SHELL', 'pg_isready -U ${PG_USER:-mx} -d ${PG_DATABASE:-mx_core}']
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s

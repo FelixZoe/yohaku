@@ -1,0 +1,107 @@
+import { z } from 'zod'
+
+import { zCoerceInt, zEntityId, zHttpsUrl } from '~/common/zod'
+import { BasicPagerSchema } from '~/shared/dto/pager.dto'
+
+import { Activity } from './activity.constant'
+import type { ActivityLikeSupportType } from './activity.interface'
+
+const transformEnum = (val: any) =>
+  typeof val === 'undefined' ? val : Number(val)
+
+/**
+ * Activity type params schema
+ */
+export const ActivityTypeParamsSchema = z.object({
+  type: z.preprocess((val) => transformEnum(val), z.enum(Activity)),
+})
+
+export type ActivityTypeParamsDto = z.infer<typeof ActivityTypeParamsSchema>
+
+/**
+ * Activity delete schema
+ */
+export const ActivityDeleteSchema = z.object({
+  before: z.number().optional(),
+})
+
+export type ActivityDeleteDto = z.infer<typeof ActivityDeleteSchema>
+
+/**
+ * Activity query schema
+ */
+export const ActivityQuerySchema = BasicPagerSchema.extend({
+  type: z.preprocess((val) => transformEnum(val), z.enum(Activity).optional()),
+})
+
+export type ActivityQueryDto = z.infer<typeof ActivityQuerySchema>
+
+/**
+ * Activity range schema
+ */
+export const ActivityRangeSchema = z.object({
+  start: zCoerceInt.optional(),
+  end: zCoerceInt.optional(),
+  limit: zCoerceInt.min(1).max(200).default(50).optional(),
+})
+
+export type ActivityRangeDto = z.infer<typeof ActivityRangeSchema>
+
+/**
+ * Activity top readings schema
+ */
+export const ActivityTopReadingsSchema = z.object({
+  top: zCoerceInt.min(1).max(50).default(5).optional(),
+  days: zCoerceInt.min(1).max(365).default(14).optional(),
+})
+
+export type ActivityTopReadingsDto = z.infer<typeof ActivityTopReadingsSchema>
+
+/**
+ * Activity notification schema
+ */
+export const ActivityNotificationSchema = z.object({
+  from: zCoerceInt,
+})
+
+export type ActivityNotificationDto = z.infer<typeof ActivityNotificationSchema>
+
+/**
+ * Like body schema
+ */
+export const LikeBodySchema = z.object({
+  id: zEntityId,
+  type: z.enum([
+    'Post',
+    'Note',
+    'note',
+    'post',
+  ]) as z.ZodType<ActivityLikeSupportType>,
+})
+
+export type LikeBodyDto = z.infer<typeof LikeBodySchema>
+
+/**
+ * Update presence schema
+ */
+export const UpdatePresenceSchema = z.object({
+  identity: z.string().max(200),
+  roomName: z.string().max(50),
+  ts: z.number(),
+  position: z.number().min(0),
+  displayName: z.string().max(50).optional(),
+  sid: z.string().min(1).max(64),
+  readerId: z.string().optional(),
+  image: z.string().max(2048).pipe(zHttpsUrl).optional(),
+})
+
+export type UpdatePresenceDto = z.infer<typeof UpdatePresenceSchema>
+
+/**
+ * Get presence query schema
+ */
+export const GetPresenceQuerySchema = z.object({
+  roomName: z.string().max(50),
+})
+
+export type GetPresenceQueryDto = z.infer<typeof GetPresenceQuerySchema>

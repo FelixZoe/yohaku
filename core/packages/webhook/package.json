@@ -1,0 +1,52 @@
+{
+  "name": "@mx-space/webhook",
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.cts",
+  "exports": {
+    ".": {
+      "types": {
+        "require": "./dist/index.d.cts",
+        "import": "./dist/index.d.mts"
+      },
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.mjs"
+    },
+    "./dist/*": {
+      "require": "./dist/*.cjs",
+      "import": "./dist/*.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "bun scripts/extract-models.ts && node scripts/generate.js && tsdown",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "26.5.0",
+    "express": "5.2.1",
+    "tsdown": "0.22.14",
+    "typescript": "6.0.3",
+    "vitest": "4.1.11"
+  },
+  "bump": {
+    "before": [
+      "git pull --rebase",
+      "pnpm i",
+      "npm run build"
+    ],
+    "after": [
+      "npm publish --access=public"
+    ],
+    "tag": false,
+    "commit_message": "chore(release): bump @mx-space/webhook to v${NEW_VERSION}"
+  },
+  "dependencies": {
+    "rebuild": "^0.1.2"
+  }
+}

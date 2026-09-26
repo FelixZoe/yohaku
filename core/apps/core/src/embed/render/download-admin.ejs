@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#faf9f7">
+  <title>Mix Space Admin - Resource Download</title>
+  <script src="https://cdn.jsdelivr.net/npm/ansi_up@4.0.3/ansi_up.js"></script>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --surface-page: #faf9f7;
+      --surface-card: #ffffff;
+      --surface-inset: #f5f4f1;
+      --fg: #1c1917;
+      --fg-muted: #57534e;
+      --fg-subtle: #78716c;
+      --border: rgba(0, 0, 0, 0.06);
+      --border-strong: rgba(0, 0, 0, 0.12);
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --accent-soft: #eaf0ff;
+      --success: #166534;
+      --success-soft: #f0fdf4;
+      --danger: #b91c1c;
+      --danger-soft: #fef2f2;
+      --radius-sm: 8px;
+      --radius-md: 10px;
+      --radius-lg: 12px;
+      --shadow-sm: 0 1px 0 rgb(0 0 0 / 0.02), 0 1px 3px rgb(0 0 0 / 0.06);
+      --font-sans: -apple-system, 'PingFang SC', 'Microsoft YaHei', 'Segoe UI',
+        system-ui, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --surface-page: #0a0a0c;
+        --surface-card: #1c1c20;
+        --surface-inset: #101013;
+        --fg: #fafaf9;
+        --fg-muted: #a8a29e;
+        --fg-subtle: #78716c;
+        --border: rgba(255, 255, 255, 0.06);
+        --border-strong: rgba(255, 255, 255, 0.12);
+        --accent: #3b82f6;
+        --accent-hover: #2563eb;
+        --accent-soft: rgba(59, 130, 246, 0.12);
+        --success: #86efac;
+        --success-soft: rgba(22, 163, 74, 0.16);
+        --danger: #fca5a5;
+        --danger-soft: rgba(239, 68, 68, 0.12);
+        color-scheme: dark;
+      }
+    }
+
+    [data-theme="light"] {
+      --surface-page: #faf9f7;
+      --surface-card: #ffffff;
+      --surface-inset: #f5f4f1;
+      --fg: #1c1917;
+      --fg-muted: #57534e;
+      --fg-subtle: #78716c;
+      --border: rgba(0, 0, 0, 0.06);
+      --border-strong: rgba(0, 0, 0, 0.12);
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --accent-soft: #eaf0ff;
+      --success: #166534;
+      --success-soft: #f0fdf4;
+      --danger: #b91c1c;
+      --danger-soft: #fef2f2;
+      color-scheme: light;
+    }
+
+    [data-theme="dark"] {
+      --surface-page: #0a0a0c;
+      --surface-card: #1c1c20;
+      --surface-inset: #101013;
+      --fg: #fafaf9;
+      --fg-muted: #a8a29e;
+      --fg-subtle: #78716c;
+      --border: rgba(255, 255, 255, 0.06);
+      --border-strong: rgba(255, 255, 255, 0.12);
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-soft: rgba(59, 130, 246, 0.12);
+      --success: #86efac;
+      --success-soft: rgba(22, 163, 74, 0.16);
+      --danger: #fca5a5;
+      --danger-soft: rgba(239, 68, 68, 0.12);
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    html {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--surface-page);
+      color: var(--fg);
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      line-height: 1.375;
+      font-size: 14px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 640px;
+      background-color: var(--surface-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-title {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.25;
+    }
+
+    .controls {
+      display: flex;
+      gap: 4px;
+    }
+
+    .btn-icon {
+      background: transparent;
+      border: 0;
+      color: var(--fg-muted);
+      padding: 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+      font-family: var(--font-sans);
+    }
+
+    .btn-icon:hover {
+      background-color: var(--surface-inset);
+      color: var(--fg);
+    }
+
+    .btn-icon:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+    }
+
+    .content {
+      padding: 28px 24px;
+    }
+
+    .status-section {
+      margin-bottom: 24px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px 3px 8px;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.25;
+      margin-bottom: 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .status-badge.success {
+      background: var(--success-soft);
+      color: var(--success);
+    }
+
+    .status-badge.error {
+      background: var(--danger-soft);
+      color: var(--danger);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: currentColor;
+    }
+
+    .status-badge.active .status-dot {
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .status-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+      line-height: 1.3;
+      text-wrap: balance;
+    }
+
+    .status-desc {
+      color: var(--fg-muted);
+      font-size: 13px;
+      line-height: 1.5;
+      text-wrap: pretty;
+    }
+
+    .progress-container {
+      margin: 22px 0;
+    }
+
+    .progress-track {
+      height: 6px;
+      background-color: var(--surface-inset);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background-color: var(--accent);
+      width: 0%;
+      border-radius: inherit;
+      transition: width 0.3s ease-out;
+    }
+
+    .progress-fill.error {
+      background-color: var(--danger);
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--fg-subtle);
+    }
+
+    .progress-label span:last-child {
+      font-variant-numeric: tabular-nums;
+      color: var(--fg-muted);
+    }
+
+    .terminal {
+      background-color: var(--surface-inset);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 0;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      height: 240px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .terminal-header {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--fg-subtle);
+    }
+
+    .terminal-content {
+      color: var(--fg-muted);
+      white-space: pre-wrap;
+      line-height: 1.6;
+      word-break: break-all;
+      padding: 12px 14px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .terminal-content::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    .terminal-content::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .terminal-content::-webkit-scrollbar-thumb {
+      background-clip: padding-box;
+      border: 3px solid transparent;
+      border-radius: 5px;
+      background-color: color-mix(in srgb, var(--fg-subtle) 40%, transparent);
+    }
+
+    .actions {
+      margin-top: 20px;
+      display: flex;
+      gap: 8px;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    .actions.visible {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .btn {
+      flex: 1;
+      height: 32px;
+      padding: 0 12px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+      transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        opacity 0.15s ease;
+      touch-action: manipulation;
+    }
+
+    .btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+    }
+
+    .btn:active {
+      opacity: 0.85;
+    }
+
+    .btn-primary {
+      background-color: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background-color: var(--surface-card);
+      color: var(--fg);
+      border-color: var(--border);
+      box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--surface-inset);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 16px;
+        align-items: stretch;
+      }
+      .container {
+        min-height: calc(100dvh - 32px);
+      }
+      .content {
+        padding: 24px 20px;
+      }
+      .terminal {
+        height: 200px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="brand">
+        <div class="brand-title">Mix Space</div>
+        <div class="brand-tag">Admin</div>
+      </div>
+      <div class="controls">
+        <button class="btn-icon" id="themeToggle" aria-label="Toggle theme">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M8 1v1M8 14v1M14 8h1M1 8h1M12.2 3.8l.7-.7M3.1 12.9l.7-.7M12.2 12.2l.7.7M3.1 3.1l.7.7" stroke-linecap="round"/>
+            <circle cx="8" cy="8" r="3"/>
+          </svg>
+        </button>
+        <button class="btn-icon" id="langToggle" aria-label="Switch language">
+          <span style="font-size: 12px; font-weight: 500;">EN</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="status-section">
+        <div class="status-badge active" id="statusBadge">
+          <div class="status-dot"></div>
+          <span data-i18n="status.downloading">Downloading</span>
+        </div>
+        <h1 class="status-title" data-i18n="title.downloading">Preparing Admin Console</h1>
+        <p class="status-desc" data-i18n="desc.init"><%= initialMessage %></p>
+      </div>
+
+      <div class="progress-container">
+        <div class="progress-track">
+          <div class="progress-fill" id="progressBar"></div>
+        </div>
+        <div class="progress-label">
+          <span data-i18n="label.progress">Progress</span>
+          <span id="progressText">0%</span>
+        </div>
+      </div>
+
+      <div class="terminal" id="terminalBlock">
+        <div class="terminal-header" data-i18n="label.output">Output</div>
+        <div class="terminal-content" id="logContent"></div>
+      </div>
+
+      <div class="actions" id="errorActions">
+        <button class="btn btn-primary" onclick="window.location.reload()" data-i18n="btn.retry">Retry</button>
+        <button class="btn btn-secondary" onclick="window.history.back()" data-i18n="btn.back">Go Back</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const i18n = {
+      en: {
+        'status.downloading': 'Downloading',
+        'status.error': 'Failed',
+        'status.complete': 'Complete',
+        'title.downloading': 'Preparing Admin Console',
+        'title.error': 'Something Went Wrong',
+        'title.complete': 'Ready to Launch',
+        'desc.init': 'Initializing download...',
+        'desc.timeout': 'Download timeout — no activity for 60 seconds',
+        'desc.failed': 'Failed to download admin assets',
+        'label.progress': 'Progress',
+        'label.output': 'Output',
+        'btn.retry': 'Retry',
+        'btn.back': 'Go Back'
+      },
+      zh: {
+        'status.downloading': '下载中',
+        'status.error': '失败',
+        'status.complete': '完成',
+        'title.downloading': '正在准备管理控制台',
+        'title.error': '出现错误',
+        'title.complete': '准备就绪',
+        'desc.init': '正在初始化下载...',
+        'desc.timeout': '下载超时 — 60 秒无响应',
+        'desc.failed': '下载管理后台资源失败',
+        'label.progress': '进度',
+        'label.output': '输出',
+        'btn.retry': '重试',
+        'btn.back': '返回'
+      }
+    };
+
+    let currentLang = localStorage.getItem('mx_lang') || (navigator.language.includes('zh') ? 'zh' : 'en');
+    let theme = localStorage.getItem('mx_theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    let logs = '';
+    let lastLine = '';
+    let consecutiveEmptyResponses = 0;
+    let downloadStarted = false;
+    let progressPercentage = 0;
+
+    const els = {
+      langToggle: document.getElementById('langToggle'),
+      themeToggle: document.getElementById('themeToggle'),
+      logContent: document.getElementById('logContent'),
+      terminal: document.getElementById('terminalBlock'),
+      progressBar: document.getElementById('progressBar'),
+      progressText: document.getElementById('progressText'),
+      statusBadge: document.getElementById('statusBadge'),
+      statusTitle: document.querySelector('.status-title'),
+      statusDesc: document.querySelector('.status-desc'),
+      errorActions: document.getElementById('errorActions'),
+      root: document.documentElement
+    };
+
+    function t(key) {
+      return i18n[currentLang][key] || key;
+    }
+
+    function updateTexts() {
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        el.textContent = t(key);
+      });
+      els.langToggle.querySelector('span').textContent = currentLang === 'en' ? 'EN' : '中';
+    }
+
+    els.langToggle.addEventListener('click', () => {
+      currentLang = currentLang === 'en' ? 'zh' : 'en';
+      localStorage.setItem('mx_lang', currentLang);
+      updateTexts();
+    });
+
+    function setTheme(newTheme) {
+      theme = newTheme;
+      localStorage.setItem('mx_theme', theme);
+      els.root.setAttribute('data-theme', theme);
+      document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#0a0a0c' : '#faf9f7';
+      els.themeToggle.innerHTML = theme === 'dark'
+        ? '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1v1M8 14v1M14 8h1M1 8h1M12.2 3.8l.7-.7M3.1 12.9l.7-.7M12.2 12.2l.7.7M3.1 3.1l.7.7" stroke-linecap="round"/><circle cx="8" cy="8" r="3"/></svg>'
+        : '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 10.3A6.5 6.5 0 015.7 2.5a6.5 6.5 0 107.8 7.8z"/></svg>';
+    }
+
+    els.themeToggle.addEventListener('click', () => {
+      setTheme(theme === 'dark' ? 'light' : 'dark');
+    });
+
+    setTheme(theme);
+    updateTexts();
+    const ansi_up = new AnsiUp();
+
+    function updateProgress(text) {
+      const progressMatch = text.match(/Download progress: (\d+)%/);
+      if (progressMatch) {
+        const percentage = parseInt(progressMatch[1]);
+        if (percentage > progressPercentage) {
+          progressPercentage = percentage;
+          els.progressBar.style.width = percentage + '%';
+          els.progressText.textContent = percentage + '%';
+        }
+      }
+    }
+
+    const timer = setInterval(function() {
+      fetch('?log=1')
+        .then(res => {
+          if (res.status === 204) {
+            clearInterval(timer);
+            els.progressBar.style.width = '100%';
+            els.progressText.textContent = '100%';
+            els.statusBadge.className = 'status-badge success';
+            els.statusBadge.querySelector('span').textContent = t('status.complete');
+            els.statusTitle.textContent = t('title.complete');
+            setTimeout(() => window.location.reload(), 1200);
+            return null;
+          }
+          if (res.status >= 400) {
+            return res.text().then(err => { throw new Error(err) });
+          }
+          return res.text();
+        })
+        .then(text => {
+          if (text === null) return;
+
+          if (!text || text === '...') {
+            consecutiveEmptyResponses++;
+            if (consecutiveEmptyResponses > 20 && !downloadStarted) {
+              clearInterval(timer);
+              showError(t('desc.failed'));
+            }
+            return;
+          }
+
+          consecutiveEmptyResponses = 0;
+          downloadStarted = true;
+
+          if (lastLine !== text) {
+            logs += text + '\n';
+            lastLine = text;
+            updateProgress(text);
+            els.logContent.innerHTML = ansi_up.ansi_to_html(logs);
+            els.terminal.scrollTop = els.terminal.scrollHeight;
+          }
+        })
+        .catch(error => {
+          clearInterval(timer);
+          showError(error.message);
+        });
+    }, 1000);
+
+    function showError(msg) {
+      els.statusBadge.className = 'status-badge error';
+      els.statusBadge.querySelector('span').textContent = t('status.error');
+      els.statusTitle.textContent = t('title.error');
+      els.statusDesc.textContent = msg;
+      els.errorActions.classList.add('visible');
+      els.progressBar.classList.add('error');
+    }
+
+    setTimeout(() => {
+      if (!downloadStarted) {
+        clearInterval(timer);
+        showError(t('desc.timeout'));
+      }
+    }, 60000);
+  </script>
+</body>
+</html>

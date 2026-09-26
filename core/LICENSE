@@ -1,0 +1,33 @@
+** Mix Space Open Source License**
+
+This project is dual-licensed under different terms for different parts of the project. It is important for users and contributors to understand the licensing terms applicable to each part of the project.
+
+### For the `apps/` Directory
+
+**License:** GNU Affero General Public License v3.0 (AGPLv3) with Additional Terms (ADDITIONAL_TERMS).
+
+**Scope:** This license applies exclusively to all files within the `apps/` directory of this project.
+
+**Summary:**
+- The AGPLv3 is a free, copyleft license suitable for software that will be distributed over a network. It allows users to use, modify, and distribute the software and any modifications under the same terms.
+- The "Additional Terms" (ADDITIONAL_TERMS) are specific conditions that are added to the AGPLv3 license. These terms must be reviewed in the accompanying LICENSE file or documentation to understand any additional restrictions or permissions that apply to the software.
+
+### For Other Parts of the Project
+
+**License:** MIT License.
+
+**Scope:** This license applies to all parts of the project that are not included within the `apps/` directory.
+
+**Summary:**
+- The MIT License is a permissive open-source license that allows users considerable freedom. It permits use, copying, modification, merging, publishing, distribution, sublicensing, and/or selling copies of the software.
+- It also protects the authors by including a limitation of liability and a disclaimer of warranty.
+
+**General Conditions:**
+- Redistribution and use in source and binary forms, with or without modification, are permitted provided that the above license notices and this permission notice appear in all copies of the software.
+- The software is provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement.
+
+**Contribution:**
+- Contributions to this project are accepted under the terms of the same license as the part of the project to which the contribution is made.
+
+**Notice:**
+- This summary is not the license itself and is not a substitute for reading the licenses in their entirety. All users and contributors are encouraged to read the full text of the licenses for a comprehensive understanding.

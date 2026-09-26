@@ -1,0 +1,345 @@
+import { BusinessEvents } from '~/constants/business-event.constant'
+import { VisitorEventDispatchService } from '~/processors/gateway/web/visitor-event-dispatch.service'
+
+const createService = (enricher: Record<string, any> = {}) => {
+  const broadcasts: Array<{
+    data: any
+    event: BusinessEvents
+    rooms?: string[]
+  }> = []
+  const webGateway = {
+    broadcast: vi.fn((event, data, options) => {
+      broadcasts.push({ data, event, rooms: options?.rooms })
+    }),
+    getSocketsOfRoom: vi
+      .fn()
+      .mockResolvedValue([{ id: 'socket-ja' }, { id: 'socket-zh' }]),
+  }
+  const gatewayService = {
+    getSocketMetadata: vi.fn(async (socket: { id: string }) =>
+      socket.id === 'socket-ja' ? { lang: 'ja' } : { lang: 'zh' },
+    ),
+  }
+  const translationService = {
+    getDictTranslations: vi.fn(async (keyPath: string, lang: string) => {
+      if (lang !== 'ja') return new Map()
+      if (keyPath === 'note.mood') return new Map([['开心', 'うれしい']])
+      if (keyPath === 'note.weather') return new Map([['晴', '晴れ']])
+      return new Map()
+    }),
+    getEntityTranslations: vi.fn(async (keyPath: string, lang: string) => {
+      if (lang !== 'ja') return new Map()
+      if (keyPath === 'topic.name') return new Map([['topic-1', '随筆']])
+      if (keyPath === 'topic.introduce')
+        return new Map([['topic-1', '随筆の紹介']])
+      if (keyPath === 'topic.description')
+        return new Map([['topic-1', '随筆の説明']])
+      if (keyPath === 'category.name') return new Map([['category-1', '技術']])
+      return new Map()
+    }),
+    translateArticle: vi.fn(async ({ originalData, targetLang }) => {
+      if (targetLang === 'ja') {
+        return {
+          ...originalData,
+          availableTranslations: ['ja'],
+          isTranslated: true,
+          sourceLang: 'zh',
+          text: '日本語本文',
+          title: '日本語タイトル',
+          translationMeta: {
+            sourceLang: 'zh',
+            targetLang: 'ja',
+            translatedAt: new Date('2026-05-26T00:00:00.000Z'),
+          },
+        }
+      }
+
+      return {
+        ...originalData,
+        availableTranslations: ['ja'],
+        isTranslated: false,
+        sourceLang: 'zh',
+      }
+    }),
+  }
+
+  const service = new VisitorEventDispatchService(
+    enricher as any,
+    webGateway as any,
+    {} as any,
+    translationService as any,
+    gatewayService as any,
+  )
+
+  return { broadcasts, service, translationService, webGateway }
+}
+
+describe('VisitorEventDispatchService socket localization', () => {
+  it('broadcasts note update payloads with article and topic translations for socket lang', async () => {
+    const { broadcasts, service } = createService()
+
+    await (service as any).broadcastWithTranslation(
+      BusinessEvents.NOTE_UPDATE,
+      {
+        id: 'note-1',
+        mood: '开心',
+        text: '中文正文',
+        title: '中文标题',
+        topic: {
+          description: '中文说明',
+          id: 'topic-1',
+          introduce: '中文介绍',
+          name: '随想',
+        },
+        weather: '晴',
+      },
+      'article-note-1',
+    )
+
+    const jaPayload = broadcasts.find((item) =>
+      item.rooms?.includes('socket-ja'),
+    )?.data
+
+    expect(jaPayload).toMatchObject({
+      mood: 'うれしい',
+      payloadLang: 'ja',
+      text: '日本語本文',
+      title: '日本語タイトル',
+      topic: {
+        description: '随筆の説明',
+        introduce: '随筆の紹介',
+        name: '随筆',
+      },
+      weather: '晴れ',
+    })
+  })
+
+  it('broadcasts post update payloads with category translations for socket lang', async () => {
+    const { broadcasts, service } = createService()
+
+    await (service as any).broadcastWithTranslation(
+      BusinessEvents.POST_UPDATE,
+      {
+        category: {
+          id: 'category-1',
+          name: '技术',
+          slug: 'tech',
+        },
+        id: 'post-1',
+        summary: '中文摘要',
+        tags: ['标签'],
+        text: '中文正文',
+        title: '中文标题',
+      },
+      'article-post-1',
+    )
+
+    const jaPayload = broadcasts.find((item) =>
+      item.rooms?.includes('socket-ja'),
+    )?.data
+
+    expect(jaPayload).toMatchObject({
+      category: {
+        name: '技術',
+      },
+      payloadLang: 'ja',
+      text: '日本語本文',
+      title: '日本語タイトル',
+    })
+  })
+})
+
+describe('VisitorEventDispatchService draft publish', () => {
+  it('broadcasts POST_REPUBLISH when a post is republished', async () => {
+    const doc = {
+      id: 'post-1',
+      isPublished: true,
+      slug: 'draft-went-live',
+      title: 'Draft went live',
+    }
+    const { broadcasts, service } = createService({
+      enrichPayload: vi.fn(async () => doc),
+    })
+
+    await (service as any).onPostRepublish({ id: 'post-1' })
+
+    expect(broadcasts).toEqual([
+      { data: doc, event: BusinessEvents.POST_REPUBLISH, rooms: undefined },
+    ])
+  })
+
+  it('broadcasts NOTE_REPUBLISH when a public note is republished', async () => {
+    const doc = {
+      id: 'note-1',
+      isPublished: true,
+      nid: 7,
+      password: null,
+      publicAt: null,
+      title: 'Draft went live',
+    }
+    const { broadcasts, service } = createService({
+      enrichPayload: vi.fn(async () => doc),
+    })
+
+    await (service as any).onNoteRepublish({ id: 'note-1' })
+
+    expect(broadcasts).toEqual([
+      { data: doc, event: BusinessEvents.NOTE_REPUBLISH, rooms: undefined },
+    ])
+  })
+})
+
+describe('VisitorEventDispatchService premium paywall', () => {
+  const premiumContent = JSON.stringify({
+    root: {
+      children: [
+        {
+          type: 'paragraph',
+          direction: 'ltr',
+          format: '',
+          indent: 0,
+          version: 1,
+          children: [
+            {
+              type: 'text',
+              text: 'visible teaser',
+              detail: 0,
+              format: 0,
+              mode: 'normal',
+              style: '',
+              version: 1,
+            },
+          ],
+        },
+        {
+          type: 'paragraph',
+          direction: 'ltr',
+          format: '',
+          indent: 0,
+          version: 1,
+          children: [
+            {
+              type: 'text',
+              text: 'secret paywalled body',
+              detail: 0,
+              format: 0,
+              mode: 'normal',
+              style: '',
+              version: 1,
+            },
+          ],
+        },
+      ],
+    },
+  })
+
+  it('broadcasts a teaser, not the full body, for a premium post update', async () => {
+    const { broadcasts, service } = createService()
+
+    await (service as any).broadcastWithTranslation(
+      BusinessEvents.POST_UPDATE,
+      {
+        id: 'post-1',
+        isPremium: true,
+        text: 'secret paywalled body full text',
+        content: premiumContent,
+        meta: null,
+        title: '中文标题',
+      },
+      'article-post-1',
+    )
+
+    const jaPayload = broadcasts.find((item) =>
+      item.rooms?.includes('socket-ja'),
+    )?.data
+
+    expect(jaPayload.text).not.toContain('secret')
+    expect(JSON.parse(jaPayload.content).root.children).toHaveLength(1)
+  })
+
+  it('broadcasts the full body for a premium post inside its free window', async () => {
+    const { broadcasts, service } = createService({
+      enrichPayload: vi.fn(async () => ({
+        id: 'post-1',
+        isPremium: true,
+        text: 'secret paywalled body full text',
+        content: premiumContent,
+        meta: {
+          paywall: { freeUntil: new Date(Date.now() + 60_000).toISOString() },
+        },
+      })),
+    })
+
+    await (service as any).onPostCreate({ id: 'post-1' })
+
+    expect(broadcasts[0].data.text).toContain('secret')
+    expect(JSON.parse(broadcasts[0].data.content).root.children).toHaveLength(2)
+  })
+
+  it('broadcasts a teaser for a premium post whose free window expired', async () => {
+    const { broadcasts, service } = createService({
+      enrichPayload: vi.fn(async () => ({
+        id: 'post-1',
+        isPremium: true,
+        text: 'secret paywalled body full text',
+        content: premiumContent,
+        meta: {
+          paywall: { freeUntil: new Date(Date.now() - 60_000).toISOString() },
+        },
+      })),
+    })
+
+    await (service as any).onPostCreate({ id: 'post-1' })
+
+    expect(broadcasts[0].data.text).not.toContain('secret')
+    expect(JSON.parse(broadcasts[0].data.content).root.children).toHaveLength(1)
+  })
+
+  it('broadcasts non-premium posts untouched', async () => {
+    const doc = { id: 'post-1', isPremium: false, text: 'plain', content: null }
+    const { broadcasts, service } = createService({
+      enrichPayload: vi.fn(async () => doc),
+    })
+
+    await (service as any).onPostCreate({ id: 'post-1' })
+
+    expect(broadcasts[0].data).toBe(doc)
+  })
+
+  it('strips translated text and summary when broadcasting for a premium post', async () => {
+    const { broadcasts, service } = createService({
+      isPaywalledPost: vi.fn(async () => true),
+    })
+
+    await (service as any).onTranslationUpdate({
+      id: 'tr-1',
+      refId: 'post-1',
+      refType: 'post',
+      lang: 'ja',
+      text: 'secret paywalled translated body',
+      summary: 'summary of the full article',
+      title: '日本語タイトル',
+    })
+
+    expect(broadcasts).toHaveLength(1)
+    expect(broadcasts[0].data.text).toBeUndefined()
+    expect(broadcasts[0].data.summary).toBeUndefined()
+    expect(broadcasts[0].data.title).toBe('日本語タイトル')
+  })
+
+  it('keeps translated text for non-premium posts', async () => {
+    const { broadcasts, service } = createService({
+      isPaywalledPost: vi.fn(async () => false),
+    })
+
+    await (service as any).onTranslationUpdate({
+      id: 'tr-2',
+      refId: 'post-2',
+      refType: 'post',
+      lang: 'ja',
+      text: 'plain translated body',
+    })
+
+    expect(broadcasts[0].data.text).toBe('plain translated body')
+  })
+})

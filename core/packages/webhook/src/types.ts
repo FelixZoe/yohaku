@@ -1,0 +1,137 @@
+import type { EventEmitter } from 'node:events'
+
+import type { BusinessEvents } from './event.enum'
+import type {
+  CommentModel,
+  LinkModel,
+  NormalizedNote,
+  NormalizedPost,
+  PageModel,
+  PublicLiveDeskStateV2,
+  ReaderModel,
+  RecentlyWithEnrichment,
+  SayModel,
+} from './models.generated'
+
+export type WebhookEventSource = 'admin' | 'visitor' | 'system'
+
+export interface ExtendedEventEmitter extends EventEmitter {
+  on: (<T extends BusinessEvents>(
+    event: T,
+    listener: (
+      data: EventPayloadMapping[Extract<T, keyof EventPayloadMapping>],
+      source: WebhookEventSource,
+    ) => void,
+  ) => this) &
+    ((event: '*', listener: (event: GenericEvent) => void) => this)
+}
+export type Id = string
+export type PayloadOnlyId = { data: Id }
+export interface AggregateUpdatePayload {
+  source: 'config' | 'owner' | 'theme'
+  keys: string[]
+}
+export interface EventPayloadMapping {
+  [BusinessEvents.POST_CREATE]: NormalizedPost
+  [BusinessEvents.POST_UPDATE]: NormalizedPost
+  [BusinessEvents.POST_REPUBLISH]: NormalizedPost
+  [BusinessEvents.POST_UNPUBLISH]: PayloadOnlyId
+  [BusinessEvents.POST_DELETE]: PayloadOnlyId
+
+  [BusinessEvents.NOTE_CREATE]: NormalizedNote
+  [BusinessEvents.NOTE_UPDATE]: NormalizedNote
+  [BusinessEvents.NOTE_REPUBLISH]: NormalizedNote
+  [BusinessEvents.NOTE_UNPUBLISH]: PayloadOnlyId
+  [BusinessEvents.NOTE_DELETE]: PayloadOnlyId
+
+  [BusinessEvents.PAGE_CREATE]: PageModel
+  [BusinessEvents.PAGE_UPDATE]: PageModel
+  [BusinessEvents.PAGE_DELETE]: PayloadOnlyId
+
+  [BusinessEvents.SAY_CREATE]: SayModel
+  [BusinessEvents.SAY_UPDATE]: SayModel
+  [BusinessEvents.SAY_DELETE]: PayloadOnlyId
+
+  [BusinessEvents.RECENTLY_CREATE]: RecentlyWithEnrichment
+  [BusinessEvents.RECENTLY_UPDATE]: RecentlyWithEnrichment
+
+  [BusinessEvents.AGGREGATE_UPDATE]: AggregateUpdatePayload
+
+  [BusinessEvents.ACTIVITY_LIKE]: IActivityLike
+
+  [BusinessEvents.LINK_APPLY]: LinkModel
+
+  [BusinessEvents.COMMENT_CREATE]: CommentModel
+
+  [BusinessEvents.COMMENT_UPDATE]: {
+    id: string
+    text: string
+  }
+
+  [BusinessEvents.ARTICLE_READ_COUNT_UPDATE]: {
+    count: number
+    type: 'post' | 'note'
+    id: string
+  }
+
+  [BusinessEvents.COMPANION_PRESENCE_CHANGED]: PublicLiveDeskStateV2
+
+  health_check: {}
+}
+
+export interface IActivityLike {
+  id: string
+  type: 'Note' | 'Post'
+  created: string
+  ref: {
+    id: string
+    title: string
+    readerId?: string
+  }
+  reader?: ReaderModel
+}
+
+// Auto Generaged type.
+export type GenericEvent =
+  | { type: BusinessEvents.POST_CREATE; payload: NormalizedPost }
+  | { type: BusinessEvents.POST_UPDATE; payload: NormalizedPost }
+  | { type: BusinessEvents.POST_REPUBLISH; payload: NormalizedPost }
+  | { type: BusinessEvents.POST_UNPUBLISH; payload: PayloadOnlyId }
+  | { type: BusinessEvents.POST_DELETE; payload: PayloadOnlyId }
+  | { type: BusinessEvents.NOTE_CREATE; payload: NormalizedNote }
+  | { type: BusinessEvents.NOTE_UPDATE; payload: NormalizedNote }
+  | { type: BusinessEvents.NOTE_REPUBLISH; payload: NormalizedNote }
+  | { type: BusinessEvents.NOTE_UNPUBLISH; payload: PayloadOnlyId }
+  | { type: BusinessEvents.NOTE_DELETE; payload: PayloadOnlyId }
+  | { type: BusinessEvents.PAGE_CREATE; payload: PageModel }
+  | { type: BusinessEvents.PAGE_UPDATE; payload: PageModel }
+  | { type: BusinessEvents.PAGE_DELETE; payload: PayloadOnlyId }
+  | { type: BusinessEvents.SAY_CREATE; payload: SayModel }
+  | { type: BusinessEvents.SAY_UPDATE; payload: SayModel }
+  | { type: BusinessEvents.SAY_DELETE; payload: PayloadOnlyId }
+  | { type: BusinessEvents.RECENTLY_CREATE; payload: RecentlyWithEnrichment }
+  | { type: BusinessEvents.RECENTLY_UPDATE; payload: RecentlyWithEnrichment }
+  | { type: BusinessEvents.AGGREGATE_UPDATE; payload: AggregateUpdatePayload }
+  | { type: BusinessEvents.ACTIVITY_LIKE; payload: IActivityLike }
+  | { type: BusinessEvents.LINK_APPLY; payload: LinkModel }
+  | { type: BusinessEvents.COMMENT_CREATE; payload: CommentModel }
+  | {
+      type: BusinessEvents.COMMENT_UPDATE
+      payload: {
+        id: string
+        text: string
+      }
+    }
+  | {
+      type: BusinessEvents.ARTICLE_READ_COUNT_UPDATE
+      payload: {
+        count: number
+        type: 'post' | 'note'
+        id: string
+      }
+    }
+  | {
+      type: BusinessEvents.COMPANION_PRESENCE_CHANGED
+      payload: PublicLiveDeskStateV2
+    }
+  | { type: 'health_check'; payload: {} }

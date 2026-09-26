@@ -1,0 +1,161 @@
+import type { EnrichmentResult } from './enrichment'
+
+export interface Image {
+  height: number
+  width: number
+  type: string
+  accent?: string
+  src: string
+  thumbhash?: string
+}
+
+export interface Pager {
+  page: number
+  size: number
+  total: number
+  totalPages: number
+  hasNextPage?: boolean
+  hasPrevPage?: boolean
+}
+
+export interface PaginateResult<T> {
+  data: T[]
+  pagination: Pager
+}
+
+export interface PaginationMeta {
+  page: number
+  size: number
+  total: number
+  totalPages: number
+}
+
+export interface InteractionMeta {
+  isLiked?: boolean
+  likeCount?: number
+  readCount?: number
+}
+
+export interface ArticleTranslation {
+  isTranslated: boolean
+  sourceLang?: string
+  targetLang?: string
+  model?: string
+  translatedAt?: string
+  title?: string
+  text?: string
+  subtitle?: string | null
+  summary?: string | null
+  tags?: string[]
+  content?: string
+  contentFormat?: string
+  availableTranslations?: string[]
+}
+
+export interface EntryTranslation {
+  article?: ArticleTranslation
+  fields?: Record<string, string>
+}
+
+export interface RelatedRef {
+  id: string
+  title: string
+  slug?: string
+  nid?: number
+  type?: string
+}
+
+export interface InsightsMeta {
+  hasInLocale: boolean
+}
+
+export interface SummaryMeta {
+  id: string
+  text: string
+  lang: string
+  createdAt: string
+}
+
+export interface SkillAssetView {
+  path: string
+  rawUrl: string
+  type: string
+  size: number
+}
+
+export interface SkillBundleView {
+  id: string
+  name: string
+  description: string
+  rawUrl: string
+  assets: SkillAssetView[]
+}
+export type PostEntitlementReason =
+  'public' | 'owner' | 'free-window' | 'purchase' | 'membership' | 'locked'
+
+export interface PaywallPrice {
+  amount: number
+  currency: string
+}
+
+export interface PaywallMeta {
+  locked: boolean
+  previewBlocks?: number
+  freeUntil?: string
+  entitlement: { reason: PostEntitlementReason }
+  purchase?: { enabled: boolean; price?: PaywallPrice }
+}
+
+export interface TtsMeta {
+  available: boolean
+  lang?: string
+  blockCount?: number
+  stale?: boolean
+  updatedAt?: string | null
+}
+
+export interface TagGlossaryPair {
+  source: string
+  translated: string
+}
+
+export interface GlossaryMeta {
+  tags?: TagGlossaryPair[]
+}
+
+export interface BaseResponseMeta {
+  pagination?: PaginationMeta
+  view?: string
+  translation?: EntryTranslation | Record<string, EntryTranslation>
+  interaction?: InteractionMeta | Record<string, InteractionMeta>
+  enrichments?: Record<string, EnrichmentResult>
+  glossary?: GlossaryMeta
+}
+
+export interface PostResponseMeta extends BaseResponseMeta {
+  insights?: InsightsMeta
+  related?: RelatedRef[]
+  articles?: Record<string, RelatedRef>
+  summary?: SummaryMeta
+  skills?: SkillBundleView[]
+  paywall?: PaywallMeta
+  tts?: TtsMeta
+}
+
+export interface NoteResponseMeta extends BaseResponseMeta {
+  insights?: InsightsMeta
+  summary?: SummaryMeta
+  tts?: TtsMeta
+}
+
+/**
+ * @deprecated Use `BaseResponseMeta`, `PostResponseMeta`, or
+ * `NoteResponseMeta` from `@mx-space/api-client` instead.
+ */
+export interface ResponseMeta extends BaseResponseMeta {
+  related?: RelatedRef[]
+  articles?: Record<string, RelatedRef>
+  insights?: InsightsMeta
+  summary?: SummaryMeta
+  skills?: SkillBundleView[]
+}

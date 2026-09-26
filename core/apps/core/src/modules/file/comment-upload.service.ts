@@ -1,0 +1,218 @@
+import { Readable } from 'node:stream'
+
+import { Injectable, Logger } from '@nestjs/common'
+import type { FastifyRequest } from 'fastify'
+import { fileTypeFromBuffer } from 'file-type'
+
+import { AppErrorCode, createAppException } from '~/common/errors'
+import { ConfigsService } from '~/modules/configs/configs.service'
+import { UploadService } from '~/processors/helper/helper.upload.service'
+import {
+  generateFilename,
+  replaceFilenameTemplate,
+} from '~/utils/filename-template.util'
+import { S3Uploader } from '~/utils/s3.util'
+
+import { FileService } from './file.service'
+import { FileReferenceService } from './file-reference.service'
+
+const DEFAULT_COMMENT_UPLOAD_PREFIX_TEMPLATE = 'comments/{readerId}/{Y}/{m}'
+
+const DEFAULT_MIME_WHITELIST = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+]
+
+export interface ReaderUploadResult {
+  url: string
+  fileName: string
+  byteSize: number
+  mimeType: string
+  expireAt: string
+}
+
+export interface PublicCommentUploadConfig {
+  enable: boolean
+  singleFileSizeMB: number
+  commentImageMaxCount: number
+  mimeWhitelist: string[]
+  pendingTtlMinutes: number
+}
+
+async function detectImageMime(
+  buffer: Buffer,
+): Promise<{ mime: string; ext: string } | null> {
+  const result = await fileTypeFromBuffer(buffer)
+  if (!result) return null
+  return { mime: result.mime, ext: `.${result.ext}` }
+}
+
+function resolveCommentUploadConfig(config: {
+  enable?: boolean
+  singleFileSizeMB?: number
+  commentImageMaxCount?: number
+  mimeWhitelist?: string[]
+  pendingTtlMinutes?: number
+}) {
+  return {
+    enable: config.enable ?? true,
+    singleFileSizeMB: config.singleFileSizeMB ?? 5,
+    commentImageMaxCount: config.commentImageMaxCount ?? 4,
+    mimeWhitelist: config.mimeWhitelist?.length
+      ? config.mimeWhitelist
+      : DEFAULT_MIME_WHITELIST,
+    pendingTtlMinutes: config.pendingTtlMinutes ?? 120,
+  }
+}
+
+@Injectable()
+export class CommentUploadService {
+  private readonly logger = new Logger(CommentUploadService.name)
+
+  constructor(
+    private readonly fileReferenceService: FileReferenceService,
+    private readonly configsService: ConfigsService,
+    private readonly uploadService: UploadService,
+    private readonly fileService: FileService,
+  ) {}
+
+  async getPublicConfig(): Promise<PublicCommentUploadConfig> {
+    const config = await this.configsService.get('commentUploadOptions')
+    return resolveCommentUploadConfig(config)
+  }
+
+  async uploadForReader(
+    req: FastifyRequest,
+    readerId: string,
+  ): Promise<ReaderUploadResult> {
+    const rawConfig = await this.configsService.get('commentUploadOptions')
+    if (rawConfig.enable === false) {
+      throw createAppException(AppErrorCode.COMMENT_UPLOAD_DISABLED)
+    }
+
+    const {
+      singleFileSizeMB,
+      mimeWhitelist: whitelist,
+      pendingTtlMinutes,
+    } = resolveCommentUploadConfig(rawConfig)
+    const maxFileSize = singleFileSizeMB * 1024 * 1024
+
+    const file = await this.uploadService.getAndValidMultipartField(req, {
+      maxFileSize,
+    })
+
+    const chunks: Buffer[] = []
+    let totalBytes = 0
+    for await (const chunk of file.file) {
+      chunks.push(chunk)
+      totalBytes += chunk.length
+      if (totalBytes > maxFileSize) {
+        throw createAppException(AppErrorCode.COMMENT_UPLOAD_FILE_TOO_LARGE)
+      }
+    }
+    const buffer = Buffer.concat(chunks)
+
+    if (file.file.truncated) {
+      throw createAppException(AppErrorCode.COMMENT_UPLOAD_FILE_TOO_LARGE)
+    }
+
+    const detected = await detectImageMime(buffer)
+    if (!detected || !whitelist.includes(detected.mime)) {
+      throw createAppException(AppErrorCode.COMMENT_UPLOAD_INVALID_MIME)
+    }
+
+    const detectedMime = detected.mime
+    const ext = detected.ext
+    const originalFilename = `upload${ext}`
+    const fileUploadConfig = await this.configsService.get('fileUploadOptions')
+    const filename = generateFilename(fileUploadConfig, {
+      originalFilename,
+      fileType: 'image',
+      readerId,
+    })
+
+    const imageStorageConfig = await this.configsService.get(
+      'imageStorageOptions',
+    )
+
+    const useS3 =
+      imageStorageConfig?.enable &&
+      !!imageStorageConfig.endpoint &&
+      !!imageStorageConfig.secretId &&
+      !!imageStorageConfig.secretKey &&
+      !!imageStorageConfig.bucket
+
+    const prefixTemplate =
+      imageStorageConfig?.commentUploadPrefix ||
+      DEFAULT_COMMENT_UPLOAD_PREFIX_TEMPLATE
+
+    const renderedPath = replaceFilenameTemplate(prefixTemplate, {
+      originalFilename,
+      fileType: 'image',
+      readerId,
+    }).replace(/\/+$/, '')
+
+    const objectKey = renderedPath ? `${renderedPath}/${filename}` : filename
+
+    let url: string
+    let s3ObjectKey: string | undefined
+
+    if (useS3) {
+      const s3Uploader = new S3Uploader({
+        endpoint: imageStorageConfig.endpoint!,
+        accessKey: imageStorageConfig.secretId!,
+        secretKey: imageStorageConfig.secretKey!,
+        bucket: imageStorageConfig.bucket!,
+        region: imageStorageConfig.region || 'auto',
+      })
+      if (imageStorageConfig.customDomain) {
+        s3Uploader.setCustomDomain(imageStorageConfig.customDomain)
+      }
+      try {
+        url = await s3Uploader.uploadBuffer(buffer, objectKey, detectedMime)
+      } catch (err) {
+        this.logger.error(
+          `S3 upload failed endpoint=${imageStorageConfig.endpoint} bucket=${imageStorageConfig.bucket} region=${imageStorageConfig.region || 'auto'} objectKey=${objectKey} contentType=${detectedMime} byteSize=${totalBytes}: ${err instanceof Error ? err.message : String(err)}`,
+        )
+        throw err
+      }
+      s3ObjectKey = objectKey
+    } else {
+      const relativePath = objectKey
+      await this.fileService.writeFile(
+        'image' as never,
+        relativePath,
+        Readable.from(buffer),
+      )
+      url = await this.fileService.resolveFileUrl(
+        'image' as never,
+        relativePath,
+      )
+    }
+
+    const fileName = s3ObjectKey ?? objectKey
+
+    await this.fileReferenceService.createReaderPendingReference({
+      fileUrl: url,
+      fileName,
+      readerId,
+      mimeType: detectedMime,
+      byteSize: totalBytes,
+      s3ObjectKey: s3ObjectKey ?? null,
+    })
+
+    const expireAt = new Date(
+      Date.now() + pendingTtlMinutes * 60 * 1000,
+    ).toISOString()
+
+    return {
+      url,
+      fileName,
+      byteSize: totalBytes,
+      mimeType: detectedMime,
+      expireAt,
+    }
+  }
+}

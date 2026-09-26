@@ -1,0 +1,541 @@
+import { BadRequestException } from '@nestjs/common'
+import { describe, expect, it, vi } from 'vitest'
+
+import { createPgRepositoryMock, now } from '@/helper/pg-repository-mock'
+import { AppException } from '~/common/errors/exception.types'
+import { ArticleTypeEnum } from '~/constants/article.constant'
+import { BusinessEvents, EventScope } from '~/constants/business-event.constant'
+import { EventBusEvents } from '~/constants/event-bus.constant'
+import {
+  CATEGORY_SERVICE_TOKEN,
+  DRAFT_SERVICE_TOKEN,
+} from '~/constants/injection.constant'
+import { DraftRefType } from '~/modules/draft/draft.enum'
+import { FileReferenceType } from '~/modules/file/file-reference.enum'
+import type { PostRepository, PostRow } from '~/modules/post/post.repository'
+import { PostService } from '~/modules/post/post.service'
+import { ContentFormat } from '~/shared/types/content-format.type'
+
+const createPost = (overrides: Partial<PostRow> = {}): PostRow => ({
+  id: 'post-1' as any,
+  title: 'Post',
+  slug: 'post',
+  text: 'body',
+  content: null,
+  contentFormat: ContentFormat.Markdown,
+  summary: null,
+  images: [],
+  meta: null,
+  tags: [],
+  categoryId: 'cat-1' as any,
+  category: null,
+  copyright: true,
+  isPublished: true,
+  isPremium: false,
+  readCount: 0,
+  likeCount: 0,
+  pinAt: null,
+  pinOrder: null,
+  related: [],
+  createdAt: now,
+  modifiedAt: null,
+  ...overrides,
+})
+
+const createService = () => {
+  const repository = createPgRepositoryMock<PostRepository>()
+  const categoryService = {
+    findCategoryById: vi.fn().mockResolvedValue({
+      id: 'cat-1',
+      slug: 'default',
+      name: 'Default',
+    }),
+    findBySlug: vi.fn().mockResolvedValue({
+      id: 'cat-1',
+      slug: 'default',
+      name: 'Default',
+    }),
+  }
+  const draftService = {
+    deleteByRef: vi.fn(),
+  }
+  const moduleRef = {
+    get: vi.fn((token) => {
+      if (token === CATEGORY_SERVICE_TOKEN) return categoryService
+      if (token === DRAFT_SERVICE_TOKEN) return draftService
+      return null
+    }),
+  }
+  const commentService = { deleteForRef: vi.fn() }
+  const imageService = { saveImageDimensionsFromMarkdownText: vi.fn() }
+  const fileReferenceService = {
+    activateReferences: vi.fn(),
+    removeReferencesForDocument: vi.fn(),
+    updateReferencesForDocument: vi.fn(),
+  }
+  const eventManager = { emit: vi.fn() }
+  const slugTrackerService = {
+    createTracker: vi.fn(),
+    findTrackerBySlug: vi.fn(),
+    deleteAllTracker: vi.fn(),
+  }
+  const lexicalService = { normalizeContentForStorage: vi.fn() }
+  const contentMigrationCommitService = {
+    commitMarkdownToLexical: vi.fn(),
+  }
+  const enrichmentService = { scheduleDocPrefetch: vi.fn() }
+  const service = new PostService(
+    repository as any,
+    commentService as any,
+    imageService as any,
+    fileReferenceService as any,
+    eventManager as any,
+    slugTrackerService as any,
+    lexicalService as any,
+    contentMigrationCommitService as any,
+    enrichmentService as any,
+    moduleRef as any,
+  )
+  service.onApplicationBootstrap()
+
+  return {
+    categoryService,
+    commentService,
+    contentMigrationCommitService,
+    draftService,
+    eventManager,
+    fileReferenceService,
+    repository,
+    service,
+    slugTrackerService,
+  }
+}
+
+describe('PostService', () => {
+  it('rejects a paywall freeWindowHours above the maximum instead of silently defaulting', async () => {
+    const { repository, service } = createService()
+    repository.findById.mockResolvedValue(createPost())
+
+    await expect(
+      service.updateById('post-1', {
+        meta: { paywall: { freeWindowHours: 24 * 365 + 1 } },
+      }),
+    ).rejects.toMatchObject({ code: 'VALIDATION_FAILED' })
+    await expect(
+      service.create({
+        ...createPost(),
+        meta: { paywall: { previewBlocks: -1 } },
+      } as any),
+    ).rejects.toMatchObject({ code: 'VALIDATION_FAILED' })
+    expect(repository.update).not.toHaveBeenCalled()
+    expect(repository.create).not.toHaveBeenCalled()
+  })
+
+  it('rejects a direct Markdown-to-Lexical update without a migration descriptor', async () => {
+    const { repository, service } = createService()
+    repository.findById.mockResolvedValue(createPost())
+    repository.findBySlug.mockResolvedValue(createPost())
+
+    await expect(
+      service.updateById('post-1', {
+        title: 'Post',
+        slug: 'post',
+        categoryId: 'cat-1' as any,
+        text: 'body',
+        content: '{"root":{"children":[]}}',
+        contentFormat: ContentFormat.Lexical,
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException)
+    expect(repository.update).not.toHaveBeenCalled()
+  })
+
+  it('rejects downgrading a published Lexical document to Markdown', async () => {
+    const { repository, service } = createService()
+    repository.findById.mockResolvedValue(
+      createPost({
+        content: '{"root":{"children":[]}}',
+        contentFormat: ContentFormat.Lexical,
+      }),
+    )
+
+    await expect(
+      service.updateById('post-1', {
+        text: 'body',
+        contentFormat: ContentFormat.Markdown,
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException)
+    expect(repository.update).not.toHaveBeenCalled()
+  })
+
+  it('delegates a staged migration to the atomic commit boundary', async () => {
+    const { contentMigrationCommitService, repository, service } =
+      createService()
+    repository.findById.mockResolvedValue(createPost())
+    repository.findBySlug.mockResolvedValue(createPost())
+
+    const descriptor = {
+      profile: 'yohaku-v1' as const,
+      converterVersion: '0.1.0',
+      sourceMarkdown: 'body',
+      sourceHash: 'sha256:source',
+      preconditions: [
+        { kind: 'source' as const, id: 'post-1' as any, hash: 'sha256:old' },
+      ],
+    }
+    await service.updateById('post-1', {
+      title: 'Post',
+      slug: 'post',
+      categoryId: 'cat-1' as any,
+      text: 'body',
+      content: '{"root":{"children":[]}}',
+      contentFormat: ContentFormat.Lexical,
+      migration: descriptor,
+    })
+
+    expect(
+      contentMigrationCommitService.commitMarkdownToLexical,
+    ).toHaveBeenCalledWith(
+      expect.objectContaining({
+        refType: DraftRefType.Post,
+        refId: 'post-1',
+        descriptor,
+      }),
+    )
+    expect(repository.update).not.toHaveBeenCalled()
+  })
+
+  it('creates posts through the PG repository after category and slug validation', async () => {
+    const { repository, service } = createService()
+    repository.findBySlug.mockResolvedValue(null)
+    repository.create.mockResolvedValue(createPost())
+
+    const result = await service.create({
+      title: 'Hello World',
+      text: 'body',
+      categoryId: 'cat-1',
+    } as any)
+
+    expect(result.slug).toBe('post')
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Hello World',
+        slug: 'Hello-World',
+        categoryId: 'cat-1',
+        contentFormat: ContentFormat.Markdown,
+      }),
+    )
+  })
+
+  it('rejects duplicate slugs before creating the PG row', async () => {
+    const { repository, service } = createService()
+    repository.findBySlug.mockResolvedValue(createPost())
+
+    await expect(
+      service.create({
+        title: 'Post',
+        text: 'body',
+        categoryId: 'cat-1',
+      } as any),
+    ).rejects.toThrow(AppException)
+
+    expect(repository.create).not.toHaveBeenCalled()
+  })
+
+  it('tracks old public paths when slug changes', async () => {
+    const { repository, service, slugTrackerService } = createService()
+    repository.findById.mockResolvedValue(createPost({ slug: 'old-post' }))
+    repository.findBySlug.mockResolvedValue(null)
+    repository.update.mockResolvedValue(createPost({ slug: 'new-post' }))
+
+    await service.updateById('post-1', { slug: 'new post' } as any)
+
+    expect(slugTrackerService.createTracker).toHaveBeenCalledWith(
+      '/default/old-post',
+      ArticleTypeEnum.Post,
+      'post-1',
+    )
+    expect(repository.update).toHaveBeenCalledWith(
+      'post-1',
+      expect.objectContaining({ slug: 'new-post' }),
+    )
+  })
+
+  it('cleans related records and references when deleting a post', async () => {
+    const {
+      commentService,
+      draftService,
+      eventManager,
+      fileReferenceService,
+      repository,
+      service,
+      slugTrackerService,
+    } = createService()
+    repository.findById.mockResolvedValue(createPost())
+    repository.deleteById.mockResolvedValue(createPost())
+
+    await service.deletePost('post-1')
+
+    expect(repository.deleteById).toHaveBeenCalledWith('post-1')
+    expect(commentService.deleteForRef).toHaveBeenCalled()
+    expect(draftService.deleteByRef).toHaveBeenCalled()
+    expect(slugTrackerService.deleteAllTracker).toHaveBeenCalledWith('post-1')
+    expect(
+      fileReferenceService.removeReferencesForDocument,
+    ).toHaveBeenCalledWith('post-1', FileReferenceType.Post)
+    expect(eventManager.emit).toHaveBeenCalledWith(
+      EventBusEvents.CleanAggregateCache,
+      null,
+      { scope: EventScope.TO_SYSTEM },
+    )
+    expect(eventManager.emit).toHaveBeenCalledWith(
+      BusinessEvents.POST_DELETE,
+      { id: 'post-1' },
+      {
+        scope: EventScope.TO_SYSTEM_VISITOR,
+        nextTick: true,
+      },
+    )
+  })
+
+  it('does not invalidate aggregate caches when post deletion fails', async () => {
+    const { eventManager, repository, service } = createService()
+    repository.findById.mockResolvedValue(createPost())
+    repository.deleteById.mockRejectedValue(new Error('delete failed'))
+
+    await expect(service.deletePost('post-1')).rejects.toThrow('delete failed')
+
+    expect(eventManager.emit).not.toHaveBeenCalled()
+  })
+
+  it('emits POST_REPUBLISH when a post returns online', async () => {
+    vi.useFakeTimers()
+    const { eventManager, repository, service } = createService()
+    repository.findById.mockResolvedValue(createPost({ isPublished: true }))
+
+    service.afterUpdatePost('post-1', false)
+    await vi.advanceTimersByTimeAsync(1100)
+    vi.useRealTimers()
+
+    expect(eventManager.emit).toHaveBeenCalledWith(
+      BusinessEvents.POST_REPUBLISH,
+      { id: 'post-1' },
+      { scope: EventScope.TO_SYSTEM_VISITOR },
+    )
+  })
+
+  it('emits POST_UNPUBLISH without permanent-delete semantics', async () => {
+    vi.useFakeTimers()
+    const { eventManager, repository, service } = createService()
+    repository.findById.mockResolvedValue(createPost({ isPublished: false }))
+
+    service.afterUpdatePost('post-1', true)
+    await vi.advanceTimersByTimeAsync(1100)
+    vi.useRealTimers()
+
+    expect(eventManager.emit).toHaveBeenCalledWith(
+      BusinessEvents.POST_UNPUBLISH,
+      { id: 'post-1' },
+      { scope: EventScope.TO_SYSTEM_VISITOR },
+    )
+  })
+
+  it('keeps draft-only updates off the visitor scope', async () => {
+    vi.useFakeTimers()
+    const { eventManager, repository, service } = createService()
+    repository.findById.mockResolvedValue(createPost({ isPublished: false }))
+
+    service.afterUpdatePost('post-1', false)
+    await vi.advanceTimersByTimeAsync(1100)
+    vi.useRealTimers()
+
+    expect(eventManager.emit).toHaveBeenCalledWith(
+      BusinessEvents.POST_UPDATE,
+      { id: 'post-1' },
+      { scope: EventScope.TO_SYSTEM },
+    )
+  })
+
+  it('rejects missing related post ids', async () => {
+    const { repository, service } = createService()
+    repository.findManyByIds.mockResolvedValue([])
+
+    await expect(
+      service.checkRelated({ relatedId: ['missing'] } as any),
+    ).rejects.toThrow(AppException)
+  })
+
+  it('rejects creating an isPremium markdown post with PREMIUM_REQUIRES_LEXICAL', async () => {
+    const { repository, service } = createService()
+    repository.findBySlug.mockResolvedValue(null)
+
+    await expect(
+      service.create({
+        title: 'Post',
+        text: 'body',
+        categoryId: 'cat-1',
+        contentFormat: ContentFormat.Markdown,
+        isPremium: true,
+      } as any),
+    ).rejects.toThrow(AppException)
+
+    expect(repository.create).not.toHaveBeenCalled()
+  })
+
+  it('allows creating an isPremium lexical post', async () => {
+    const { repository, service } = createService()
+    repository.findBySlug.mockResolvedValue(null)
+    repository.create.mockResolvedValue(
+      createPost({ isPremium: true, contentFormat: ContentFormat.Lexical }),
+    )
+
+    await service.create({
+      title: 'Post',
+      text: 'body',
+      content: '{}',
+      categoryId: 'cat-1',
+      contentFormat: ContentFormat.Lexical,
+      isPremium: true,
+    } as any)
+
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ isPremium: true }),
+    )
+  })
+
+  it('rejects flipping isPremium true on an existing markdown post', async () => {
+    const { repository, service } = createService()
+    repository.findById.mockResolvedValue(
+      createPost({ contentFormat: ContentFormat.Markdown, isPremium: false }),
+    )
+
+    await expect(
+      service.updateById('post-1', { isPremium: true } as any),
+    ).rejects.toThrow(AppException)
+
+    expect(repository.update).not.toHaveBeenCalled()
+  })
+
+  it('rejects flipping contentFormat away from lexical while isPremium stays true', async () => {
+    const { repository, service } = createService()
+    repository.findById.mockResolvedValue(
+      createPost({ contentFormat: ContentFormat.Lexical, isPremium: true }),
+    )
+
+    await expect(
+      service.updateById('post-1', {
+        contentFormat: ContentFormat.Markdown,
+      } as any),
+    ).rejects.toThrow(AppException)
+
+    expect(repository.update).not.toHaveBeenCalled()
+  })
+
+  it('allows updating a lexical post to isPremium true', async () => {
+    const { repository, service } = createService()
+    repository.findById.mockResolvedValue(
+      createPost({ contentFormat: ContentFormat.Lexical, isPremium: false }),
+    )
+    repository.update.mockResolvedValue(
+      createPost({ contentFormat: ContentFormat.Lexical, isPremium: true }),
+    )
+
+    await service.updateById('post-1', { isPremium: true } as any)
+
+    expect(repository.update).toHaveBeenCalledWith(
+      'post-1',
+      expect.objectContaining({ isPremium: true }),
+    )
+  })
+
+  describe('free window on publish', () => {
+    const lexicalPremium = (overrides: Partial<PostRow> = {}) =>
+      createPost({
+        contentFormat: ContentFormat.Lexical,
+        isPremium: true,
+        ...overrides,
+      })
+    const freeUntilOf = (call: unknown[]) =>
+      (call.at(-1) as { meta?: { paywall?: { freeUntil?: string } } }).meta
+        ?.paywall?.freeUntil
+
+    it('writes freeUntil when creating a published premium post', async () => {
+      const { repository, service } = createService()
+      repository.findBySlug.mockResolvedValue(null)
+      repository.create.mockResolvedValue(lexicalPremium())
+
+      await service.create({
+        title: 'Post',
+        text: 'body',
+        content: '{}',
+        categoryId: 'cat-1',
+        contentFormat: ContentFormat.Lexical,
+        isPremium: true,
+        isPublished: true,
+        meta: { paywall: { freeWindowHours: 1 } },
+      } as any)
+
+      const freeUntil = freeUntilOf(repository.create.mock.calls[0])
+      expect(Date.parse(freeUntil!) - Date.now()).toBeCloseTo(3_600_000, -4)
+    })
+
+    it('does not write freeUntil when creating a draft', async () => {
+      const { repository, service } = createService()
+      repository.findBySlug.mockResolvedValue(null)
+      repository.create.mockResolvedValue(lexicalPremium())
+
+      await service.create({
+        title: 'Post',
+        text: 'body',
+        content: '{}',
+        categoryId: 'cat-1',
+        contentFormat: ContentFormat.Lexical,
+        isPremium: true,
+        isPublished: false,
+      } as any)
+
+      expect(freeUntilOf(repository.create.mock.calls[0])).toBeUndefined()
+    })
+
+    it('writes freeUntil when a premium draft is published', async () => {
+      const { repository, service } = createService()
+      repository.findById.mockResolvedValue(
+        lexicalPremium({ isPublished: false }),
+      )
+      repository.update.mockResolvedValue(lexicalPremium())
+
+      await service.updateById('post-1', { isPublished: true } as any)
+
+      expect(freeUntilOf(repository.update.mock.calls[0])).toBeDefined()
+    })
+
+    it('writes freeUntil when a published post turns premium', async () => {
+      const { repository, service } = createService()
+      repository.findById.mockResolvedValue(
+        lexicalPremium({ isPremium: false }),
+      )
+      repository.update.mockResolvedValue(lexicalPremium())
+
+      await service.updateById('post-1', { isPremium: true } as any)
+
+      expect(freeUntilOf(repository.update.mock.calls[0])).toBeDefined()
+    })
+
+    it('keeps an existing freeUntil and skips already-published premium updates', async () => {
+      const { repository, service } = createService()
+      const meta = { paywall: { freeUntil: '2020-01-01T00:00:00.000Z' } }
+      repository.findById.mockResolvedValue(
+        lexicalPremium({ isPublished: false, meta }),
+      )
+      repository.update.mockResolvedValue(lexicalPremium())
+
+      await service.updateById('post-1', { isPublished: true } as any)
+      expect(freeUntilOf(repository.update.mock.calls[0])).toBe(
+        '2020-01-01T00:00:00.000Z',
+      )
+
+      repository.findById.mockResolvedValue(lexicalPremium())
+      await service.updateById('post-1', { title: 'Renamed' } as any)
+      expect(repository.update.mock.calls[1][1].meta).toBeUndefined()
+    })
+  })
+})
