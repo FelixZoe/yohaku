@@ -1,0 +1,15 @@
+{
+  "not_enabled": "订阅暂未开启。",
+  "type_post": "文稿",
+  "type_note": "手记",
+  "type_say": "说说",
+  "type_recently": "速记",
+  "success": "订阅已成，谢君青睐。",
+  "welcome": "欢迎订阅「{title}」，新墨既成，当即飞书入君邮筒。",
+  "rss_hint": "你也可以通过",
+  "rss_suffix": "订阅「{title}」的 RSS 流。",
+  "telegram_hint": "也可以订阅 Telegram 频道",
+  "submit": "订阅",
+  "form_email": "请留邮箱 *",
+  "bell_intro": "邮件订阅已启，点亮小铃，不误新墨。"
+}

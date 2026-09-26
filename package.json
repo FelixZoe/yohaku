@@ -1,0 +1,50 @@
+{
+  "name": "Yohaku",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@12.3.4+sha512.961aa41fb077da3a04a441d9f8e15ebc0c96da8ef710b2eb67bf9ee7cb0610eabd48f1fd85f51cffe73846785fa0f87c56a3a872a1d893f8446741b5cce45457",
+  "enriched-markdown": {
+    "enableCodeHighlight": false,
+    "enableMath": false
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "pnpm --filter @yohaku/web build",
+    "dev": "pnpm --filter @yohaku/web dev",
+    "dev:mobile": "pnpm --filter @yohaku/mobile start",
+    "ios": "pnpm --filter @yohaku/mobile ios",
+    "lint": "pnpm --filter @yohaku/web lint",
+    "oss:ship": "bash ./scripts/ship-oss.sh",
+    "postinstall": "node ./scripts/link-yohaku-oss-node-modules.mjs",
+    "prepare": "pnpm exec simple-git-hooks"
+  },
+  "devDependencies": {
+    "@innei/prettier": "1.0.0",
+    "@lobehub/lint": "^2.1.5",
+    "@types/node": "26.1.2",
+    "eslint": "^10.9.1",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.3",
+    "fast-xml-parser": "^5.11.1",
+    "knip": "^6.33.0",
+    "lint-staged": "17.3.0",
+    "prettier": "3.9.6",
+    "simple-git-hooks": "2.13.1",
+    "taze": "19.17.1",
+    "vitest": "^4.1.11"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm exec lint-staged"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "prettier --ignore-path ./.gitignore --write "
+    ],
+    "*.{js,ts,cjs,mjs,jsx,tsx,json}": [
+      "eslint --fix"
+    ]
+  }
+}

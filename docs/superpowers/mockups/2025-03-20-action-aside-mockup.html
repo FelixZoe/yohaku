@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Action Aside — Note / Post mockup</title>
+    <style>
+      :root {
+        --paper: #f7f4ee;
+        --paper-line: rgba(0, 0, 0, 0.08);
+        --ink: #2a2826;
+        --ink-muted: #6b6560;
+        --ink-faint: #9c948c;
+        --tab: hsl(38, 25%, 88%);
+        --tab-border: hsl(35, 20%, 75%);
+        --tab-shadow: hsl(35, 15%, 80%);
+        --accent: #33a6b8;
+      }
+
+      [data-theme="dark"] {
+        --paper: #1c1b1a;
+        --paper-line: rgba(255, 255, 255, 0.07);
+        --ink: #e8e4df;
+        --ink-muted: #9a948c;
+        --ink-faint: #5c5752;
+        --tab: hsl(35, 10%, 25%);
+        --tab-border: hsl(35, 10%, 35%);
+        --tab-shadow: hsl(35, 10%, 20%);
+        --accent: #f596aa;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        background: #0f0e0d;
+        color: var(--ink);
+        min-height: 100vh;
+        padding: 2rem 1.5rem 4rem;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.25rem;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding: 0.75rem 1rem;
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        color: #c8c2bc;
+        font-size: 13px;
+      }
+
+      .toolbar label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .toolbar button {
+        font: inherit;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.06);
+        color: #e8e4df;
+        cursor: pointer;
+      }
+
+      .toolbar button:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      h1 {
+        font-size: 1rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        color: #e8e4df;
+        margin: 0 0 0.25rem;
+      }
+
+      .sub {
+        font-size: 12px;
+        color: #8a847c;
+        margin-bottom: 1.25rem;
+        max-width: 42rem;
+        line-height: 1.5;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1.5rem;
+        align-items: start;
+      }
+
+      .panel {
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+        background: #141312;
+      }
+
+      .panel-h {
+        padding: 0.65rem 1rem;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #8a847c;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(0, 0, 0, 0.25);
+      }
+
+      .stage {
+        display: flex;
+        justify-content: center;
+        padding: 2rem 1.5rem 2.5rem;
+        min-height: 280px;
+      }
+
+      /* Fake article column + binding margin */
+      .article {
+        position: relative;
+        width: min(100%, 200px);
+        background: var(--paper);
+        border-radius: 4px;
+        box-shadow: 0 1px 0 var(--paper-line), 0 12px 32px rgba(0, 0, 0, 0.35);
+        padding: 1.25rem 2.75rem 1.25rem 1rem;
+        min-height: 220px;
+      }
+
+      .article::before {
+        content: "";
+        position: absolute;
+        top: 0.75rem;
+        bottom: 0.75rem;
+        right: 1.85rem;
+        width: 1px;
+        background: var(--paper-line);
+      }
+
+      .article p {
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.65;
+        color: var(--ink-muted);
+      }
+
+      .article p + p {
+        margin-top: 0.6rem;
+      }
+
+      /* Aside: sits in margin like production */
+      .aside {
+        position: absolute;
+        top: 0.85rem;
+        right: 0.15rem;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.5rem;
+        transition: opacity 0.3s ease;
+      }
+
+      body.immersive .aside.note-style {
+        opacity: 0.45;
+      }
+
+      body.immersive .aside.note-style:hover {
+        opacity: 1;
+      }
+
+      body.immersive .aside.post-style {
+        opacity: 0.35;
+      }
+
+      body.immersive .aside.post-style:hover {
+        opacity: 1;
+      }
+
+      /* --- Note: bookmark tabs --- */
+      .tab {
+        --w-collapsed: 1.375rem;
+        --w-peek: 1.25rem;
+        --w-open: 6rem;
+        position: relative;
+        display: flex;
+        align-items: center;
+        height: 2.25rem;
+        overflow: hidden;
+        border: none;
+        padding: 0;
+        margin: 0;
+        cursor: pointer;
+        font: inherit;
+        background: var(--tab);
+        border-right: 1px solid var(--tab-border);
+        box-shadow: 0 1px 0 0 var(--tab-shadow);
+        border-radius: 0 4px 4px 0;
+        width: var(--w-peek);
+        transition:
+          width 0.2s ease-out,
+          background 0.15s ease;
+      }
+
+      body.immersive .aside.note-style .tab:not(:hover) {
+        width: 0.375rem;
+      }
+
+      body.immersive .aside.note-style .tab:not(:hover) .tab-sym {
+        opacity: 0;
+      }
+
+      .tab:hover {
+        width: var(--w-open);
+      }
+
+      .tab:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
+      }
+
+      .tab.active {
+        background: color-mix(in oklab, var(--tab) 88%, var(--accent) 12%);
+      }
+
+      .tab-sym {
+        flex: 0 0 var(--w-collapsed);
+        width: var(--w-collapsed);
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 300;
+        color: var(--ink-muted);
+        transition: opacity 0.2s ease;
+      }
+
+      .tab-label {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding-right: 0.65rem;
+        font-size: 11px;
+        font-weight: 300;
+        color: var(--ink-muted);
+        white-space: nowrap;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+
+      .tab:hover .tab-label {
+        opacity: 1;
+      }
+
+      .tab-count {
+        font-size: 10px;
+        color: var(--ink-faint);
+      }
+
+      /* Stagger hint */
+      .aside.note-style .tab:nth-child(1) {
+        transition-delay: 0ms;
+      }
+      .aside.note-style .tab:nth-child(2) {
+        transition-delay: 30ms;
+      }
+      .aside.note-style .tab:nth-child(3) {
+        transition-delay: 60ms;
+      }
+      .aside.note-style .tab:nth-child(4) {
+        transition-delay: 90ms;
+      }
+      .aside.note-style .tab:nth-child(5) {
+        transition-delay: 120ms;
+      }
+
+      /* --- Post/Page: marginal marks --- */
+      .mark {
+        display: flex;
+        align-items: center;
+        height: 1.75rem;
+        padding: 0;
+        margin: 0;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-family: ui-monospace, "Cascadia Code", monospace;
+        font-size: 11px;
+        letter-spacing: -0.02em;
+        color: var(--ink-muted);
+        transition: color 0.15s ease;
+        text-align: right;
+      }
+
+      body.immersive .aside.post-style .mark:not(:hover) {
+        color: var(--ink-faint);
+        opacity: 0.85;
+      }
+
+      .mark:hover {
+        color: var(--ink);
+      }
+
+      [data-theme="dark"] .mark:hover {
+        color: #f0ebe5;
+      }
+
+      .mark:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+        border-radius: 2px;
+      }
+
+      .mark.active:not(:hover) {
+        color: color-mix(in oklab, var(--ink-muted) 70%, var(--accent) 30%);
+      }
+
+      .mark-inner {
+        display: flex;
+        align-items: baseline;
+        gap: 0.25rem;
+      }
+
+      .mark-count {
+        font-size: 10px;
+        opacity: 0.9;
+      }
+
+      .mark-hint {
+        margin-left: 0.4rem;
+        font-size: 9px;
+        font-weight: 400;
+        color: var(--ink-faint);
+        white-space: nowrap;
+        opacity: 0;
+        transition: opacity 0.15s ease;
+      }
+
+      .mark:hover .mark-hint {
+        opacity: 0.55;
+      }
+
+      .legend {
+        padding: 0.75rem 1rem 1rem;
+        font-size: 11px;
+        line-height: 1.55;
+        color: #7a736c;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(0, 0, 0, 0.2);
+      }
+
+      .legend code {
+        font-size: 10px;
+        padding: 0.1rem 0.35rem;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.06);
+        color: #b5aea5;
+      }
+    </style>
+  </head>
+  <body data-theme="light">
+    <h1>Action Aside — 视觉 mockup</h1>
+    <p class="sub">
+      左栏：笔记侧 — 牛皮纸书签片，hover 向右展开 label。右栏：文章/页面侧 — 装订线边注，mono
+      小字，hover 略现说明。下方「沉浸式阅读」模拟参考里的 <code>immersive</code>：整体变淡、书签缩条。
+    </p>
+
+    <div class="toolbar">
+      <label><input type="checkbox" id="immersive" /> 沉浸式阅读（弱化 aside）</label>
+      <label><input type="checkbox" id="dark" /> 深色纸面背景</label>
+      <button type="button" id="openHint">在默认浏览器中打开本文件</button>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <div class="panel-h">Note · 纸张附着物</div>
+        <div class="stage">
+          <div class="article">
+            <p>正文区块示意。右侧灰线为装订线；操作条贴在纸缘外。</p>
+            <p>Hover 每条书签可展开「喜欢 / 分享 …」。</p>
+            <aside class="aside note-style" aria-label="笔记操作">
+              <button type="button" class="tab active" aria-pressed="true">
+                <span class="tab-sym">♥</span>
+                <span class="tab-label">喜欢 <span class="tab-count">12</span></span>
+              </button>
+              <button type="button" class="tab">
+                <span class="tab-sym">↗</span>
+                <span class="tab-label">分享</span>
+              </button>
+              <button type="button" class="tab">
+                <span class="tab-sym">◉</span>
+                <span class="tab-label">订阅</span>
+              </button>
+              <button type="button" class="tab">
+                <span class="tab-sym">◇</span>
+                <span class="tab-label">评论</span>
+              </button>
+              <button type="button" class="tab">
+                <span class="tab-sym">※</span>
+                <span class="tab-label">捐赠</span>
+              </button>
+            </aside>
+          </div>
+        </div>
+        <div class="legend">
+          实现时将 HSL 换为本仓 semantic neutral / surface；
+          <code>MotionButtonBase</code> 可做 <code>symbol</code> 内容。文末旋转与
+          <code>ActionAsideContainer</code> 定位本 mockup 未演示。
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-h">Post &amp; Page · 排版边注</div>
+        <div class="stage">
+          <div class="article">
+            <p>同一纸面。边注无底色，像校对符号。</p>
+            <p>Page 与 Post 共用此栏视觉。</p>
+            <aside class="aside post-style" aria-label="文章操作">
+              <button type="button" class="mark active" aria-pressed="true">
+                <span class="mark-inner">
+                  <span>△</span>
+                  <span class="mark-count">12</span>
+                </span>
+                <span class="mark-hint">喜欢</span>
+              </button>
+              <button type="button" class="mark">
+                <span class="mark-inner"><span>↗</span></span>
+                <span class="mark-hint">分享</span>
+              </button>
+              <button type="button" class="mark">
+                <span class="mark-inner"><span>◉</span></span>
+                <span class="mark-hint">订阅</span>
+              </button>
+              <button type="button" class="mark">
+                <span class="mark-inner"><span>◇</span></span>
+                <span class="mark-hint">捐赠</span>
+              </button>
+              <button type="button" class="mark">
+                <span class="mark-inner"><span>※</span></span>
+                <span class="mark-hint">评论</span>
+              </button>
+            </aside>
+          </div>
+        </div>
+        <div class="legend">
+          Tooltip 级说明仅在 hover 出现；真实实现用 i18n
+          <code>aria-label</code>。图标可替换为 Mingcute / Material Symbols，保持字阶与间距。
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const body = document.body
+      document.getElementById("immersive").addEventListener("change", (e) => {
+        body.classList.toggle("immersive", e.target.checked)
+      })
+      document.getElementById("dark").addEventListener("change", (e) => {
+        body.setAttribute("data-theme", e.target.checked ? "dark" : "light")
+      })
+      document.getElementById("openHint").addEventListener("click", () => {
+        alert("在 Finder 中双击本 HTML，或在浏览器「打开文件」选择：\n" + location.pathname)
+      })
+    </script>
+  </body>
+</html>

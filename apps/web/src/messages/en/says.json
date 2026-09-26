@@ -1,0 +1,14 @@
+{
+  "page_title": "Quotes",
+  "edit_say": "Edit quote",
+  "publish_say": "Publish quote",
+  "update_success": "Revised.",
+  "publish_success": "Sent out.",
+  "update": "Update",
+  "publish": "Publish",
+  "content": "Content",
+  "source": "Source",
+  "author": "Author",
+  "author_label": "Author: {author}",
+  "owner_says": "From the site owner"
+}

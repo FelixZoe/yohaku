@@ -1,0 +1,6 @@
+[submodule "reporter-assets"]
+path = reporter-assets
+url = https://github.com/Innei/reporter-assets.git
+[submodule "yohaku-oss"]
+path = yohaku-oss
+url = https://github.com/Innei/Yohaku.git

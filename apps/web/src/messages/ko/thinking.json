@@ -1,0 +1,16 @@
+{
+  "page_title": "사색",
+  "page_subtitle": "귀 기울여 주셔서 고마워요.",
+  "post_placeholder": "지금 무얼 떠올리고 있나요?",
+  "send": "보내기",
+  "detected_link": "링크 감지됨",
+  "resolving": "해석 중",
+  "emoji_label": "이모지",
+  "feed_reference": "인용 · {title}",
+  "feed_comment_cta": "읽으신 김에, 한마디 어떠세요?",
+  "moment_application": "애플리케이션",
+  "moment_window": "창",
+  "moment_media": "미디어",
+  "moment_playback_at": "{position}까지 재생",
+  "moment_playback_progress": "{position} / {duration}까지 재생"
+}

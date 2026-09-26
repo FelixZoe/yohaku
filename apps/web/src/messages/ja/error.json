@@ -1,0 +1,20 @@
+{
+  "404_description": "此の星、知に満たず",
+  "404_torn_line1": "ページが見つかりません、",
+  "404_torn_line2": "風に飛ばされたのかもしれません。",
+  "404_torn_todo": "やること",
+  "404_torn_signature": "— 道に迷った訪問者",
+  "404_backHome": "ホームに戻る",
+  "500_title": "頁の崩れ",
+  "api_fetchError": "初期データの取得に失敗しました。APIサーバーが正常に動作しているか確認してください。エラーメッセージ：",
+  "render_error": "頁の描き、乱れぬ",
+  "render_error_contact": "エラーが繰り返し発生する場合は、開発者に連絡してください",
+  "render_error_thanks": "、ありがとうございます！",
+  "page_deleted": "此の頁、跡絶えぬ",
+  "back_home": "ホームに戻る",
+  "refresh": "更新",
+  "biz_error_title": "問ひに、応へず",
+  "biz_error_http_status": "HTTP Status: {status}",
+  "biz_error_message": "エラー：{message}",
+  "share_link_expired": "この共有リンクは無効になりました"
+}

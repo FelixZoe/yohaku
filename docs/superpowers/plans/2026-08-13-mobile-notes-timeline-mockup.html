@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Yohaku Mobile · 博文 Sans / 手记编年</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Noto+Serif+SC:wght@500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --color-neutral-1: #f9f8f5;
+      --color-neutral-2: #f0efeb;
+      --color-neutral-3: #e3e1db;
+      --color-neutral-4: #d0cec6;
+      --color-neutral-5: #a8a69f;
+      --color-neutral-6: #787670;
+      --color-neutral-7: #5c5a55;
+      --color-neutral-8: #403f3a;
+      --color-neutral-9: #24231f;
+      --color-neutral-10: #141312;
+
+      --color-accent: #c56473;
+      --color-info: #3d6896;
+      --color-success: #5e9f7e;
+      --color-warning: #a87a3d;
+      --color-error: #a64953;
+
+      --color-paper: #fdfcf9;
+      --color-desk: #f0efeb;
+      --color-border: rgba(24, 24, 27, 0.1);
+
+      --font-sans: Inter, -apple-system, 'PingFang SC', 'Microsoft YaHei',
+                   'Noto Sans SC', 'Hiragino Sans GB', system-ui, sans-serif;
+      --font-serif: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
+                    SongTi SC, STSong, Georgia, serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', Consolas, Monaco,
+                   'Hannotate SC', monospace;
+
+      --shadow-paper: 0 1px 2px rgba(20, 19, 18, 0.05),
+                      0 6px 20px rgba(20, 19, 18, 0.07);
+    }
+
+    [data-theme='dark'] {
+      --color-neutral-1: #141414;
+      --color-neutral-2: #242424;
+      --color-neutral-3: #404040;
+      --color-neutral-4: #5c5c5c;
+      --color-neutral-5: #787878;
+      --color-neutral-6: #a8a8a8;
+      --color-neutral-7: #d0d0d0;
+      --color-neutral-8: #e3e3e3;
+      --color-neutral-9: #f0f0f0;
+      --color-neutral-10: #f8f8f8;
+
+      --color-paper: #242424;
+      --color-desk: #141414;
+      --color-border: rgba(255, 255, 255, 0.1);
+      --shadow-paper: 0 1px 2px rgba(0, 0, 0, 0.35),
+                      0 6px 20px rgba(0, 0, 0, 0.28);
+    }
+
+    * { box-sizing: border-box; }
+    html { font-size: 14px; line-height: 1.5; letter-spacing: 0.01em; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--color-desk);
+      color: var(--color-neutral-9);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .toolbar {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 10;
+      background: var(--color-paper);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 4px 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--color-neutral-7);
+    }
+    .toolbar button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: inherit;
+      font: inherit;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .toolbar button:hover { background: var(--color-neutral-3); }
+
+    .shell {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 36px 24px 96px;
+    }
+    .lede h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      line-height: 1.29;
+      font-weight: 500;
+      color: var(--color-neutral-10);
+    }
+    .lede p {
+      margin: 0 0 36px;
+      max-width: 62ch;
+      font-size: 14px;
+      line-height: 1.57;
+      color: var(--color-neutral-7);
+    }
+
+    .stage {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(280px, 1fr));
+      gap: 28px 24px;
+      align-items: start;
+    }
+    @media (max-width: 1100px) {
+      .stage { grid-template-columns: 1fr; justify-items: center; }
+    }
+
+    .col-label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+      padding: 0 4px;
+      width: 100%;
+      max-width: 390px;
+    }
+    .col-label h2 {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--color-neutral-9);
+    }
+    .col-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--color-neutral-7);
+    }
+    .col-note {
+      margin: 0 4px 12px;
+      max-width: 390px;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--color-neutral-7);
+    }
+
+    .phone {
+      width: 100%;
+      max-width: 390px;
+      background: var(--color-desk);
+      border-radius: 28px;
+      box-shadow:
+        0 0 0 1px var(--color-border),
+        0 24px 48px -24px rgba(20, 19, 18, 0.22);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 760px;
+    }
+    .status {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 22px 4px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--color-neutral-9);
+    }
+    .status-icons {
+      display: flex;
+      gap: 6px;
+      color: var(--color-neutral-8);
+      font-size: 11px;
+    }
+
+    .screen {
+      flex: 1;
+      padding: 8px 20px 16px;
+    }
+
+    .page-title {
+      margin: 4px 0 18px;
+      font-size: 28px;
+      line-height: 1.29;
+      font-weight: 500;
+      color: var(--color-neutral-10);
+    }
+    .page-title.sans { font-family: var(--font-sans); }
+    .page-title.serif { font-family: var(--font-serif); }
+
+    .cards { display: flex; flex-direction: column; gap: 16px; }
+
+    .paper {
+      background: var(--color-paper);
+      border-radius: 18px;
+      box-shadow: var(--shadow-paper);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .eyebrow {
+      margin: 0;
+      font-family: var(--font-sans);
+      font-size: 10px;
+      line-height: 1.4;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--color-neutral-6);
+    }
+    .post-title {
+      margin: 2px 0 0;
+      font-family: var(--font-sans);
+      font-size: 20px;
+      line-height: 1.4;
+      font-weight: 500;
+      color: var(--color-neutral-9);
+    }
+    .excerpt {
+      margin: 0;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      line-height: 1.54;
+      color: var(--color-neutral-7);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .meta {
+      margin: 0;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--color-neutral-6);
+    }
+
+    .year-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 10px;
+      margin-bottom: 18px;
+      border-bottom: 1px solid var(--color-neutral-3);
+    }
+    .year-kicker {
+      font-family: var(--font-serif);
+      font-size: 10px;
+      line-height: 1.4;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--color-warning);
+    }
+    .year-num {
+      margin: 2px 0 0;
+      font-family: var(--font-serif);
+      font-size: 36px;
+      line-height: 1.1;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      color: var(--color-neutral-10);
+    }
+    .year-count {
+      font-family: var(--font-sans);
+      font-size: 10px;
+      line-height: 1.4;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-neutral-6);
+    }
+
+    .entry-rail {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 4px 0 20px;
+    }
+    .rail {
+      width: 52px;
+      flex-shrink: 0;
+      text-align: right;
+      padding-top: 2px;
+    }
+    .rail-day {
+      font-family: var(--font-serif);
+      font-size: 24px;
+      line-height: 1;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+      color: var(--color-neutral-10);
+    }
+    .rail-month,
+    .rail-week {
+      margin-top: 5px;
+      font-family: var(--font-sans);
+      font-size: 10px;
+      line-height: 1.4;
+      letter-spacing: 0.14em;
+      color: var(--color-neutral-6);
+    }
+    .rail-week { margin-top: 2px; color: var(--color-warning); }
+
+    .entry-body { min-width: 0; flex: 1; padding-top: 2px; }
+    .note-title {
+      margin: 0;
+      font-family: var(--font-serif);
+      font-size: 16px;
+      line-height: 1.45;
+      font-weight: 500;
+      color: var(--color-neutral-9);
+    }
+    .note-title.loose { font-size: 20px; line-height: 1.4; }
+    .note-mood {
+      margin: 6px 0 0;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--color-neutral-7);
+    }
+    .note-excerpt {
+      margin: 6px 0 0;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      line-height: 1.54;
+      color: var(--color-neutral-7);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .letter-no {
+      margin: 8px 0 0;
+      font-family: var(--font-sans);
+      font-size: 10px;
+      line-height: 1.4;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--color-warning);
+    }
+    .letter-no b {
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.04em;
+    }
+
+    .stack-date {
+      margin: 0 0 4px;
+      font-family: var(--font-sans);
+      font-size: 10px;
+      line-height: 1.4;
+      letter-spacing: 0.16em;
+      color: var(--color-neutral-6);
+    }
+    .entry-stack {
+      position: relative;
+      padding: 2px 0 20px 22px;
+    }
+    .entry-stack::before {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 8px;
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      border: 1.5px solid var(--color-neutral-4);
+      background: var(--color-desk);
+    }
+    .year-block { position: relative; }
+    .year-block .spine {
+      position: absolute;
+      left: 7px;
+      top: 14px;
+      bottom: 8px;
+      width: 1px;
+      background: var(--color-neutral-3);
+    }
+
+    .tabbar {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 10px 18px 22px;
+      background: color-mix(in oklab, var(--color-desk) 72%, transparent);
+      border-top: 1px solid color-mix(in oklab, var(--color-neutral-4) 40%, transparent);
+    }
+    .tab {
+      width: 44px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      color: var(--color-neutral-6);
+    }
+    .tab.active { color: var(--color-accent); }
+    .tab svg { width: 22px; height: 22px; }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">
+      light · dark
+    </button>
+  </div>
+
+  <main class="shell">
+    <header class="lede">
+      <h1>博文 Sans · 手记编年</h1>
+      <p>
+        左栏是 Tab 1 改完字族后的样子：卡片结构不动，标题改 Inter / PingFang。
+        中、右是手记离开 Paper 之后的两种排法——日期轨贴近 Web 桌面，日期上置贴近 Web 窄屏。
+      </p>
+    </header>
+
+    <div class="stage">
+      <section>
+        <div class="col-label">
+          <h2>Tab 1 · 博文</h2>
+          <span class="col-tag">sans · paper</span>
+        </div>
+        <p class="col-note">页头和条目标题都走 Sans。分类、摘要、相对时间保留。</p>
+        <article class="phone">
+          <div class="status">
+            <span>9:41</span>
+            <span class="status-icons">●●● LTE</span>
+          </div>
+          <div class="screen">
+            <h1 class="page-title sans">博文</h1>
+            <div class="cards">
+              <article class="paper">
+                <p class="eyebrow">编程</p>
+                <h2 class="post-title">在余白处书写：克制的设计系统</h2>
+                <p class="excerpt">少即多，不是减法的口号，而是每一处加法都被审过的结果。把中性色收成十阶，标题不许假粗。</p>
+                <p class="meta">3 天前 · 2,184 字 · ♡ 12</p>
+              </article>
+              <article class="paper">
+                <p class="eyebrow">随笔</p>
+                <h2 class="post-title">春日的窗口与一台旧电脑</h2>
+                <p class="excerpt">窗开一条缝，键盘还是十年前的手感。写完这篇才发现，傍晚的光已经从书桌挪到了书架。</p>
+                <p class="meta">上周 · 1,042 字</p>
+              </article>
+              <article class="paper">
+                <p class="eyebrow">影像</p>
+                <h2 class="post-title">胶片用完之后</h2>
+                <p class="excerpt">最后三十六张都拍了同一条街。冲洗出来才承认，我只是想把那天的风留下来。</p>
+                <p class="meta">2 周前 · 860 字 · ♡ 4</p>
+              </article>
+            </div>
+          </div>
+          <nav class="tabbar" aria-label="tabs">
+            <span class="tab active" aria-label="博文">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4.5A2.5 2.5 0 0 0 3.5 7v11A1.5 1.5 0 0 0 6 19.4V4.5Zm2 .2v14.7a1.5 1.5 0 0 0 1.7.1l.3-.2 8-4.2a1.5 1.5 0 0 0 .8-1.3V7A2.5 2.5 0 0 0 16 4.5H8Z"/></svg>
+            </span>
+            <span class="tab" aria-label="手记">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 19.5 18.2 6.3a1.6 1.6 0 0 1 2.3 2.2L7.3 21.7 4 22.5l.9-3Z"/><path d="M15.6 8.8l2.2 2.2"/></svg>
+            </span>
+            <span class="tab" aria-label="思考">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 16.5c-1.7-1.4-2.7-3.3-2.7-5.4C3.3 7 7.2 3.5 12 3.5S20.7 7 20.7 11.1c0 4.1-3.9 7.6-8.7 7.6-.9 0-1.8-.1-2.6-.4L5 20.4l1-3.9Z"/></svg>
+            </span>
+            <span class="tab" aria-label="我">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="9" r="3.2"/><path d="M5.4 19.2a6.6 6.6 0 0 1 13.2 0"/></svg>
+            </span>
+          </nav>
+        </article>
+      </section>
+
+      <section>
+        <div class="col-label">
+          <h2>Tab 2 · 日期轨</h2>
+          <span class="col-tag">A1 · rail</span>
+        </div>
+        <p class="col-note">左栏日期、右栏标题。最新一篇略大，带两行 excerpt。</p>
+        <article class="phone">
+          <div class="status">
+            <span>9:41</span>
+            <span class="status-icons">●●● LTE</span>
+          </div>
+          <div class="screen">
+            <h1 class="page-title serif">手记</h1>
+            <header class="year-head">
+              <div>
+                <div class="year-kicker">Anno</div>
+                <div class="year-num">2026</div>
+              </div>
+              <div class="year-count">12 letters</div>
+            </header>
+
+            <article class="entry-rail">
+              <div class="rail">
+                <div class="rail-day">14</div>
+                <div class="rail-month">3月</div>
+                <div class="rail-week">周五</div>
+              </div>
+              <div class="entry-body">
+                <h2 class="note-title loose">春日散步随想</h2>
+                <p class="note-mood">晴 · 开心</p>
+                <p class="note-excerpt">樱花开了一半，风里有 sakura 和沥青被晒热的味道。走到河堤才想起，去年也是这一天出门。</p>
+                <p class="letter-no">Letter №<b>142</b></p>
+              </div>
+            </article>
+
+            <article class="entry-rail">
+              <div class="rail">
+                <div class="rail-day">12</div>
+                <div class="rail-month">3月</div>
+                <div class="rail-week">周三</div>
+              </div>
+              <div class="entry-body">
+                <h2 class="note-title">深夜的代码与咖啡</h2>
+                <p class="note-mood">夜 · 沉思</p>
+                <p class="letter-no">Letter №<b>141</b></p>
+              </div>
+            </article>
+
+            <article class="entry-rail">
+              <div class="rail">
+                <div class="rail-day">02</div>
+                <div class="rail-month">3月</div>
+                <div class="rail-week">周一</div>
+              </div>
+              <div class="entry-body">
+                <h2 class="note-title">关于写作这件事</h2>
+                <p class="letter-no">Letter №<b>140</b></p>
+              </div>
+            </article>
+          </div>
+          <nav class="tabbar" aria-label="tabs">
+            <span class="tab" aria-label="博文">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 4.5A2.5 2.5 0 0 0 3.5 7v11A1.5 1.5 0 0 0 6 19.4V4.5Zm2 .2v14.7a1.5 1.5 0 0 0 1.7.1l.3-.2 8-4.2a1.5 1.5 0 0 0 .8-1.3V7A2.5 2.5 0 0 0 16 4.5H8Z"/></svg>
+            </span>
+            <span class="tab active" aria-label="手记">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5.2 19.2 18 6.4a1.7 1.7 0 0 1 2.4 2.4L7.6 21.6 4 22.4l1.2-3.2Z"/></svg>
+            </span>
+            <span class="tab" aria-label="思考">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 16.5c-1.7-1.4-2.7-3.3-2.7-5.4C3.3 7 7.2 3.5 12 3.5S20.7 7 20.7 11.1c0 4.1-3.9 7.6-8.7 7.6-.9 0-1.8-.1-2.6-.4L5 20.4l1-3.9Z"/></svg>
+            </span>
+            <span class="tab" aria-label="我">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="9" r="3.2"/><path d="M5.4 19.2a6.6 6.6 0 0 1 13.2 0"/></svg>
+            </span>
+          </nav>
+        </article>
+      </section>
+
+      <section>
+        <div class="col-label">
+          <h2>Tab 2 · 日期上置</h2>
+          <span class="col-tag">A2 · stack</span>
+        </div>
+        <p class="col-note">时间线圆点 + 日期写在标题上方。窄屏更省横向空间。</p>
+        <article class="phone">
+          <div class="status">
+            <span>9:41</span>
+            <span class="status-icons">●●● LTE</span>
+          </div>
+          <div class="screen">
+            <h1 class="page-title serif">手记</h1>
+            <header class="year-head">
+              <div>
+                <div class="year-kicker">Anno</div>
+                <div class="year-num">2026</div>
+              </div>
+              <div class="year-count">12 letters</div>
+            </header>
+
+            <div class="year-block">
+              <div class="spine" aria-hidden="true"></div>
+              <article class="entry-stack">
+                <p class="stack-date">3月 14 · 周五</p>
+                <h2 class="note-title loose">春日散步随想</h2>
+                <p class="note-mood">晴 · 开心</p>
+                <p class="note-excerpt">樱花开了一半，风里有 sakura 和沥青被晒热的味道。走到河堤才想起，去年也是这一天出门。</p>
+                <p class="letter-no">Letter №<b>142</b></p>
+              </article>
+              <article class="entry-stack">
+                <p class="stack-date">3月 12 · 周三</p>
+                <h2 class="note-title">深夜的代码与咖啡</h2>
+                <p class="note-mood">夜 · 沉思</p>
+                <p class="letter-no">Letter №<b>141</b></p>
+              </article>
+              <article class="entry-stack">
+                <p class="stack-date">3月 2 · 周一</p>
+                <h2 class="note-title">关于写作这件事</h2>
+                <p class="letter-no">Letter №<b>140</b></p>
+              </article>
+            </div>
+          </div>
+          <nav class="tabbar" aria-label="tabs">
+            <span class="tab" aria-label="博文">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 4.5A2.5 2.5 0 0 0 3.5 7v11A1.5 1.5 0 0 0 6 19.4V4.5Zm2 .2v14.7a1.5 1.5 0 0 0 1.7.1l.3-.2 8-4.2a1.5 1.5 0 0 0 .8-1.3V7A2.5 2.5 0 0 0 16 4.5H8Z"/></svg>
+            </span>
+            <span class="tab active" aria-label="手记">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5.2 19.2 18 6.4a1.7 1.7 0 0 1 2.4 2.4L7.6 21.6 4 22.4l1.2-3.2Z"/></svg>
+            </span>
+            <span class="tab" aria-label="思考">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 16.5c-1.7-1.4-2.7-3.3-2.7-5.4C3.3 7 7.2 3.5 12 3.5S20.7 7 20.7 11.1c0 4.1-3.9 7.6-8.7 7.6-.9 0-1.8-.1-2.6-.4L5 20.4l1-3.9Z"/></svg>
+            </span>
+            <span class="tab" aria-label="我">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="9" r="3.2"/><path d="M5.4 19.2a6.6 6.6 0 0 1 13.2 0"/></svg>
+            </span>
+          </nav>
+        </article>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

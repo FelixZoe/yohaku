@@ -1,0 +1,40 @@
+.sheet-backdrop {
+  transition:
+    opacity 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    display 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition-behavior: allow-discrete;
+}
+
+.sheet-backdrop[data-starting-style],
+.sheet-backdrop[data-ending-style] {
+  opacity: 0;
+}
+
+.sheet-popup {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    display 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition-behavior: allow-discrete;
+  will-change: opacity, transform;
+}
+
+.sheet-popup[data-starting-style],
+.sheet-popup[data-ending-style] {
+  opacity: 0.98;
+  transform: translateY(calc(100% + 1rem));
+}
+
+.sheet-popup[data-ending-style] {
+  transition-duration: 180ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-backdrop,
+  .sheet-popup {
+    transition-duration: 1ms;
+  }
+}

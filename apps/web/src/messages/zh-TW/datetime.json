@@ -1,0 +1,9 @@
+{
+  "relative_justNow": "剛剛",
+  "relative_secondsAgo": "{count} 秒前",
+  "relative_minutesAgo": "{count} 分鐘前",
+  "relative_hoursAgo": "{count} 小時前",
+  "relative_daysAgo": "{count} 天前",
+  "relative_monthsAgo": "{count} 個月前",
+  "relative_yearsAgo": "{count} 年前"
+}

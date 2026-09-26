@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Yohaku Mobile · 思考瞬间流</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Noto+Serif+SC:wght@500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --color-neutral-1: #f9f8f5;
+      --color-neutral-2: #f0efeb;
+      --color-neutral-3: #e3e1db;
+      --color-neutral-4: #d0cec6;
+      --color-neutral-5: #a8a69f;
+      --color-neutral-6: #787670;
+      --color-neutral-7: #5c5a55;
+      --color-neutral-8: #403f3a;
+      --color-neutral-9: #24231f;
+      --color-neutral-10: #141312;
+
+      --color-accent: #c56473;
+      --color-info: #3d6896;
+      --color-success: #5e9f7e;
+      --color-warning: #a87a3d;
+      --color-error: #a64953;
+
+      --color-paper: #fdfcf9;
+      --color-desk: #f0efeb;
+      --color-border: rgba(24, 24, 27, 0.1);
+
+      --font-sans: Inter, -apple-system, 'PingFang SC', 'Microsoft YaHei',
+                   'Noto Sans SC', 'Hiragino Sans GB', system-ui, sans-serif;
+      --font-serif: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
+                    SongTi SC, STSong, Georgia, serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', Consolas, Monaco,
+                   'Hannotate SC', monospace;
+
+      --shadow-paper: 0 1px 2px rgba(20, 19, 18, 0.05),
+                      0 6px 20px rgba(20, 19, 18, 0.07);
+    }
+
+    [data-theme='dark'] {
+      --color-neutral-1: #141414;
+      --color-neutral-2: #242424;
+      --color-neutral-3: #404040;
+      --color-neutral-4: #5c5c5c;
+      --color-neutral-5: #787878;
+      --color-neutral-6: #a8a8a8;
+      --color-neutral-7: #d0d0d0;
+      --color-neutral-8: #e3e3e3;
+      --color-neutral-9: #f0f0f0;
+      --color-neutral-10: #f8f8f8;
+
+      --color-paper: #242424;
+      --color-desk: #141414;
+      --color-border: rgba(255, 255, 255, 0.1);
+      --shadow-paper: 0 1px 2px rgba(0, 0, 0, 0.35),
+                      0 6px 20px rgba(0, 0, 0, 0.28);
+    }
+
+    * { box-sizing: border-box; }
+    html { font-size: 14px; line-height: 1.5; letter-spacing: 0.01em; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--color-desk);
+      color: var(--color-neutral-9);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .toolbar {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 10;
+      background: var(--color-paper);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 4px 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--color-neutral-7);
+    }
+    .toolbar button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: inherit;
+      font: inherit;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .toolbar button:hover { background: var(--color-neutral-3); }
+
+    .shell {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 36px 24px 96px;
+    }
+    .lede h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      line-height: 1.29;
+      font-weight: 500;
+      color: var(--color-neutral-10);
+    }
+    .lede p {
+      margin: 0 0 36px;
+      max-width: 64ch;
+      font-size: 14px;
+      line-height: 1.57;
+      color: var(--color-neutral-7);
+    }
+
+    .stage {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(280px, 1fr));
+      gap: 28px 24px;
+      align-items: start;
+    }
+    @media (max-width: 1100px) {
+      .stage { grid-template-columns: 1fr; justify-items: center; }
+    }
+
+    .col-label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+      padding: 0 4px;
+      width: 100%;
+      max-width: 390px;
+    }
+    .col-label h2 {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--color-neutral-9);
+    }
+    .col-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--color-neutral-7);
+    }
+    .col-note {
+      margin: 0 4px 12px;
+      max-width: 390px;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--color-neutral-7);
+    }
+
+    .phone {
+      width: 100%;
+      max-width: 390px;
+      background: var(--color-desk);
+      border-radius: 28px;
+      box-shadow:
+        0 0 0 1px var(--color-border),
+        0 24px 48px -24px rgba(20, 19, 18, 0.22);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 760px;
+    }
+    .status {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 22px 4px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--color-neutral-9);
+    }
+    .status-icons {
+      display: flex;
+      gap: 6px;
+      color: var(--color-neutral-8);
+      font-size: 11px;
+    }
+    .screen {
+      flex: 1;
+      padding: 8px 20px 16px;
+    }
+    .page-title {
+      margin: 4px 0 18px;
+      font-size: 28px;
+      line-height: 1.29;
+      font-weight: 500;
+      color: var(--color-neutral-10);
+    }
+    .page-title.sans { font-family: var(--font-sans); }
+    .page-title.serif { font-family: var(--font-serif); }
+
+    .cards { display: flex; flex-direction: column; gap: 16px; }
+    .paper {
+      background: var(--color-paper);
+      border-radius: 18px;
+      box-shadow: var(--shadow-paper);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .thought {
+      margin: 0;
+      font-family: var(--font-sans);
+      font-size: 16px;
+      line-height: 1.62;
+      color: var(--color-neutral-9);
+    }
+    .meta {
+      margin: 0;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--color-neutral-6);
+    }
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-top: 2px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--color-neutral-6);
+    }
+    .actions .grow { flex: 1; }
+    .act {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .act.active { color: var(--color-accent); }
+
+    .stream { display: flex; flex-direction: column; }
+    .moment {
+      padding: 4px 0 16px;
+    }
+    .moment + .moment {
+      padding-top: 16px;
+      border-top: 1px solid var(--color-neutral-3);
+    }
+    .moment .thought { margin-top: 8px; }
+    .moment .actions {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--color-border);
+    }
+
+    .paper-web .head {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+    .paper-web .who {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-neutral-9);
+    }
+    .paper-web .thought { margin-top: 4px; }
+    .paper-web .actions {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--color-border);
+    }
+
+    .tabbar {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 10px 18px 22px;
+      background: color-mix(in oklab, var(--color-desk) 72%, transparent);
+      border-top: 1px solid color-mix(in oklab, var(--color-neutral-4) 40%, transparent);
+    }
+    .tab {
+      width: 44px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      color: var(--color-neutral-6);
+    }
+    .tab.active { color: var(--color-accent); }
+    .tab svg { width: 22px; height: 22px; }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">
+      light · dark
+    </button>
+  </div>
+
+  <main class="shell">
+    <header class="lede">
+      <h1>思考 · 离开纸，还是留下纸</h1>
+      <p>
+        左栏是现在：和博文同一叠 Paper。中栏是推荐的瞬间流——正文就是条目，条目之间一根细线。
+        右栏贴近 Web：纸留下，加上作者行和虚线操作栏。
+      </p>
+    </header>
+
+    <div class="stage">
+      <section>
+        <div class="col-label">
+          <h2>现在</h2>
+          <span class="col-tag">paper</span>
+        </div>
+        <p class="col-note">正文 + 相对时间 + 操作，整块抬起来。和 Tab 1 抢同一套纸。</p>
+        <article class="phone">
+          <div class="status"><span>9:41</span><span class="status-icons">●●● LTE</span></div>
+          <div class="screen">
+            <h1 class="page-title serif">思考</h1>
+            <div class="cards">
+              <article class="paper">
+                <p class="thought">少即多，不是减法的口号，而是每一处加法都被审过的结果。</p>
+                <p class="meta">3 小时前</p>
+                <div class="actions">
+                  <span class="act active">♡ 12</span>
+                  <span class="act">✕ 0</span>
+                  <span class="grow"></span>
+                  <span class="act">评论 3</span>
+                </div>
+              </article>
+              <article class="paper">
+                <p class="thought">窗开一条缝，键盘还是十年前的手感。写完才发现，傍晚的光已经从书桌挪到了书架。</p>
+                <p class="meta">昨天</p>
+                <div class="actions">
+                  <span class="act">♡ 2</span>
+                  <span class="act">✕ 0</span>
+                  <span class="grow"></span>
+                  <span class="act">评论</span>
+                </div>
+              </article>
+              <article class="paper">
+                <p class="thought">把中性色收成十阶，标题不许假粗。剩下的事情就简单了。</p>
+                <p class="meta">3 天前</p>
+                <div class="actions">
+                  <span class="act">♡ 4</span>
+                  <span class="act">✕ 1</span>
+                  <span class="grow"></span>
+                  <span class="act">评论 1</span>
+                </div>
+              </article>
+            </div>
+          </div>
+          <nav class="tabbar" aria-label="tabs">
+            <span class="tab" aria-label="博文"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 4.5A2.5 2.5 0 0 0 3.5 7v11A1.5 1.5 0 0 0 6 19.4V4.5Zm2 .2v14.7a1.5 1.5 0 0 0 1.7.1l.3-.2 8-4.2a1.5 1.5 0 0 0 .8-1.3V7A2.5 2.5 0 0 0 16 4.5H8Z"/></svg></span>
+            <span class="tab" aria-label="手记"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 19.5 18.2 6.3a1.6 1.6 0 0 1 2.3 2.2L7.3 21.7 4 22.5l.9-3Z"/><path d="M15.6 8.8l2.2 2.2"/></svg></span>
+            <span class="tab active" aria-label="思考"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.2 16.2c-1.6-1.3-2.6-3.1-2.6-5.1C3.6 7.2 7.2 4 12 4s8.4 3.2 8.4 7.1c0 3.9-3.8 7.1-8.4 7.1-.9 0-1.7-.1-2.5-.4L5.2 20l1-3.8Z"/></svg></span>
+            <span class="tab" aria-label="我"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="9" r="3.2"/><path d="M5.4 19.2a6.6 6.6 0 0 1 13.2 0"/></svg></span>
+          </nav>
+        </article>
+      </section>
+
+      <section>
+        <div class="col-label">
+          <h2>A · 瞬间流</h2>
+          <span class="col-tag">recommended</span>
+        </div>
+        <p class="col-note">不抬纸。时间在上，正文是条目，虚线接下方操作。页头改 Sans。</p>
+        <article class="phone">
+          <div class="status"><span>9:41</span><span class="status-icons">●●● LTE</span></div>
+          <div class="screen">
+            <h1 class="page-title sans">思考</h1>
+            <div class="stream">
+              <article class="moment">
+                <p class="meta">3 小时前</p>
+                <p class="thought">少即多，不是减法的口号，而是每一处加法都被审过的结果。</p>
+                <div class="actions">
+                  <span class="act active">♡ 12</span>
+                  <span class="act">✕ 0</span>
+                  <span class="grow"></span>
+                  <span class="act">评论 3</span>
+                </div>
+              </article>
+              <article class="moment">
+                <p class="meta">昨天</p>
+                <p class="thought">窗开一条缝，键盘还是十年前的手感。写完才发现，傍晚的光已经从书桌挪到了书架。</p>
+                <div class="actions">
+                  <span class="act">♡ 2</span>
+                  <span class="act">✕ 0</span>
+                  <span class="grow"></span>
+                  <span class="act">评论</span>
+                </div>
+              </article>
+              <article class="moment">
+                <p class="meta">3 天前</p>
+                <p class="thought">把中性色收成十阶，标题不许假粗。剩下的事情就简单了。</p>
+                <div class="actions">
+                  <span class="act">♡ 4</span>
+                  <span class="act">✕ 1</span>
+                  <span class="grow"></span>
+                  <span class="act">评论 1</span>
+                </div>
+              </article>
+            </div>
+          </div>
+          <nav class="tabbar" aria-label="tabs">
+            <span class="tab" aria-label="博文"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 4.5A2.5 2.5 0 0 0 3.5 7v11A1.5 1.5 0 0 0 6 19.4V4.5Zm2 .2v14.7a1.5 1.5 0 0 0 1.7.1l.3-.2 8-4.2a1.5 1.5 0 0 0 .8-1.3V7A2.5 2.5 0 0 0 16 4.5H8Z"/></svg></span>
+            <span class="tab" aria-label="手记"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 19.5 18.2 6.3a1.6 1.6 0 0 1 2.3 2.2L7.3 21.7 4 22.5l.9-3Z"/><path d="M15.6 8.8l2.2 2.2"/></svg></span>
+            <span class="tab active" aria-label="思考"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.2 16.2c-1.6-1.3-2.6-3.1-2.6-5.1C3.6 7.2 7.2 4 12 4s8.4 3.2 8.4 7.1c0 3.9-3.8 7.1-8.4 7.1-.9 0-1.7-.1-2.5-.4L5.2 20l1-3.8Z"/></svg></span>
+            <span class="tab" aria-label="我"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="9" r="3.2"/><path d="M5.4 19.2a6.6 6.6 0 0 1 13.2 0"/></svg></span>
+          </nav>
+        </article>
+      </section>
+
+      <section>
+        <div class="col-label">
+          <h2>B · 留纸</h2>
+          <span class="col-tag">web-like</span>
+        </div>
+        <p class="col-note">贴近 Web 思考页：纸 + 作者行 + 虚线操作栏。和博文仍是同一表面。</p>
+        <article class="phone">
+          <div class="status"><span>9:41</span><span class="status-icons">●●● LTE</span></div>
+          <div class="screen">
+            <h1 class="page-title sans">思考</h1>
+            <div class="cards">
+              <article class="paper paper-web">
+                <div class="head">
+                  <p class="who">Innei</p>
+                  <p class="meta">3 小时前</p>
+                </div>
+                <p class="thought">少即多，不是减法的口号，而是每一处加法都被审过的结果。</p>
+                <div class="actions">
+                  <span class="act active">♡ 12</span>
+                  <span class="act">✕ 0</span>
+                  <span class="grow"></span>
+                  <span class="act">评论 3</span>
+                </div>
+              </article>
+              <article class="paper paper-web">
+                <div class="head">
+                  <p class="who">Innei</p>
+                  <p class="meta">昨天</p>
+                </div>
+                <p class="thought">窗开一条缝，键盘还是十年前的手感。写完才发现，傍晚的光已经从书桌挪到了书架。</p>
+                <div class="actions">
+                  <span class="act">♡ 2</span>
+                  <span class="act">✕ 0</span>
+                  <span class="grow"></span>
+                  <span class="act">评论</span>
+                </div>
+              </article>
+              <article class="paper paper-web">
+                <div class="head">
+                  <p class="who">Innei</p>
+                  <p class="meta">3 天前</p>
+                </div>
+                <p class="thought">把中性色收成十阶，标题不许假粗。剩下的事情就简单了。</p>
+                <div class="actions">
+                  <span class="act">♡ 4</span>
+                  <span class="act">✕ 1</span>
+                  <span class="grow"></span>
+                  <span class="act">评论 1</span>
+                </div>
+              </article>
+            </div>
+          </div>
+          <nav class="tabbar" aria-label="tabs">
+            <span class="tab" aria-label="博文"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 4.5A2.5 2.5 0 0 0 3.5 7v11A1.5 1.5 0 0 0 6 19.4V4.5Zm2 .2v14.7a1.5 1.5 0 0 0 1.7.1l.3-.2 8-4.2a1.5 1.5 0 0 0 .8-1.3V7A2.5 2.5 0 0 0 16 4.5H8Z"/></svg></span>
+            <span class="tab" aria-label="手记"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 19.5 18.2 6.3a1.6 1.6 0 0 1 2.3 2.2L7.3 21.7 4 22.5l.9-3Z"/><path d="M15.6 8.8l2.2 2.2"/></svg></span>
+            <span class="tab active" aria-label="思考"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.2 16.2c-1.6-1.3-2.6-3.1-2.6-5.1C3.6 7.2 7.2 4 12 4s8.4 3.2 8.4 7.1c0 3.9-3.8 7.1-8.4 7.1-.9 0-1.7-.1-2.5-.4L5.2 20l1-3.8Z"/></svg></span>
+            <span class="tab" aria-label="我"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="9" r="3.2"/><path d="M5.4 19.2a6.6 6.6 0 0 1 13.2 0"/></svg></span>
+          </nav>
+        </article>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

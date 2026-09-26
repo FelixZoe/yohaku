@@ -1,0 +1,164 @@
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+
+import type { ExpoConfig } from 'expo/config'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+
+import {
+  createAppConfig,
+  resolveOverlayUpdates,
+  updatesForCurrentBuild,
+} from '../../app.config'
+
+const originalEnvironment = process.env.EXPO_PUBLIC_APNS_ENV
+
+const loadConfig = (environment: 'development' | 'production') => {
+  process.env.EXPO_PUBLIC_APNS_ENV = environment
+  return createAppConfig()
+}
+
+const signedUpdates = (): NonNullable<ExpoConfig['updates']> => ({
+  codeSigningCertificate: './certs/certificate.pem',
+  codeSigningMetadata: { alg: 'rsa-v1_5-sha256', keyid: 'main' },
+  enabled: true,
+  url: 'https://ota.example.com',
+})
+
+const originalOtaSign = process.env.YOHAKU_OTA_SIGN
+const originalConfiguration = process.env.CONFIGURATION
+const originalEasBuild = process.env.EAS_BUILD
+
+afterEach(() => {
+  vi.resetModules()
+  if (originalEnvironment === undefined) {
+    delete process.env.EXPO_PUBLIC_APNS_ENV
+  } else {
+    process.env.EXPO_PUBLIC_APNS_ENV = originalEnvironment
+  }
+  if (originalOtaSign === undefined) {
+    delete process.env.YOHAKU_OTA_SIGN
+  } else {
+    process.env.YOHAKU_OTA_SIGN = originalOtaSign
+  }
+  if (originalConfiguration === undefined) {
+    delete process.env.CONFIGURATION
+  } else {
+    process.env.CONFIGURATION = originalConfiguration
+  }
+  if (originalEasBuild === undefined) {
+    delete process.env.EAS_BUILD
+  } else {
+    process.env.EAS_BUILD = originalEasBuild
+  }
+})
+
+describe('mobile notification native config', () => {
+  it.each(['development', 'production'] as const)(
+    'uses the %s APNs environment consistently',
+    (environment) => {
+      const config = loadConfig(environment)
+      expect(config.ios?.entitlements?.['aps-environment']).toBe(environment)
+      expect(
+        config.plugins?.find(
+          (plugin: unknown) =>
+            Array.isArray(plugin) && plugin[0] === 'expo-notifications',
+        ),
+      ).toEqual(['expo-notifications', { mode: environment }])
+    },
+  )
+
+  it('pins OTA runtimeVersion to the native fingerprint', () => {
+    const config = loadConfig('development')
+    expect(config.runtimeVersion).toEqual({ policy: 'fingerprint' })
+  })
+
+  it('does not block launch waiting for an OTA fetch', () => {
+    expect(
+      resolveOverlayUpdates('/tmp', { updates: { url: 'https://ota.example' } })
+        ?.fallbackToCacheTimeout,
+    ).toBe(0)
+  })
+
+  it('enables communication notifications and native extension generation', () => {
+    const config = loadConfig('development')
+    expect(
+      config.ios?.entitlements?.[
+        'com.apple.developer.usernotifications.communication'
+      ],
+    ).toBe(true)
+    expect(config.ios?.infoPlist?.NSUserActivityTypes).toContain(
+      'INSendMessageIntent',
+    )
+    expect(config.plugins).toContain('@bacons/apple-targets')
+    expect(config.plugins).toContain(
+      './plugins/with-notification-localizations.cjs',
+    )
+  })
+
+  it('declares social and music schemes so canOpenURL can see installed apps', () => {
+    const config = loadConfig('development')
+    expect(config.ios?.infoPlist?.LSApplicationQueriesSchemes).toEqual(
+      expect.arrayContaining([
+        'orpheus',
+        'qqmusic',
+        'github',
+        'twitter',
+        'tg',
+        'bilibili',
+        'mqqwpa',
+        'sinaweibo',
+        'steam',
+        'bluesky',
+        'discord',
+      ]),
+    )
+  })
+
+  it('does not request Face ID or link expo-secure-store', () => {
+    const config = loadConfig('production')
+    expect(config.ios?.infoPlist).not.toHaveProperty('NSFaceIDUsageDescription')
+    expect(config.plugins).not.toContain('expo-secure-store')
+  })
+
+  it('omits OTA code signing from local debug so expo-dev-client can load Metro', () => {
+    delete process.env.YOHAKU_OTA_SIGN
+    delete process.env.CONFIGURATION
+    delete process.env.EAS_BUILD
+    const updates = updatesForCurrentBuild(signedUpdates())
+    expect(updates).not.toHaveProperty('codeSigningCertificate')
+    expect(updates).not.toHaveProperty('codeSigningMetadata')
+  })
+
+  it('keeps OTA code signing for Release native builds', () => {
+    process.env.CONFIGURATION = 'Release'
+    const updates = updatesForCurrentBuild(signedUpdates())
+    expect(updates?.codeSigningCertificate).toBeDefined()
+    expect(updates?.codeSigningMetadata).toEqual({
+      alg: 'rsa-v1_5-sha256',
+      keyid: 'main',
+    })
+  })
+
+  it('passes Expo a project-relative OTA signing certificate path', () => {
+    const overlayDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'yohaku-ota-overlay-'),
+    )
+    const certificate = path.join(overlayDir, 'certs', 'certificate.pem')
+    fs.mkdirSync(path.dirname(certificate), { recursive: true })
+    fs.writeFileSync(certificate, 'test certificate')
+
+    try {
+      const updates = resolveOverlayUpdates(overlayDir, {
+        updates: { codeSigningCertificate: 'certs/certificate.pem' },
+      })
+      const configured = updates?.codeSigningCertificate
+
+      expect(configured).toBeDefined()
+      expect(path.isAbsolute(configured!)).toBe(false)
+      expect(path.resolve(__dirname, '../..', configured!)).toBe(certificate)
+    } finally {
+      fs.rmSync(overlayDir, { force: true, recursive: true })
+    }
+  })
+})

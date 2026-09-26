@@ -1,0 +1,9 @@
+{
+  "symbolNotFound": "심볼을 찾을 수 없음",
+  "quoteUnavailable": "시세 정보 없음",
+  "candlesIntraday": "{interval} 캔들",
+  "sessions": "{count} 세션",
+  "live": "실시간",
+  "frozen": "마감",
+  "todayIntraday": "오늘 · 분봉"
+}

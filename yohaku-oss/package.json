@@ -1,0 +1,19 @@
+{
+  "name": "yohaku",
+  "private": true,
+  "description": "Yohaku iOS client, and the design system it uses.",
+  "packageManager": "pnpm@11.0.0",
+  "enriched-markdown": {
+    "enableCodeHighlight": false,
+    "enableMath": false
+  },
+  "scripts": {
+    "dev": "pnpm --filter @yohaku/design-system showcase:dev",
+    "build": "pnpm --filter @yohaku/design-system showcase:build",
+    "preview": "pnpm --filter @yohaku/design-system showcase:preview",
+    "check": "pnpm --filter @yohaku/design-system check",
+    "test": "pnpm --filter @yohaku/design-system test",
+    "demo:pdf": "pnpm --filter @yohaku/design-system demo:pdf",
+    "mobile": "pnpm --filter @yohaku/mobile start"
+  }
+}

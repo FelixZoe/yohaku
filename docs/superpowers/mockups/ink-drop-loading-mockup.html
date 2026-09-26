@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Waterdrop Loading · Canvas Mockup</title>
+  <style>
+    :root {
+      --color-neutral-1: #f9f8f5;
+      --color-neutral-2: #f0efeb;
+      --color-neutral-3: #e3e1db;
+      --color-neutral-4: #d0cec6;
+      --color-neutral-5: #a8a69f;
+      --color-neutral-6: #787670;
+      --color-neutral-7: #5c5a55;
+      --color-neutral-8: #403f3a;
+      --color-neutral-9: #24231f;
+      --color-neutral-10: #141312;
+      --color-accent: #c56473;
+      --color-paper: #faf9f5;
+      --color-border: rgba(24, 24, 27, 0.1);
+
+      --font-sans: -apple-system, 'PingFang SC', 'Microsoft YaHei',
+                   'Noto Sans SC', 'Hiragino Sans GB', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', Consolas, Monaco,
+                   'Hannotate SC', monospace;
+    }
+
+    [data-theme='dark'] {
+      --color-neutral-1: #141414;
+      --color-neutral-2: #242424;
+      --color-neutral-3: #404040;
+      --color-neutral-4: #5c5c5c;
+      --color-neutral-5: #787878;
+      --color-neutral-6: #a8a8a8;
+      --color-neutral-7: #d0d0d0;
+      --color-neutral-8: #e3e3e3;
+      --color-neutral-9: #f0f0f0;
+      --color-neutral-10: #f8f8f8;
+      --color-paper: #1a1814;
+      --color-border: rgba(255, 255, 255, 0.1);
+    }
+
+    * { box-sizing: border-box; }
+    html { font-size: 14px; line-height: 1.5; letter-spacing: 0.01em; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--color-paper);
+      color: var(--color-neutral-9);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+    .mockup-shell { max-width: 1080px; margin: 0 auto; padding: 32px 24px 80px; }
+    .mockup-h1 {
+      font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.3em;
+      text-transform: uppercase; color: var(--color-neutral-6); margin: 8px 0 4px;
+    }
+    .mockup-title { font-size: 28px; font-weight: 500; margin: 0 0 8px; color: var(--color-neutral-10); }
+    .mockup-lede { color: var(--color-neutral-7); max-width: 60ch; margin: 0 0 40px; line-height: 1.7; }
+
+    .panel-h {
+      display: flex; align-items: baseline; justify-content: space-between;
+      border-bottom: 1px solid var(--color-neutral-3);
+      padding-bottom: 10px; margin: 32px 0 20px;
+    }
+    .panel-h h2 {
+      margin: 0; font-family: var(--font-mono); font-size: 11px;
+      letter-spacing: 0.25em; text-transform: uppercase; color: var(--color-neutral-7);
+    }
+    .panel-h span { font-family: var(--font-mono); font-size: 11px; color: var(--color-neutral-6); }
+
+    /* canvas-driven mark · all rendering lives in JS */
+    .wm-canvas {
+      display: inline-block;
+      vertical-align: middle;
+      color: var(--color-neutral-10); /* JS reads currentColor */
+      flex-shrink: 0;
+    }
+    .wm-canvas.size-sm { width: 18px; height: 18px; }
+    .wm-canvas.size-md { width: 30px; height: 30px; }
+    .wm-canvas.size-lg { width: 60px; height: 60px; }
+
+    .grid-sizes {
+      display: grid; grid-template-columns: 110px repeat(3, 1fr); gap: 0;
+      border: 1px solid var(--color-neutral-3); border-radius: 10px; overflow: hidden;
+      background: color-mix(in srgb, var(--color-paper) 60%, transparent);
+    }
+    .grid-sizes > div {
+      padding: 26px 18px;
+      border-right: 1px solid var(--color-neutral-3);
+      border-bottom: 1px solid var(--color-neutral-3);
+    }
+    .grid-sizes > div:nth-child(4n) { border-right: 0; }
+    .grid-sizes > div:nth-last-child(-n+4) { border-bottom: 0; }
+    .grid-sizes > .gh {
+      background: color-mix(in srgb, var(--color-neutral-2) 50%, transparent);
+      font-family: var(--font-mono); font-size: 11px; color: var(--color-neutral-7);
+      letter-spacing: 0.15em; text-transform: uppercase;
+      display: flex; align-items: center;
+    }
+    .grid-sizes > .cell {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+      min-height: 110px;
+    }
+    .cell-label { font-family: var(--font-mono); font-size: 10px; color: var(--color-neutral-6); }
+
+    .row { display: flex; gap: 28px; flex-wrap: wrap; align-items: center; margin-bottom: 22px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 14px; border-radius: 8px;
+      background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+      color: var(--color-accent); font-weight: 500; font-size: 13px;
+      cursor: default;
+    }
+    .btn .wm-canvas { color: var(--color-accent); }
+    .btn--ghost {
+      background: transparent; border: 1px solid var(--color-border);
+      color: var(--color-neutral-9);
+    }
+    .btn--ghost .wm-canvas { color: var(--color-neutral-9); }
+    .inline-status {
+      display: inline-flex; align-items: center; gap: 10px;
+      color: color-mix(in srgb, var(--color-neutral-10) 68%, transparent);
+      font-size: 13px; line-height: 1.6;
+      max-width: 26rem;
+    }
+    .list-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 18px;
+      border: 1px dashed var(--color-border); border-radius: 8px;
+      background: color-mix(in srgb, var(--color-neutral-2) 50%, transparent);
+      color: var(--color-neutral-7); font-size: 12px;
+      letter-spacing: 0.04em;
+      justify-content: center;
+    }
+    .standalone {
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+      padding: 40px;
+      border: 1px solid var(--color-border); border-radius: 12px;
+      background: color-mix(in srgb, var(--color-neutral-2) 30%, transparent);
+    }
+
+    .toolbar {
+      position: fixed; top: 12px; right: 12px; z-index: 10;
+      background: var(--color-neutral-2);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 4px 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--color-neutral-7);
+    }
+    .toolbar button {
+      background: none; border: none; cursor: pointer;
+      color: inherit; font: inherit; padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .toolbar button:hover { background: var(--color-neutral-3); }
+
+    code.kbd {
+      font-family: var(--font-mono); font-size: 11px;
+      background: var(--color-neutral-2);
+      color: var(--color-neutral-8);
+      padding: 1px 6px; border-radius: 4px;
+    }
+    .notes {
+      margin-top: 28px; padding: 18px 22px;
+      border: 1px solid var(--color-border); border-radius: 10px;
+      background: color-mix(in srgb, var(--color-neutral-2) 60%, transparent);
+      color: var(--color-neutral-7); font-size: 13px; line-height: 1.85;
+    }
+    .notes b { color: var(--color-neutral-10); }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">
+      light · dark
+    </button>
+  </div>
+
+  <main class="mockup-shell">
+    <p class="mockup-h1">@yohaku/design-system · loading · waterdrop · canvas</p>
+    <h1 class="mockup-title">Waterdrop ripple · Canvas2D</h1>
+    <p class="mockup-lede">
+      与 <code class="kbd">AjisaiBackground</code> 同一族：Canvas2D 内绘水珠 <code class="kbd">ctx.ellipse</code>，重力加速坠落（<code class="kbd">t^2.2</code>，自帧外起以蓄速）。
+      触水非淡化而是<em>融化</em>——alpha 全程为 1，scaleY 缓塌至 0、scaleX 同时外摊（pancake），bottom 始终锚于水线，几何上"压平入水"。
+      涟漪用 <code class="kbd">ctx.ellipse(x,y,r,r*0.32,...)</code> 作俯视椭圆，两道错峰。
+      所有实例共一 RAF；色取 <code class="kbd">currentColor</code>，dark 自适。
+    </p>
+
+    <div class="panel-h">
+      <h2>01 · sizes</h2>
+      <span>sm · md · lg</span>
+    </div>
+
+    <div class="grid-sizes">
+      <div class="gh"></div>
+      <div class="gh">sm · 18px</div>
+      <div class="gh">md · 30px</div>
+      <div class="gh">lg · 60px</div>
+
+      <div class="gh">live</div>
+      <div class="cell">
+        <canvas class="wm-canvas size-sm" data-cycle="2600" data-rings="1"></canvas>
+        <span class="cell-label">btn / suffix · ring×1</span>
+      </div>
+      <div class="cell">
+        <canvas class="wm-canvas size-md" data-cycle="2600" data-rings="2"></canvas>
+        <span class="cell-label">inline · ring×2</span>
+      </div>
+      <div class="cell">
+        <canvas class="wm-canvas size-lg" data-cycle="2800" data-rings="2"></canvas>
+        <span class="cell-label">standalone · ring×2</span>
+      </div>
+    </div>
+
+    <div class="panel-h">
+      <h2>02 · cycle speed</h2>
+      <span>data-cycle ms</span>
+    </div>
+
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:14px">
+        <canvas class="wm-canvas size-md" data-cycle="1900" data-rings="2"></canvas>
+        <span class="cell-label">1900 · brisk</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:14px">
+        <canvas class="wm-canvas size-md" data-cycle="2600" data-rings="2"></canvas>
+        <span class="cell-label">2600 · default</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:14px">
+        <canvas class="wm-canvas size-md" data-cycle="3400" data-rings="2"></canvas>
+        <span class="cell-label">3400 · meditative</span>
+      </div>
+    </div>
+
+    <div class="panel-h">
+      <h2>03 · use cases</h2>
+      <span>button · inline · list · standalone</span>
+    </div>
+
+    <div class="row">
+      <button class="btn">
+        <canvas class="wm-canvas size-sm" data-cycle="2100" data-rings="1"></canvas>
+        保存中
+      </button>
+      <button class="btn btn--ghost">
+        <canvas class="wm-canvas size-sm" data-cycle="2300" data-rings="1"></canvas>
+        加载条目
+      </button>
+      <span class="inline-status">
+        <canvas class="wm-canvas size-md" data-cycle="2600" data-rings="2"></canvas>
+        墨痕未散，文心已起。
+      </span>
+    </div>
+
+    <div class="list-row">
+      <canvas class="wm-canvas size-md" data-cycle="2700" data-rings="2"></canvas>
+      加载更多 · LOADING MORE
+    </div>
+
+    <div class="standalone" style="margin-top: 22px">
+      <canvas class="wm-canvas size-lg" data-cycle="2800" data-rings="2"></canvas>
+      <span style="font-size: 13px; color: var(--color-neutral-7); letter-spacing: 0.04em">
+        正在等候 · loading
+      </span>
+    </div>
+
+    <div class="notes">
+      <b>实现要点</b><br>
+      · <b>结构</b>：单 <code class="kbd">&lt;canvas&gt;</code>，css 尺寸定大小，JS 内部按 DPR 放大画布。无嵌套 DOM。<br>
+      · <b>drop</b>：<code class="kbd">ctx.ellipse</code> 通绘。下落占 cycle 的 <code class="kbd">0.00–0.15</code>，用 <code class="kbd">t^2.2</code> 加速；自 <code class="kbd">y = -4·r</code>（帧外）起，入帧仍只见高速末段。触水后 <code class="kbd">0.15–0.24</code> 保 alpha=1，<code class="kbd">scaleY=(1-p)^2.2 → 0</code> + <code class="kbd">scaleX → 1.68</code>，bottom 锚水线，即"压平入水"之形，无半透淡出。<br>
+      · <b>ring</b>：<code class="kbd">ctx.ellipse(x, y, r, r * 0.32, ...)</code>，aspect 0.32 = 俯视水面。第一道自 <code class="kbd">0.15</code> 起至 cycle 末，第二道自 <code class="kbd">0.44</code> 起，半径约 <code class="kbd">75%</code>、峰值 alpha 约 <code class="kbd">60%</code>。<br>
+      · <b>color</b>：JS 读 <code class="kbd">getComputedStyle(el).color</code>，即继承 CSS <code class="kbd">color</code>。父容器换色（如 .btn 用 accent）即跟随。<br>
+      · <b>RAF</b>：所有实例共一 ticker（<code class="kbd">requestAnimationFrame</code> 单循环），活实例列表驱动。off-screen 可入 IntersectionObserver 暂停（此 mockup 暂未加，React 实现时再补）。<br>
+      · <b>React API</b>：<code class="kbd">&lt;LoadingMark size="sm|md|lg" cycle?={ms} rings?={1|2}/&gt;</code>。旧 <code class="kbd">&lt;Loading inline text/&gt;</code> 仅换内部 mark。
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      const TAU = Math.PI * 2
+
+      // Phase plan (0..1):
+      //   0.00..0.15  drop falls (short t^2.2 descent, spawned above the frame)
+      //   0.15..0.24  drop merges into the surface by flattening, with alpha fixed at 1
+      //   0.15..1.00  ring 1 spreads and decays
+      //   0.44..1.00  ring 2 spreads later, smaller and quieter
+      const PHASES = {
+        fallStart: 0.00, fallEnd: 0.15,
+        mergeStart: 0.15, mergeEnd: 0.24,
+        ring1Start: 0.15, ring1End: 1.00,
+        ring2Start: 0.44, ring2End: 1.00,
+      }
+      const FALL_EXP = 2.2
+      const MERGE_EXP = 2.2
+      const BASELINE_RATIO = 0.68
+      const DROP_RADIUS_RATIO = 0.135
+      const FALL_START_MULTIPLIER = -4
+      const PANCAKE_SCALE_X_MAX = 1.68
+      const RING_ASPECT = 0.32
+      const RING_EASE_EXP = 1.8
+      const RING_ALPHA_EXP = 1.2
+      const SECONDARY_RING_SCALE = 0.75
+      const SECONDARY_RING_ALPHA = 0.6
+      const DROP_STOP_RY = 0.5
+
+      const instances = []
+      let rafId = null
+      const startTime = performance.now()
+
+      const clamp01 = (n) => Math.max(0, Math.min(1, n))
+      const lerp = (a, b, p) => a + (b - a) * p
+      const easeOut = (p, exp) => 1 - (1 - p) ** exp
+
+      function parseRgb(value) {
+        const body = value.match(/rgba?\((.*)\)/)?.[1]
+        if (!body) return { r: 20, g: 19, b: 18 }
+        const tokens = body
+          .replace(/\//g, ' ')
+          .split(/[,\s]+/)
+          .filter(Boolean)
+
+        const channel = (token) => {
+          if (token.endsWith('%')) return Math.round((parseFloat(token) / 100) * 255)
+          return Math.round(parseFloat(token))
+        }
+        const r = channel(tokens[0])
+        const g = channel(tokens[1])
+        const b = channel(tokens[2])
+        if (![r, g, b].every(Number.isFinite)) return { r: 20, g: 19, b: 18 }
+
+        return {
+          r: clamp01(r / 255) * 255,
+          g: clamp01(g / 255) * 255,
+          b: clamp01(b / 255) * 255,
+        }
+      }
+
+      function rgbToHsl({ r, g, b }) {
+        const rn = r / 255
+        const gn = g / 255
+        const bn = b / 255
+        const max = Math.max(rn, gn, bn)
+        const min = Math.min(rn, gn, bn)
+        const l = (max + min) / 2
+        const d = max - min
+        if (d === 0) return { h: 0, s: 0, l }
+
+        const s = d / (1 - Math.abs(2 * l - 1))
+        let h = 0
+        if (max === rn) h = ((gn - bn) / d) % 6
+        else if (max === gn) h = (bn - rn) / d + 2
+        else h = (rn - gn) / d + 4
+        h = Math.round(h * 60)
+        if (h < 0) h += 360
+
+        return { h, s, l }
+      }
+
+      function makeTone(canvas) {
+        const rgb = parseRgb(getComputedStyle(canvas).color)
+        const hsl = rgbToHsl(rgb)
+        const sat = Math.round(clamp01(hsl.s + 0.04) * 100)
+        const light = (delta) => Math.round(clamp01(hsl.l + delta) * 100)
+        const hsla = (delta, alpha = 1) =>
+          `hsla(${hsl.h}, ${sat}%, ${light(delta)}%, ${clamp01(alpha)})`
+
+        return {
+          core: hsla(0, 1),
+          highlight: hsla(hsl.l < 0.5 ? 0.52 : 0.18, 0.72),
+          shoulder: hsla(hsl.l < 0.5 ? 0.18 : 0.06, 0.96),
+          edge: hsla(hsl.l > 0.58 ? -0.34 : -0.16, 1),
+          ring: (alpha) =>
+            `rgba(${Math.round(rgb.r)}, ${Math.round(rgb.g)}, ${Math.round(rgb.b)}, ${clamp01(alpha)})`,
+        }
+      }
+
+      function resize(inst) {
+        const c = inst.canvas
+        const dpr = Math.min(window.devicePixelRatio || 1, 2)
+        const w = c.clientWidth
+        const h = c.clientHeight
+        if (!w || !h) return false
+        const pw = Math.round(w * dpr)
+        const ph = Math.round(h * dpr)
+        if (c.width !== pw || c.height !== ph) {
+          c.width = pw
+          c.height = ph
+        }
+        inst.cssW = w
+        inst.cssH = h
+        inst.dpr = dpr
+        return true
+      }
+
+      function strokeRing(ctx, tone, cx, baselineY, radius, p, peakAlpha, maxWidth) {
+        if (radius <= 0) return
+        const alpha = peakAlpha * (1 - p) ** RING_ALPHA_EXP
+        if (alpha < 0.003) return
+
+        const lineWidth = lerp(Math.max(0.35, maxWidth * 0.35), maxWidth, (1 - p) ** 0.9)
+        ctx.lineWidth = lineWidth
+        ctx.strokeStyle = tone.ring(alpha)
+        ctx.beginPath()
+        ctx.ellipse(cx, baselineY, radius, radius * RING_ASPECT, 0, 0, TAU)
+        ctx.stroke()
+      }
+
+      function fillDrop(ctx, tone, cx, centerY, rx, ry) {
+        if (ry < DROP_STOP_RY) return
+
+        const gradientRadius = Math.max(rx, ry) * 1.22
+        const gradient = ctx.createRadialGradient(
+          cx - rx * 0.38,
+          centerY - ry * 0.52,
+          Math.max(0.15, Math.min(rx, ry) * 0.06),
+          cx + rx * 0.16,
+          centerY + ry * 0.10,
+          gradientRadius,
+        )
+        gradient.addColorStop(0, tone.highlight)
+        gradient.addColorStop(0.22, tone.shoulder)
+        gradient.addColorStop(0.68, tone.core)
+        gradient.addColorStop(1, tone.edge)
+
+        ctx.fillStyle = gradient
+        ctx.beginPath()
+        ctx.ellipse(cx, centerY, rx, ry, 0, 0, TAU)
+        ctx.fill()
+      }
+
+      function drawInstance(inst, now) {
+        const c = inst.canvas
+        const ctx = inst.ctx
+        if (!resize(inst)) return
+
+        const { cssW, cssH, dpr, cycle, rings } = inst
+        const t = ((now - startTime) % cycle) / cycle
+
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+        ctx.clearRect(0, 0, cssW, cssH)
+
+        const cx = cssW / 2
+        const baselineY = cssH * BASELINE_RATIO
+        const size = Math.min(cssW, cssH)
+        const dropRadius = size * DROP_RADIUS_RATIO
+        const tone = makeTone(c)
+        const ring1MaxRadius = size * 0.43
+        const ring2MaxRadius = ring1MaxRadius * SECONDARY_RING_SCALE
+        const maxLineWidth = Math.max(0.65, size * 0.036)
+
+        // Drop: the bottom edge, not the center, is what meets the waterline.
+        if (t >= PHASES.fallStart && t < PHASES.mergeEnd) {
+          let centerY, rx, ry
+          if (t < PHASES.fallEnd) {
+            // Short free-fall read: the visible frame catches the fast tail.
+            const p = (t - PHASES.fallStart) / (PHASES.fallEnd - PHASES.fallStart)
+            const e = p ** FALL_EXP
+            const startCenterY = FALL_START_MULTIPLIER * dropRadius
+            const endCenterY = baselineY - dropRadius
+            centerY = startCenterY + (endCenterY - startCenterY) * e
+            rx = dropRadius
+            ry = dropRadius
+          } else {
+            // Merge: opacity remains 1; height collapses while width spreads.
+            const p = (t - PHASES.mergeStart) / (PHASES.mergeEnd - PHASES.mergeStart)
+            const spread = easeOut(p, 2)
+            const scaleX = lerp(1, PANCAKE_SCALE_X_MAX, spread)
+            const scaleY = (1 - p) ** MERGE_EXP
+            rx = dropRadius * scaleX
+            ry = dropRadius * scaleY
+            centerY = baselineY - ry
+          }
+          fillDrop(ctx, tone, cx, centerY, rx, ry)
+        }
+
+        if (t >= PHASES.ring1Start && t < PHASES.ring1End) {
+          const p = (t - PHASES.ring1Start) / (PHASES.ring1End - PHASES.ring1Start)
+          const radius = ring1MaxRadius * easeOut(p, RING_EASE_EXP)
+          strokeRing(ctx, tone, cx, baselineY, radius, p, 0.72, maxLineWidth)
+        }
+
+        if (rings >= 2 && t >= PHASES.ring2Start && t < PHASES.ring2End) {
+          const p = (t - PHASES.ring2Start) / (PHASES.ring2End - PHASES.ring2Start)
+          const radius = ring2MaxRadius * easeOut(p, RING_EASE_EXP)
+          strokeRing(
+            ctx,
+            tone,
+            cx,
+            baselineY,
+            radius,
+            p,
+            0.72 * SECONDARY_RING_ALPHA,
+            maxLineWidth * 0.78,
+          )
+        }
+      }
+
+      function tick(now) {
+        for (const inst of instances) drawInstance(inst, now)
+        rafId = requestAnimationFrame(tick)
+      }
+
+      function mount(canvas) {
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+        const inst = {
+          canvas,
+          ctx,
+          cycle: Number(canvas.dataset.cycle) || 1900,
+          rings: Math.max(1, Math.min(2, Number(canvas.dataset.rings) || 2)),
+          cssW: 0, cssH: 0, dpr: 1,
+        }
+        instances.push(inst)
+        if (rafId == null) rafId = requestAnimationFrame(tick)
+      }
+
+      function init() {
+        document.querySelectorAll('canvas.wm-canvas').forEach(mount)
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init)
+      } else {
+        init()
+      }
+    })()
+  </script>
+</body>
+</html>

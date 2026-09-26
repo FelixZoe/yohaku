@@ -1,0 +1,898 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Yohaku Mobile · 手记专栏</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500&display=swap" rel="stylesheet" />
+  <style>
+    /*
+     * Mockup tokens — mirror @yohaku/design-system/src/tokens.css.
+     * The verify script (scripts/check.ts) lints these against the package.
+     */
+    :root {
+      --color-neutral-1: #f9f8f5;
+      --color-neutral-2: #f0efeb;
+      --color-neutral-3: #e3e1db;
+      --color-neutral-4: #d0cec6;
+      --color-neutral-5: #a8a69f;
+      --color-neutral-6: #787670;
+      --color-neutral-7: #5c5a55;
+      --color-neutral-8: #403f3a;
+      --color-neutral-9: #24231f;
+      --color-neutral-10: #141312;
+
+      --color-accent: #c56473;
+      --color-info: #3d6896;
+      --color-success: #5e9f7e;
+      --color-warning: #a87a3d;
+      --color-error: #a64953;
+
+      --color-paper: #fdfcf9;
+      --color-desk: var(--color-neutral-2);
+      --color-border: rgba(24, 24, 27, 0.1);
+
+      --font-sans: -apple-system, 'PingFang SC', 'Microsoft YaHei',
+                   'Noto Sans SC', 'Hiragino Sans GB', system-ui, sans-serif;
+      --font-serif: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
+                    SongTi SC, STSong, Georgia, serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', Consolas, Monaco,
+                   'Hannotate SC', monospace;
+
+      --shadow-paper: 0 1px 2px rgba(20, 19, 18, 0.05),
+                      0 6px 20px rgba(20, 19, 18, 0.07);
+      --shadow-capsule: 0 1px 2px rgba(20, 19, 18, 0.08),
+                        0 10px 28px rgba(20, 19, 18, 0.16);
+    }
+
+    [data-theme='dark'] {
+      --color-neutral-1: #141414;
+      --color-neutral-2: #242424;
+      --color-neutral-3: #404040;
+      --color-neutral-4: #5c5c5c;
+      --color-neutral-5: #787878;
+      --color-neutral-6: #a8a8a8;
+      --color-neutral-7: #d0d0d0;
+      --color-neutral-8: #e3e3e3;
+      --color-neutral-9: #f0f0f0;
+      --color-neutral-10: #f8f8f8;
+
+      --color-paper: #242424;
+      --color-desk: var(--color-neutral-1);
+      --color-border: rgba(255, 255, 255, 0.1);
+      --shadow-paper: 0 1px 2px rgba(0, 0, 0, 0.35),
+                      0 6px 20px rgba(0, 0, 0, 0.28);
+      --shadow-capsule: 0 1px 2px rgba(0, 0, 0, 0.5),
+                        0 10px 28px rgba(0, 0, 0, 0.4);
+    }
+
+    * { box-sizing: border-box; }
+    html { font-size: 14px; line-height: 1.5; letter-spacing: 0.01em; }
+    body {
+      margin: 0;
+      background: var(--color-desk);
+      color: var(--color-neutral-9);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .toolbar {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 10;
+      background: var(--color-paper);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 4px 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--color-neutral-7);
+    }
+    .toolbar button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: inherit;
+      font: inherit;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .toolbar button:hover { background: var(--color-neutral-3); }
+
+    .shell {
+      max-width: 1760px;
+      margin: 0 auto;
+      padding: 36px 24px 96px;
+    }
+    .lede h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      line-height: 1.29;
+      font-weight: 500;
+      color: var(--color-neutral-10);
+      text-wrap: balance;
+    }
+    .lede p {
+      margin: 0 0 36px;
+      max-width: 68ch;
+      font-size: 14px;
+      line-height: 1.57;
+      color: var(--color-neutral-7);
+    }
+
+    .stage {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(260px, 1fr));
+      gap: 28px 20px;
+      align-items: start;
+    }
+    @media (max-width: 1400px) {
+      .stage { grid-template-columns: repeat(2, minmax(280px, 1fr)); }
+    }
+    @media (max-width: 720px) {
+      .stage { grid-template-columns: 1fr; justify-items: center; }
+    }
+
+    .col-label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+      padding: 0 4px;
+      width: 100%;
+      max-width: 390px;
+    }
+    .col-label h2 {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--color-neutral-9);
+    }
+    .col-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--color-neutral-7);
+    }
+    .col-note {
+      margin: 0 4px 12px;
+      max-width: 390px;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--color-neutral-7);
+    }
+
+    .phone {
+      width: 100%;
+      max-width: 390px;
+      background: var(--color-desk);
+      border-radius: 28px;
+      box-shadow:
+        0 0 0 1px var(--color-border),
+        0 24px 48px -24px rgba(20, 19, 18, 0.22);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 820px;
+      position: relative;
+    }
+    [data-theme='dark'] .phone {
+      box-shadow:
+        0 0 0 1px var(--color-border),
+        0 24px 48px -24px rgba(0, 0, 0, 0.55);
+    }
+
+    .status {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 22px 0;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--color-neutral-9);
+    }
+    .status-icons {
+      display: flex;
+      gap: 6px;
+      color: var(--color-neutral-8);
+      font-size: 11px;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 44px;
+      padding: 0 14px;
+    }
+    .nav-side {
+      min-width: 64px;
+      display: flex;
+      align-items: center;
+    }
+    .nav-side.end { justify-content: flex-end; }
+    .nav-ghost {
+      font-size: 13px;
+      line-height: 18px;
+      color: var(--color-neutral-7);
+      background: none;
+      border: none;
+      padding: 8px 4px;
+      font-family: var(--font-sans);
+    }
+    .nav-back {
+      width: 28px;
+      height: 28px;
+      color: var(--color-neutral-8);
+    }
+
+    .screen {
+      flex: 1;
+      padding: 4px 20px 88px;
+    }
+    .screen.detail { padding-bottom: 36px; }
+
+    .page-title {
+      margin: 2px 0 16px;
+      font-family: var(--font-serif);
+      font-size: 28px;
+      line-height: 1.29;
+      font-weight: 500;
+      color: var(--color-neutral-10);
+      text-wrap: balance;
+    }
+    .topic-masthead {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 2px 0 16px;
+    }
+    .topic-masthead .page-title {
+      margin: 0;
+    }
+
+    .meta {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--color-neutral-6);
+    }
+    .latest-title {
+      margin: 6px 0 0;
+      font-family: var(--font-serif);
+      font-size: 28px;
+      line-height: 1.29;
+      font-weight: 500;
+      color: var(--color-neutral-10);
+      text-wrap: balance;
+    }
+    .latest-body {
+      margin: 14px 0 0;
+      font-family: var(--font-serif);
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--color-neutral-8);
+      mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+      max-height: 168px;
+      overflow: hidden;
+    }
+
+    .topic-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      color: var(--color-neutral-7);
+      font-size: 12px;
+      line-height: 18px;
+    }
+    .topic-chip.quiet { margin-top: 8px; }
+
+    .topic-icon {
+      flex-shrink: 0;
+      object-fit: cover;
+      background: var(--color-neutral-3);
+      outline: 1px solid rgba(0, 0, 0, 0.1);
+      outline-offset: -1px;
+    }
+    [data-theme='dark'] .topic-icon {
+      outline-color: rgba(255, 255, 255, 0.1);
+    }
+    .topic-icon.sm {
+      width: 16px;
+      height: 16px;
+      border-radius: 5px;
+    }
+    .topic-icon.md {
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+    }
+    .topic-icon.lg {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+    }
+
+    .rule {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 22px 0 24px;
+    }
+    .rule-line {
+      flex: 1;
+      height: 1px;
+      background: var(--color-neutral-3);
+    }
+    .rule-label {
+      font-size: 10px;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      color: var(--color-neutral-6);
+    }
+
+    .year-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 10px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--color-neutral-3);
+    }
+    .year-head.later { margin-top: 28px; }
+    .year-kicker {
+      font-family: var(--font-serif);
+      font-size: 10px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--color-warning);
+    }
+    .year-num {
+      margin: 2px 0 0;
+      font-family: var(--font-serif);
+      font-size: 36px;
+      line-height: 1.1;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      color: var(--color-neutral-10);
+    }
+    .year-count {
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-neutral-6);
+    }
+
+    .year-block { position: relative; }
+    .spine {
+      position: absolute;
+      left: 7px;
+      top: 14px;
+      bottom: 8px;
+      width: 1px;
+      background: var(--color-neutral-3);
+    }
+    .entry-stack {
+      position: relative;
+      padding: 2px 0 20px 22px;
+    }
+    .entry-stack::before {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 8px;
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      border: 1.5px solid var(--color-neutral-4);
+      background: var(--color-desk);
+    }
+    .stack-date {
+      margin: 0 0 4px;
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      color: var(--color-neutral-6);
+    }
+    .note-title {
+      margin: 0;
+      font-family: var(--font-serif);
+      font-size: 16px;
+      line-height: 1.45;
+      font-weight: 500;
+      color: var(--color-neutral-9);
+    }
+    .note-mood {
+      margin: 6px 0 0;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--color-neutral-7);
+    }
+    .letter-no {
+      margin: 8px 0 0;
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--color-warning);
+    }
+
+    .series-list { display: flex; flex-direction: column; }
+    .series-item {
+      padding: 16px 0 18px;
+    }
+    .series-item + .series-item {
+      box-shadow: 0 -1px 0 var(--color-neutral-3);
+    }
+    .series-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .series-name {
+      margin: 0;
+      font-family: var(--font-serif);
+      font-size: 20px;
+      line-height: 1.3;
+      font-weight: 500;
+      color: var(--color-neutral-9);
+    }
+    .series-intro {
+      margin: 6px 0 0;
+      font-size: 13px;
+      line-height: 1.54;
+      color: var(--color-neutral-7);
+    }
+    .series-count {
+      margin: 8px 0 0;
+      font-size: 12px;
+      color: var(--color-neutral-6);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .topic-intro {
+      margin: 0 0 8px;
+      font-size: 14px;
+      line-height: 1.57;
+      color: var(--color-neutral-7);
+    }
+    .topic-meta {
+      margin: 0 0 22px;
+      font-size: 12px;
+      color: var(--color-neutral-6);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .topic-row {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      padding: 9px 0;
+    }
+    .topic-row + .topic-row {
+      box-shadow: 0 -1px 0 var(--color-neutral-3);
+    }
+    .topic-row-date {
+      width: 42px;
+      flex-shrink: 0;
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      color: var(--color-neutral-6);
+    }
+    .topic-row-title {
+      min-width: 0;
+      font-family: var(--font-serif);
+      font-size: 15px;
+      line-height: 1.4;
+      font-weight: 500;
+      color: var(--color-neutral-9);
+    }
+
+    .detail-title {
+      margin: 8px 0 0;
+      font-family: var(--font-serif);
+      font-size: 28px;
+      line-height: 1.29;
+      font-weight: 500;
+      color: var(--color-neutral-10);
+      text-wrap: balance;
+    }
+    .detail-body {
+      margin: 18px 0 0;
+      font-family: var(--font-serif);
+      font-size: 16px;
+      line-height: 1.7;
+      color: var(--color-neutral-9);
+    }
+    .detail-body p { margin: 0 0 1em; }
+    .hairline {
+      height: 1px;
+      background: var(--color-neutral-3);
+      margin: 28px 0 18px;
+    }
+    .in-topic-kicker {
+      margin: 0 0 8px;
+      font-size: 12px;
+      color: var(--color-neutral-7);
+    }
+    .in-topic-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .in-topic-name {
+      margin: 0;
+      font-family: var(--font-serif);
+      font-size: 20px;
+      line-height: 1.3;
+      font-weight: 500;
+      color: var(--color-neutral-9);
+    }
+    .in-topic-intro {
+      margin: 6px 0 0;
+      font-size: 13px;
+      line-height: 1.54;
+      color: var(--color-neutral-7);
+    }
+
+    .like-row {
+      display: flex;
+      justify-content: center;
+      margin: 22px 0 0;
+    }
+    .like-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      height: 40px;
+      padding: 0 18px;
+      border-radius: 999px;
+      background: var(--color-paper);
+      box-shadow: var(--shadow-paper);
+      color: var(--color-neutral-8);
+      font-size: 14px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tab-dock {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 14px;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .capsule {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      width: min(328px, calc(100% - 32px));
+      height: 56px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: color-mix(in oklab, var(--color-paper) 88%, transparent);
+      box-shadow: var(--shadow-capsule);
+      backdrop-filter: blur(20px);
+    }
+    .tab {
+      width: 44px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      color: var(--color-neutral-6);
+    }
+    .tab.active { color: var(--color-accent); }
+    .tab svg { width: 22px; height: 22px; }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">
+      light · dark
+    </button>
+  </div>
+
+  <main class="shell">
+    <header class="lede">
+      <h1>手记专栏 · 方案 B</h1>
+      <p>
+        手记 Tab 仍是信箱。专栏是信的属性：列表右上角一个安静入口，属于某专栏的信带一枚标记，详情页底部再说一次「这篇在某专栏」。不把时间线切成两栏。
+      </p>
+    </header>
+
+    <div class="stage">
+      <section>
+        <div class="col-label">
+          <h2>手记列表</h2>
+          <span class="col-tag">入口</span>
+        </div>
+        <p class="col-note">右上「专栏」进索引。最新一篇和部分旧信带标记，没专栏的信不画空位。</p>
+        <article class="phone">
+          <div class="status">
+            <span>9:41</span>
+            <span class="status-icons">●●● LTE</span>
+          </div>
+          <div class="nav">
+            <div class="nav-side"></div>
+            <div class="nav-side end">
+              <span class="nav-ghost">专栏</span>
+            </div>
+          </div>
+          <div class="screen">
+            <p class="meta">晴 · 开心 · 3月 14</p>
+            <h1 class="latest-title">春日散步随想</h1>
+            <p class="topic-chip">
+              专栏 ·
+              <img class="topic-icon sm" alt="" src="https://images.unsplash.com/photo-1480796927426-f609979314bd?auto=format&fit=crop&w=64&h=64&q=60" />
+              北海道
+            </p>
+            <div class="latest-body">
+              樱花开了一半，风里有 sakura 和沥青被晒热的味道。走到河堤才想起，去年也是这一天出门。河对面的公寓还没换窗帘，窗台上多了一盆绿萝。
+            </div>
+
+            <div class="rule">
+              <div class="rule-line"></div>
+              <span class="rule-label">Older notes</span>
+              <div class="rule-line"></div>
+            </div>
+
+            <header class="year-head">
+              <div>
+                <div class="year-kicker">Anno</div>
+                <div class="year-num">2026</div>
+              </div>
+              <div class="year-count">12 letters</div>
+            </header>
+            <div class="year-block">
+              <div class="spine"></div>
+              <article class="entry-stack">
+                <p class="stack-date">3月 12 · 周三</p>
+                <h2 class="note-title">深夜的代码与咖啡</h2>
+                <p class="note-mood">夜 · 沉思</p>
+                <p class="letter-no">Letter №141</p>
+              </article>
+              <article class="entry-stack">
+                <p class="stack-date">2月 28 · 周六</p>
+                <h2 class="note-title">札幌的雪停了</h2>
+                <p class="letter-no">Letter №138</p>
+                <p class="topic-chip quiet">
+                  专栏 ·
+                  <img class="topic-icon sm" alt="" src="https://images.unsplash.com/photo-1480796927426-f609979314bd?auto=format&fit=crop&w=64&h=64&q=60" />
+                  北海道
+                </p>
+              </article>
+            </div>
+          </div>
+          <div class="tab-dock">
+            <nav class="capsule" aria-label="tabs">
+              <span class="tab" aria-label="博文">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 4.5A2.5 2.5 0 0 0 3.5 7v11A1.5 1.5 0 0 0 6 19.4V4.5Zm2 .2v14.7a1.5 1.5 0 0 0 1.7.1l.3-.2 8-4.2a1.5 1.5 0 0 0 .8-1.3V7A2.5 2.5 0 0 0 16 4.5H8Z"/></svg>
+              </span>
+              <span class="tab active" aria-label="手记">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5.2 19.2 18 6.4a1.7 1.7 0 0 1 2.4 2.4L7.6 21.6 4 22.4l1.2-3.2Z"/></svg>
+              </span>
+              <span class="tab" aria-label="思考">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 16.5c-1.7-1.4-2.7-3.3-2.7-5.4C3.3 7 7.2 3.5 12 3.5S20.7 7 20.7 11.1c0 4.1-3.9 7.6-8.7 7.6-.9 0-1.8-.1-2.6-.4L5 20.4l1-3.9Z"/></svg>
+              </span>
+              <span class="tab" aria-label="我">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="9" r="3.2"/><path d="M5.4 19.2a6.6 6.6 0 0 1 13.2 0"/></svg>
+              </span>
+            </nav>
+          </div>
+        </article>
+      </section>
+
+      <section>
+        <div class="col-label">
+          <h2>专栏索引</h2>
+          <span class="col-tag">全部系列</span>
+        </div>
+        <p class="col-note">仍在手记 Tab 里。名字、介绍、篇数直接铺在桌上，发丝线隔开。</p>
+        <article class="phone">
+          <div class="status">
+            <span>9:41</span>
+            <span class="status-icons">●●● LTE</span>
+          </div>
+          <div class="nav">
+            <div class="nav-side">
+              <svg class="nav-back" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16.5 7.5 9.5 14l7 6.5" />
+              </svg>
+            </div>
+            <div class="nav-side end"></div>
+          </div>
+          <div class="screen">
+            <h1 class="page-title">专栏</h1>
+            <div class="series-list">
+              <article class="series-item">
+                <div class="series-head">
+                  <img class="topic-icon md" alt="" src="https://images.unsplash.com/photo-1480796927426-f609979314bd?auto=format&fit=crop&w=88&h=88&q=60" />
+                  <h2 class="series-name">北海道</h2>
+                </div>
+                <p class="series-intro">冬天去了两次。雪、汤、夜行巴士，以及一些没写成博文的边角。</p>
+                <p class="series-count">8 篇</p>
+              </article>
+              <article class="series-item">
+                <div class="series-head">
+                  <img class="topic-icon md" alt="" src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=88&h=88&q=60" />
+                  <h2 class="series-name">厨房</h2>
+                </div>
+                <p class="series-intro">一周做一顿认真的晚饭。失败的也记。</p>
+                <p class="series-count">14 篇</p>
+              </article>
+              <article class="series-item">
+                <div class="series-head">
+                  <img class="topic-icon md" alt="" src="https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=88&h=88&q=60" />
+                  <h2 class="series-name">读过</h2>
+                </div>
+                <p class="series-intro">不是书评。读完后还记得的几句。</p>
+                <p class="series-count">6 篇</p>
+              </article>
+              <article class="series-item">
+                <div class="series-head">
+                  <img class="topic-icon md" alt="" src="https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=88&h=88&q=60" />
+                  <h2 class="series-name">关于写作</h2>
+                </div>
+                <p class="series-intro">给自己看的工作笔记。</p>
+                <p class="series-count">4 篇</p>
+              </article>
+            </div>
+          </div>
+          <div class="tab-dock">
+            <nav class="capsule" aria-label="tabs">
+              <span class="tab" aria-label="博文">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 4.5A2.5 2.5 0 0 0 3.5 7v11A1.5 1.5 0 0 0 6 19.4V4.5Zm2 .2v14.7a1.5 1.5 0 0 0 1.7.1l.3-.2 8-4.2a1.5 1.5 0 0 0 .8-1.3V7A2.5 2.5 0 0 0 16 4.5H8Z"/></svg>
+              </span>
+              <span class="tab active" aria-label="手记">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5.2 19.2 18 6.4a1.7 1.7 0 0 1 2.4 2.4L7.6 21.6 4 22.4l1.2-3.2Z"/></svg>
+              </span>
+              <span class="tab" aria-label="思考">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 16.5c-1.7-1.4-2.7-3.3-2.7-5.4C3.3 7 7.2 3.5 12 3.5S20.7 7 20.7 11.1c0 4.1-3.9 7.6-8.7 7.6-.9 0-1.8-.1-2.6-.4L5 20.4l1-3.9Z"/></svg>
+              </span>
+              <span class="tab" aria-label="我">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="9" r="3.2"/><path d="M5.4 19.2a6.6 6.6 0 0 1 13.2 0"/></svg>
+              </span>
+            </nav>
+          </div>
+        </article>
+      </section>
+
+      <section>
+        <div class="col-label">
+          <h2>专栏详情</h2>
+          <span class="col-tag">系列页</span>
+        </div>
+        <p class="col-note">名字当大标题。介绍压低。下面是按年的细行，不再重复信箱那套 spine。</p>
+        <article class="phone">
+          <div class="status">
+            <span>9:41</span>
+            <span class="status-icons">●●● LTE</span>
+          </div>
+          <div class="nav">
+            <div class="nav-side">
+              <svg class="nav-back" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16.5 7.5 9.5 14l7 6.5" />
+              </svg>
+            </div>
+            <div class="nav-side end"></div>
+          </div>
+          <div class="screen">
+            <div class="topic-masthead">
+              <img class="topic-icon lg" alt="" src="https://images.unsplash.com/photo-1480796927426-f609979314bd?auto=format&fit=crop&w=128&h=128&q=60" />
+              <h1 class="page-title">北海道</h1>
+            </div>
+            <p class="topic-intro">冬天去了两次。雪、汤、夜行巴士，以及一些没写成博文的边角。</p>
+            <p class="topic-meta">8 篇 · 最近更新 3 天前</p>
+
+            <header class="year-head">
+              <div>
+                <div class="year-kicker">Anno</div>
+                <div class="year-num">2026</div>
+              </div>
+              <div class="year-count">3 letters</div>
+            </header>
+            <div class="topic-row">
+              <span class="topic-row-date">03.14</span>
+              <span class="topic-row-title">春日散步随想</span>
+            </div>
+            <div class="topic-row">
+              <span class="topic-row-date">02.28</span>
+              <span class="topic-row-title">札幌的雪停了</span>
+            </div>
+            <div class="topic-row">
+              <span class="topic-row-date">01.06</span>
+              <span class="topic-row-title">小樽的夜</span>
+            </div>
+
+            <header class="year-head later">
+              <div>
+                <div class="year-kicker">Anno</div>
+                <div class="year-num">2025</div>
+              </div>
+              <div class="year-count">5 letters</div>
+            </header>
+            <div class="topic-row">
+              <span class="topic-row-date">12.22</span>
+              <span class="topic-row-title">回函馆的路上</span>
+            </div>
+            <div class="topic-row">
+              <span class="topic-row-date">12.19</span>
+              <span class="topic-row-title">汤之川的早晨</span>
+            </div>
+            <div class="topic-row">
+              <span class="topic-row-date">12.17</span>
+              <span class="topic-row-title">第一场雪</span>
+            </div>
+          </div>
+          <div class="tab-dock">
+            <nav class="capsule" aria-label="tabs">
+              <span class="tab" aria-label="博文">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 4.5A2.5 2.5 0 0 0 3.5 7v11A1.5 1.5 0 0 0 6 19.4V4.5Zm2 .2v14.7a1.5 1.5 0 0 0 1.7.1l.3-.2 8-4.2a1.5 1.5 0 0 0 .8-1.3V7A2.5 2.5 0 0 0 16 4.5H8Z"/></svg>
+              </span>
+              <span class="tab active" aria-label="手记">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5.2 19.2 18 6.4a1.7 1.7 0 0 1 2.4 2.4L7.6 21.6 4 22.4l1.2-3.2Z"/></svg>
+              </span>
+              <span class="tab" aria-label="思考">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 16.5c-1.7-1.4-2.7-3.3-2.7-5.4C3.3 7 7.2 3.5 12 3.5S20.7 7 20.7 11.1c0 4.1-3.9 7.6-8.7 7.6-.9 0-1.8-.1-2.6-.4L5 20.4l1-3.9Z"/></svg>
+              </span>
+              <span class="tab" aria-label="我">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="9" r="3.2"/><path d="M5.4 19.2a6.6 6.6 0 0 1 13.2 0"/></svg>
+              </span>
+            </nav>
+          </div>
+        </article>
+      </section>
+
+      <section>
+        <div class="col-label">
+          <h2>手记详情</h2>
+          <span class="col-tag">从信进去</span>
+        </div>
+        <p class="col-note">底栏退下。正文后一条发丝线，再写专栏名和介绍。点名字进去。没有专栏就不出现。</p>
+        <article class="phone">
+          <div class="status">
+            <span>9:41</span>
+            <span class="status-icons">●●● LTE</span>
+          </div>
+          <div class="nav">
+            <div class="nav-side">
+              <svg class="nav-back" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16.5 7.5 9.5 14l7 6.5" />
+              </svg>
+            </div>
+            <div class="nav-side end">
+              <span class="nav-ghost">···</span>
+            </div>
+          </div>
+          <div class="screen detail">
+            <p class="meta">晴 · 开心 · 3月 14</p>
+            <h1 class="detail-title">春日散步随想</h1>
+            <div class="detail-body">
+              <p>樱花开了一半，风里有 sakura 和沥青被晒热的味道。走到河堤才想起，去年也是这一天出门。</p>
+              <p>河对面的公寓还没换窗帘，窗台上多了一盆绿萝。我在栏杆上站了一会儿，没有拍照。</p>
+            </div>
+            <div class="hairline"></div>
+            <article>
+              <p class="in-topic-kicker">此手记收录于专栏</p>
+              <div class="in-topic-head">
+                <img class="topic-icon md" alt="" src="https://images.unsplash.com/photo-1480796927426-f609979314bd?auto=format&fit=crop&w=88&h=88&q=60" />
+                <h2 class="in-topic-name">北海道</h2>
+              </div>
+              <p class="in-topic-intro">冬天去了两次。雪、汤、夜行巴士，以及一些没写成博文的边角。</p>
+            </article>
+            <div class="like-row">
+              <span class="like-pill">♡ 12</span>
+            </div>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

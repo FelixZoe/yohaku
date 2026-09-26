@@ -1,0 +1,5 @@
+# Raw lighthouse reports are build artifacts — large, regeneratable.
+# Only summary.md / diff*.md / spec*.md / findings*.md / pages.json / scripts
+# are committed.
+baseline/*/*.report.json
+baseline/*/*.report.html

@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Post 天头纹理 · v4 WebGL</title>
+<style>
+  :root {
+    --color-neutral-1: #f9f8f5;
+    --color-neutral-2: #f0efeb;
+    --color-neutral-3: #e3e1db;
+    --color-neutral-4: #d0cec6;
+    --color-neutral-5: #a8a69f;
+    --color-neutral-6: #787670;
+    --color-neutral-7: #5c5a55;
+    --color-neutral-8: #403f3a;
+    --color-neutral-9: #24231f;
+    --color-neutral-10: #141312;
+    --color-accent: #c56473;
+    --color-paper: #faf9f5;
+    --color-border: rgba(24, 24, 27, 0.1);
+    --font-sans: -apple-system, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', Consolas, Monaco, monospace;
+    --header-glass: rgba(255, 255, 255, 0.38);
+    --header-solid: #fff;
+  }
+  [data-theme='dark'] {
+    --color-neutral-1: #141414;
+    --color-neutral-2: #242424;
+    --color-neutral-3: #404040;
+    --color-neutral-4: #5c5c5c;
+    --color-neutral-5: #787878;
+    --color-neutral-6: #a8a8a8;
+    --color-neutral-7: #d0d0d0;
+    --color-neutral-8: #e3e3e3;
+    --color-neutral-9: #f0f0f0;
+    --color-neutral-10: #f8f8f8;
+    --color-paper: #1a1814;
+    --color-border: rgba(255, 255, 255, 0.1);
+    --header-glass: rgba(24, 24, 24, 0.38);
+    --header-solid: #191919;
+  }
+
+  * { box-sizing: border-box; }
+  html { font-size: 14px; line-height: 1.5; letter-spacing: 0.01em; }
+  body { margin: 0; background: var(--color-neutral-2); color: var(--color-neutral-9); font-family: var(--font-sans); }
+  .shell { max-width: 1120px; margin: 0 auto; padding: 40px 20px 96px; }
+  .page-head { margin-bottom: 36px; }
+  .page-head h1 { font-size: 28px; line-height: 1.29; font-weight: 500; margin: 0 0 8px; }
+  .page-head p { margin: 0 0 8px; color: var(--color-neutral-7); font-size: 14px; max-width: 70ch; }
+  code { font-family: var(--font-mono); font-size: 12px; }
+
+  .toolbar {
+    position: fixed; top: 12px; right: 12px; z-index: 20;
+    background: var(--color-neutral-1); border: 1px solid var(--color-border);
+    border-radius: 6px; padding: 4px 6px;
+    font-family: var(--font-mono); font-size: 12px; color: var(--color-neutral-7);
+  }
+  .toolbar button { background: none; border: none; cursor: pointer; color: inherit; font: inherit; padding: 2px 6px; border-radius: 4px; }
+  .toolbar button:hover { background: var(--color-neutral-3); }
+  .toolbar button[data-on='1'] { background: var(--color-neutral-3); color: var(--color-neutral-9); }
+
+  .case { margin-bottom: 52px; }
+  .case-label { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+  .case-label .idx { font-family: var(--font-mono); font-size: 12px; color: var(--color-neutral-6); }
+  .case-label h2 { margin: 0; font-size: 20px; line-height: 1.4; font-weight: 500; }
+  .case-label .tag {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--color-neutral-6); border: 1px solid var(--color-border); border-radius: 3px; padding: 1px 5px;
+  }
+  .case-note { margin: 0 0 14px; font-size: 13px; line-height: 1.6; color: var(--color-neutral-7); max-width: 76ch; }
+  .case-meta { font-family: var(--font-mono); font-size: 12px; color: var(--color-neutral-6); margin: 10px 0 0; display: flex; gap: 16px; flex-wrap: wrap; }
+
+  .frame { position: relative; overflow: hidden; background: var(--color-paper); border: 1px solid var(--color-border); border-radius: 8px; height: 400px; }
+  .frame canvas { position: absolute; inset: 0 0 auto 0; width: 100%; height: 260px; z-index: 1; display: block; }
+  .article { position: relative; z-index: 2; max-width: 560px; margin: 0 auto; padding-top: 118px; }
+  .article h3 { margin: 0 0 12px; text-align: center; font-weight: 700; font-size: 36px; line-height: 1.22; color: var(--color-neutral-10); text-wrap: balance; }
+  .article .meta { text-align: center; font-size: 12px; color: var(--color-neutral-7); margin-bottom: 26px; }
+  .article .body { font-size: 15px; line-height: 1.6; color: var(--color-neutral-9); }
+
+  .hdr { position: absolute; inset: 0 0 auto 0; height: 72px; z-index: 9; pointer-events: none; }
+  .hdr .logo { position: absolute; top: 24px; left: 34px; width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--color-neutral-8); }
+  .hdr .auth { position: absolute; top: 24px; right: 26px; width: 24px; height: 24px; border-radius: 50%; background: var(--color-neutral-4); }
+  .hdr .pill {
+    position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+    height: 40px; border-radius: 2px; display: flex; align-items: center; padding: 0 6px;
+    background: var(--header-glass); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  }
+  .frame[data-solid='1'] .hdr .pill {
+    background: var(--header-solid); backdrop-filter: none; -webkit-backdrop-filter: none;
+    box-shadow: 0 6px 20px -10px rgba(0,0,0,0.12), 0 2px 6px -3px rgba(0,0,0,0.06);
+  }
+  .hdr .pill i { font-style: normal; font-size: 13px; color: var(--color-neutral-8); padding: 6px 12px; border-radius: 2px; white-space: nowrap; }
+  .hdr .pill i.on { background: rgba(255,255,255,0.9); box-shadow: 0 1px 4px rgba(0,0,0,0.10); }
+  [data-theme='dark'] .hdr .pill i.on { background: rgba(255,255,255,0.12); box-shadow: none; }
+  .hdr .sep { width: 1px; height: 14px; background: var(--color-border); }
+
+  .presence { position: absolute; left: 0; top: 88px; bottom: 24px; width: 14px; z-index: 8; pointer-events: none; }
+  .presence .track { position: absolute; left: 0; top: 0; bottom: 0; width: 1px; background: color-mix(in oklab, var(--color-neutral-9) 15%, transparent); }
+  .presence .done { position: absolute; left: 0; top: 0; height: 34%; width: 1px; background: color-mix(in oklab, var(--color-accent) 80%, transparent); }
+  .presence .node { position: absolute; left: -1px; top: 34%; width: 3px; height: 3px; background: color-mix(in oklab, var(--color-accent) 80%, transparent); }
+  .presence .other { position: absolute; left: -1px; width: 3px; height: 3px; background: color-mix(in oklab, var(--color-neutral-9) 30%, transparent); }
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <button onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; syncTheme()">light · dark</button>
+  <button data-on="0" onclick="toggleSolid(this)">header solid</button>
+  <button data-on="0" onclick="toggleFreeze(this)">freeze</button>
+</div>
+
+<div class="shell">
+  <div class="page-head">
+    <h1>Post 天头纹理 · v4（WebGL）</h1>
+    <p>全部走 fragment shader。共同约束：<strong>元素稀疏、尺度大、频率低</strong>——不用重复点阵 / 排线那类高密度图案；缓慢运动（周期以十秒计，不是"动画"是"呼吸"）；seed 决定形态所以每篇不同但可复算；左侧 14px 留给 Presence；玻璃条压上去只会得到大尺度的柔和。</p>
+    <p>仓库里已有裸 WebGL 的先例（<code>ScrollImageSoak/shader.ts</code>），实现路径是现成的。</p>
+  </div>
+
+  <section class="case">
+    <div class="case-label"><span class="idx">A</span><h2>流线 · Flow Lines</h2><span class="tag">9 条线</span></div>
+    <p class="case-note">只有 9 条极细的长曲线，沿一个低频流场缓慢漂移，越往下越淡直至消失。线之间间距 20px 以上，视觉上是稀疏的"笔迹"而不是纹理网。第 3 条压成 accent。整块画面的信息量比现在的色带还低，但有活的东西在里面。</p>
+    <div class="frame" data-solid="0"><canvas data-shader="flow" data-seed="0.37"></canvas>
+      <div class="presence"><span class="track"></span><span class="done"></span><span class="node"></span><span class="other" style="top:61%"></span></div>
+      <div class="hdr"><span class="logo"></span><span class="auth"></span><div class="pill"><i class="on">文稿</i><span class="sep"></span><i>思考</i><span class="sep"></span><i>时间线</i><span class="sep"></span><i>友链</i></div></div>
+      <div class="article"><h3>在 WKWebView 里重新学会排版</h3><div class="meta">2026-08-30 · 随笔 · 12 min</div><div class="body">把一段正文放进 WebView 之前，我一直以为排版是 CSS 的事。后来发现，真正决定它好不好读的，是它上面那块什么都没有的地方。</div></div>
+    </div>
+    <p class="case-meta"><span>密度 极低</span><span>周期 ≈ 60s</span><span>seed：相位/振幅</span></p>
+  </section>
+
+  <section class="case">
+    <div class="case-label"><span class="idx">B</span><h2>套色版 · Overprint Plates</h2><span class="tag">2 个色版</span></div>
+    <p class="case-note">没有线也没有点：两块大尺度的软形色版，一版 accent 一版 neutral，互相错开几个像素叠印，边缘是<strong>较硬的收口</strong>（不是模糊光斑——版形有明确轮廓，只是轮廓本身在缓慢变形）。这是 Presence 那套"错版印"语言的放大版。整块天头只有两个元素，密度趋近于零。</p>
+    <div class="frame" data-solid="0"><canvas data-shader="plates" data-seed="0.62"></canvas>
+      <div class="presence"><span class="track"></span><span class="done"></span><span class="node"></span><span class="other" style="top:61%"></span></div>
+      <div class="hdr"><span class="logo"></span><span class="auth"></span><div class="pill"><i class="on">文稿</i><span class="sep"></span><i>思考</i><span class="sep"></span><i>时间线</i><span class="sep"></span><i>友链</i></div></div>
+      <div class="article"><h3>在 WKWebView 里重新学会排版</h3><div class="meta">2026-08-30 · 随笔 · 12 min</div><div class="body">把一段正文放进 WebView 之前，我一直以为排版是 CSS 的事。后来发现，真正决定它好不好读的，是它上面那块什么都没有的地方。</div></div>
+    </div>
+    <p class="case-meta"><span>密度 ≈ 0</span><span>周期 ≈ 90s</span><span>seed：版形/错位方向</span></p>
+  </section>
+
+  <section class="case">
+    <div class="case-label"><span class="idx">C</span><h2>场线 · Field Lines</h2><span class="tag">6 条线 + 引力点</span></div>
+    <p class="case-note">6 条本来平直的横线，被一个看不见的引力点吸起来——引力点缓慢横向漂移，可以绑鼠标或阅读进度。稀疏、有明确的因果关系（一眼看懂"有东西在那儿"），而不是无意义的花纹。引力点所在的那条线是 accent。</p>
+    <div class="frame" data-solid="0"><canvas data-shader="field" data-seed="0.18"></canvas>
+      <div class="presence"><span class="track"></span><span class="done"></span><span class="node"></span><span class="other" style="top:61%"></span></div>
+      <div class="hdr"><span class="logo"></span><span class="auth"></span><div class="pill"><i class="on">文稿</i><span class="sep"></span><i>思考</i><span class="sep"></span><i>时间线</i><span class="sep"></span><i>友链</i></div></div>
+      <div class="article"><h3>在 WKWebView 里重新学会排版</h3><div class="meta">2026-08-30 · 随笔 · 12 min</div><div class="body">把一段正文放进 WebView 之前，我一直以为排版是 CSS 的事。后来发现，真正决定它好不好读的，是它上面那块什么都没有的地方。</div></div>
+    </div>
+    <p class="case-meta"><span>密度 极低</span><span>周期 ≈ 40s</span><span>可交互：鼠标 / 阅读进度</span></p>
+  </section>
+
+  <section class="case">
+    <div class="case-label"><span class="idx">D</span><h2>水位 · Iso Bands</h2><span class="tag">4 条等值线</span></div>
+    <p class="case-note">一个低频标量场，只抽 4 条等值线出来——线宽不均（场梯度大的地方线细），所以每条线自带粗细变化，像蘸水笔。比 v3 那版等高线少一半线、间距大一倍。最上面一条是 accent「水位线」，可以绑阅读进度上浮。</p>
+    <div class="frame" data-solid="0"><canvas data-shader="iso" data-seed="0.81"></canvas>
+      <div class="presence"><span class="track"></span><span class="done"></span><span class="node"></span><span class="other" style="top:61%"></span></div>
+      <div class="hdr"><span class="logo"></span><span class="auth"></span><div class="pill"><i class="on">文稿</i><span class="sep"></span><i>思考</i><span class="sep"></span><i>时间线</i><span class="sep"></span><i>友链</i></div></div>
+      <div class="article"><h3>在 WKWebView 里重新学会排版</h3><div class="meta">2026-08-30 · 随笔 · 12 min</div><div class="body">把一段正文放进 WebView 之前，我一直以为排版是 CSS 的事。后来发现，真正决定它好不好读的，是它上面那块什么都没有的地方。</div></div>
+    </div>
+    <p class="case-meta"><span>密度 低</span><span>周期 ≈ 70s</span><span>seed：场相位</span></p>
+  </section>
+</div>
+
+<script type="text/plain" id="vs">#version 300 es
+in vec2 aP;
+void main(){ gl_Position = vec4(aP, 0.0, 1.0); }
+</script>
+
+<script type="text/plain" id="fs-common">#version 300 es
+precision highp float;
+out vec4 fragColor;
+uniform vec2 uRes;
+uniform float uTime;
+uniform float uSeed;
+uniform vec3 uInk;
+uniform vec3 uAccent;
+
+float lineAA(float d, float w){
+  float aa = fwidth(d) * 1.2;
+  return 1.0 - smoothstep(w - aa, w + aa, d);
+}
+</script>
+
+<script type="text/plain" id="fs-flow">
+void main(){
+  vec2 uv = gl_FragCoord.xy / uRes;
+  uv.y = 1.0 - uv.y;
+  float t = uTime;
+  vec3 col = vec3(0.0);
+  float a = 0.0;
+
+  for (int i = 0; i < 9; i++) {
+    float fi = float(i);
+    float base = 0.07 + fi * 0.105;
+    float ph = uSeed * 6.2831 + fi * 0.83;
+    float y = base
+      + 0.052 * sin(uv.x * 1.9 + ph + t * 0.055)
+      + 0.024 * sin(uv.x * 3.6 - ph * 1.4 + t * 0.038)
+      + 0.011 * sin(uv.x * 7.2 + ph * 0.6 - t * 0.029);
+    float m = lineAA(abs(uv.y - y), 0.0016);
+    float depth = 1.0 - base * 0.55;
+    vec3 c = (i == 3) ? uAccent : uInk;
+    float alpha = m * depth * ((i == 3) ? 0.42 : 0.30);
+    col = mix(col, c, alpha > 0.0 ? alpha / max(a + alpha, 1e-4) : 0.0);
+    a = a + alpha - a * alpha;
+  }
+
+  float fade = smoothstep(1.0, 0.35, uv.y);
+  fragColor = vec4(col, a * fade);
+}
+</script>
+
+<script type="text/plain" id="fs-plates">
+float plate(vec2 p, vec2 c, float r, float t, float seed, float edge){
+  vec2 q = p - c;
+  q.y *= 1.9;
+  float ang = atan(q.y, q.x);
+  float rr = r * (1.0
+    + 0.16 * sin(ang * 2.0 + seed * 6.28 + t * 0.055)
+    + 0.09 * sin(ang * 3.0 - seed * 3.0 - t * 0.041)
+    + 0.05 * sin(ang * 5.0 + t * 0.033));
+  return smoothstep(rr, rr - edge, length(q));
+}
+
+void main(){
+  vec2 uv = gl_FragCoord.xy / uRes;
+  uv.y = 1.0 - uv.y;
+  float t = uTime;
+
+  vec2 c1 = vec2(0.38 + 0.02 * sin(t * 0.03), -0.10);
+  vec2 off = vec2(0.012, 0.018);
+
+  float pa = plate(uv, c1, 0.46, t, uSeed, 0.035);
+  float pb = plate(uv, c1 + off, 0.44, t, uSeed + 0.31, 0.035);
+
+  float aa = pa * 0.115;
+  float ab = pb * 0.085;
+
+  vec3 col = uAccent * aa + uInk * ab;
+  float a = aa + ab - aa * ab;
+  col = a > 0.0 ? col / a : col;
+
+  float fade = smoothstep(1.0, 0.30, uv.y);
+  fragColor = vec4(col, a * fade);
+}
+</script>
+
+<script type="text/plain" id="fs-field">
+void main(){
+  vec2 uv = gl_FragCoord.xy / uRes;
+  uv.y = 1.0 - uv.y;
+  float t = uTime;
+
+  vec2 att = vec2(0.5 + 0.30 * sin(t * 0.045 + uSeed * 6.28), 0.30);
+  vec3 col = vec3(0.0);
+  float a = 0.0;
+
+  for (int i = 0; i < 6; i++) {
+    float fi = float(i);
+    float base = 0.10 + fi * 0.135;
+    float dx = uv.x - att.x;
+    float falloff = exp(-dx * dx * 11.0);
+    float dy = base - att.y;
+    float pull = 0.115 * falloff / (1.0 + dy * dy * 26.0);
+    float y = base - pull;
+    float m = lineAA(abs(uv.y - y), 0.0015);
+    bool key = (i == 2);
+    vec3 c = key ? uAccent : uInk;
+    float alpha = m * (1.0 - base * 0.5) * (key ? 0.44 : 0.28);
+    col = mix(col, c, alpha > 0.0 ? alpha / max(a + alpha, 1e-4) : 0.0);
+    a = a + alpha - a * alpha;
+  }
+
+  float fade = smoothstep(1.0, 0.32, uv.y);
+  fragColor = vec4(col, a * fade);
+}
+</script>
+
+<script type="text/plain" id="fs-iso">
+float fieldValue(vec2 p, float t, float seed){
+  return sin(p.x * 2.3 + seed * 6.28 + t * 0.035) * 0.55
+       + sin(p.x * 1.1 - seed * 2.0 - t * 0.026) * 0.35
+       + sin(p.y * 3.4 + t * 0.021) * 0.75
+       + p.y * 1.6;
+}
+
+void main(){
+  vec2 uv = gl_FragCoord.xy / uRes;
+  uv.y = 1.0 - uv.y;
+  float t = uTime;
+
+  float v = fieldValue(uv, t, uSeed) * 1.15;
+  float g = 0.5 - abs(fract(v) - 0.5);
+  float w = fwidth(v) * 1.1 + 0.004;
+  float m = 1.0 - smoothstep(0.0, w, g);
+
+  float band = floor(v);
+  bool key = abs(band - floor(fieldValue(vec2(0.5, 0.16), t, uSeed) * 1.15)) < 0.5;
+
+  vec3 c = key ? uAccent : uInk;
+  float alpha = m * (key ? 0.40 : 0.26);
+  float fade = smoothstep(1.0, 0.30, uv.y) * smoothstep(0.0, 0.10, uv.y + 0.10);
+  fragColor = vec4(c, alpha * fade);
+}
+</script>
+
+<script>
+const VS = document.getElementById('vs').textContent
+const COMMON = document.getElementById('fs-common').textContent
+const SOURCES = {
+  flow: document.getElementById('fs-flow').textContent,
+  plates: document.getElementById('fs-plates').textContent,
+  field: document.getElementById('fs-field').textContent,
+  iso: document.getElementById('fs-iso').textContent,
+}
+
+let frozen = false
+const scenes = []
+
+function compile(gl, type, src) {
+  const s = gl.createShader(type)
+  gl.shaderSource(s, src)
+  gl.compileShader(s)
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+    console.error(gl.getShaderInfoLog(s), src)
+  }
+  return s
+}
+
+function hexToRgb(hex) {
+  const h = hex.trim().replace('#', '')
+  const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16)
+  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]
+}
+
+function themeColors() {
+  const cs = getComputedStyle(document.documentElement)
+  return {
+    ink: hexToRgb(cs.getPropertyValue('--color-neutral-6')),
+    accent: hexToRgb(cs.getPropertyValue('--color-accent')),
+  }
+}
+
+function initCanvas(canvas) {
+  const gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: false, antialias: true })
+  if (!gl) { canvas.replaceWith(Object.assign(document.createElement('div'), { textContent: 'WebGL2 不可用' })); return }
+  const kind = canvas.dataset.shader
+  const prog = gl.createProgram()
+  gl.attachShader(prog, compile(gl, gl.VERTEX_SHADER, VS))
+  gl.attachShader(prog, compile(gl, gl.FRAGMENT_SHADER, COMMON + SOURCES[kind]))
+  gl.bindAttribLocation(prog, 0, 'aP')
+  gl.linkProgram(prog)
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) console.error(gl.getProgramInfoLog(prog))
+
+  const buf = gl.createBuffer()
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf)
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW)
+  gl.enableVertexAttribArray(0)
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0)
+
+  gl.enable(gl.BLEND)
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+
+  const u = {
+    res: gl.getUniformLocation(prog, 'uRes'),
+    time: gl.getUniformLocation(prog, 'uTime'),
+    seed: gl.getUniformLocation(prog, 'uSeed'),
+    ink: gl.getUniformLocation(prog, 'uInk'),
+    accent: gl.getUniformLocation(prog, 'uAccent'),
+  }
+
+  const scene = { canvas, gl, prog, u, seed: parseFloat(canvas.dataset.seed || '0.5'), visible: true, t: 0 }
+  scenes.push(scene)
+
+  const io = new IntersectionObserver(([e]) => { scene.visible = e.isIntersecting }, { rootMargin: '120px' })
+  io.observe(canvas)
+
+  resize(scene)
+  return scene
+}
+
+function resize(scene) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2)
+  const w = Math.round(scene.canvas.clientWidth * dpr)
+  const h = Math.round(scene.canvas.clientHeight * dpr)
+  if (scene.canvas.width !== w || scene.canvas.height !== h) {
+    scene.canvas.width = w
+    scene.canvas.height = h
+  }
+}
+
+let colors = themeColors()
+function syncTheme() { colors = themeColors() }
+
+function tick(ms) {
+  const t = ms / 1000
+  for (const s of scenes) {
+    if (!s.visible) continue
+    resize(s)
+    const { gl, u } = s
+    gl.viewport(0, 0, s.canvas.width, s.canvas.height)
+    gl.useProgram(s.prog)
+    gl.uniform2f(u.res, s.canvas.width, s.canvas.height)
+    gl.uniform1f(u.time, frozen ? 12.0 : t)
+    gl.uniform1f(u.seed, s.seed)
+    gl.uniform3fv(u.ink, colors.ink)
+    gl.uniform3fv(u.accent, colors.accent)
+    gl.clearColor(0, 0, 0, 0)
+    gl.clear(gl.COLOR_BUFFER_BIT)
+    gl.drawArrays(gl.TRIANGLES, 0, 3)
+  }
+  requestAnimationFrame(tick)
+}
+
+document.querySelectorAll('canvas[data-shader]').forEach(initCanvas)
+requestAnimationFrame(tick)
+
+function toggleSolid(btn) {
+  const on = btn.dataset.on === '1' ? '0' : '1'
+  btn.dataset.on = on
+  document.querySelectorAll('.frame').forEach((f) => { f.dataset.solid = on })
+}
+function toggleFreeze(btn) {
+  const on = btn.dataset.on === '1' ? '0' : '1'
+  btn.dataset.on = on
+  frozen = on === '1'
+}
+</script>
+</body>
+</html>

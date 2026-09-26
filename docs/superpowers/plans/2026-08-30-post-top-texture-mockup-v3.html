@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Post 天头纹理 · v3</title>
+<style>
+  :root {
+    --color-neutral-1: #f9f8f5;
+    --color-neutral-2: #f0efeb;
+    --color-neutral-3: #e3e1db;
+    --color-neutral-4: #d0cec6;
+    --color-neutral-5: #a8a69f;
+    --color-neutral-6: #787670;
+    --color-neutral-7: #5c5a55;
+    --color-neutral-8: #403f3a;
+    --color-neutral-9: #24231f;
+    --color-neutral-10: #141312;
+
+    --color-accent: #c56473;
+    --color-paper: #faf9f5;
+    --color-border: rgba(24, 24, 27, 0.1);
+
+    --font-sans: -apple-system, 'PingFang SC', 'Microsoft YaHei',
+                 'Noto Sans SC', 'Hiragino Sans GB', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', Consolas, Monaco, monospace;
+
+    --header-glass: rgba(255, 255, 255, 0.38);
+    --header-solid: #fff;
+    --ink: var(--color-neutral-5);
+  }
+
+  [data-theme='dark'] {
+    --color-neutral-1: #141414;
+    --color-neutral-2: #242424;
+    --color-neutral-3: #404040;
+    --color-neutral-4: #5c5c5c;
+    --color-neutral-5: #787878;
+    --color-neutral-6: #a8a8a8;
+    --color-neutral-7: #d0d0d0;
+    --color-neutral-8: #e3e3e3;
+    --color-neutral-9: #f0f0f0;
+    --color-neutral-10: #f8f8f8;
+    --color-paper: #1a1814;
+    --color-border: rgba(255, 255, 255, 0.1);
+    --header-glass: rgba(24, 24, 24, 0.38);
+    --header-solid: #191919;
+  }
+
+  * { box-sizing: border-box; }
+  html { font-size: 14px; line-height: 1.5; letter-spacing: 0.01em; }
+  body { margin: 0; background: var(--color-neutral-2); color: var(--color-neutral-9); font-family: var(--font-sans); }
+
+  .shell { max-width: 1120px; margin: 0 auto; padding: 40px 20px 96px; }
+  .page-head { margin-bottom: 36px; }
+  .page-head h1 { font-size: 28px; line-height: 1.29; font-weight: 500; margin: 0 0 8px; }
+  .page-head p { margin: 0; color: var(--color-neutral-7); font-size: 14px; max-width: 68ch; }
+  .page-head code { font-family: var(--font-mono); font-size: 12px; }
+
+  .toolbar {
+    position: fixed; top: 12px; right: 12px; z-index: 20;
+    background: var(--color-neutral-1); border: 1px solid var(--color-border);
+    border-radius: 6px; padding: 4px 6px;
+    font-family: var(--font-mono); font-size: 12px; color: var(--color-neutral-7);
+  }
+  .toolbar button { background: none; border: none; cursor: pointer; color: inherit; font: inherit; padding: 2px 6px; border-radius: 4px; }
+  .toolbar button:hover { background: var(--color-neutral-3); }
+  .toolbar button[data-on='1'] { background: var(--color-neutral-3); color: var(--color-neutral-9); }
+
+  .case { margin-bottom: 52px; }
+  .case-label { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+  .case-label .idx { font-family: var(--font-mono); font-size: 12px; color: var(--color-neutral-6); }
+  .case-label h2 { margin: 0; font-size: 20px; line-height: 1.4; font-weight: 500; }
+  .case-label .tag {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--color-neutral-6); border: 1px solid var(--color-border); border-radius: 3px; padding: 1px 5px;
+  }
+  .case-note { margin: 0 0 14px; font-size: 13px; line-height: 1.6; color: var(--color-neutral-7); max-width: 74ch; }
+  .case-meta { font-family: var(--font-mono); font-size: 12px; color: var(--color-neutral-6); margin: 10px 0 0; display: flex; gap: 16px; flex-wrap: wrap; }
+
+  .frame {
+    position: relative; overflow: hidden;
+    background: var(--color-paper);
+    border: 1px solid var(--color-border); border-radius: 8px; height: 400px;
+  }
+  .tex { position: absolute; inset: 0 0 auto 0; pointer-events: none; z-index: 1; }
+  .article { position: relative; z-index: 2; max-width: 560px; margin: 0 auto; padding-top: 118px; }
+  .article h3 { margin: 0 0 12px; text-align: center; font-weight: 700; font-size: 36px; line-height: 1.22; color: var(--color-neutral-10); text-wrap: balance; }
+  .article .meta { text-align: center; font-size: 12px; color: var(--color-neutral-7); margin-bottom: 26px; }
+  .article .body { font-size: 15px; line-height: 1.6; color: var(--color-neutral-9); }
+
+  /* 悬浮 header（真实几何） */
+  .hdr { position: absolute; inset: 0 0 auto 0; height: 72px; z-index: 9; pointer-events: none; }
+  .hdr .logo { position: absolute; top: 24px; left: 34px; width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--color-neutral-8); }
+  .hdr .auth { position: absolute; top: 24px; right: 26px; width: 24px; height: 24px; border-radius: 50%; background: var(--color-neutral-4); }
+  .hdr .pill {
+    position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+    height: 40px; border-radius: 2px; display: flex; align-items: center; padding: 0 6px;
+    background: var(--header-glass);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  }
+  .frame[data-solid='1'] .hdr .pill {
+    background: var(--header-solid); backdrop-filter: none; -webkit-backdrop-filter: none;
+    box-shadow: 0 6px 20px -10px rgba(0,0,0,0.12), 0 2px 6px -3px rgba(0,0,0,0.06);
+  }
+  .hdr .pill i { font-style: normal; font-size: 13px; color: var(--color-neutral-8); padding: 6px 12px; border-radius: 2px; white-space: nowrap; }
+  .hdr .pill i.on { background: rgba(255,255,255,0.9); box-shadow: 0 1px 4px rgba(0,0,0,0.10); }
+  [data-theme='dark'] .hdr .pill i.on { background: rgba(255,255,255,0.12); box-shadow: none; }
+  .hdr .sep { width: 1px; height: 14px; background: var(--color-border); }
+
+  /* Presence 左轨 */
+  .presence { position: absolute; left: 0; top: 88px; bottom: 24px; width: 14px; z-index: 8; pointer-events: none; }
+  .presence .track { position: absolute; left: 0; top: 0; bottom: 0; width: 1px; background: color-mix(in oklab, var(--color-neutral-9) 15%, transparent); }
+  .presence .done { position: absolute; left: 0; top: 0; height: 34%; width: 1px; background: color-mix(in oklab, var(--color-accent) 80%, transparent); }
+  .presence .node { position: absolute; left: -1px; top: 34%; width: 3px; height: 3px; background: color-mix(in oklab, var(--color-accent) 80%, transparent); }
+  .presence .other { position: absolute; left: -1px; width: 3px; height: 3px; background: color-mix(in oklab, var(--color-neutral-9) 30%, transparent); }
+
+  /* ══ A · 网点 halftone ═════════════════════════════ */
+  .a-band { height: 180px; }
+  .a-band > div {
+    position: absolute; left: 0; right: 0;
+    background-repeat: repeat; background-position: center top;
+  }
+  .a-r1 { top: 0;   height: 44px; background-image: radial-gradient(circle at 4px 4px, var(--ink) 2.1px, transparent 2.2px); background-size: 8px 8px; opacity: 0.30; }
+  .a-r2 { top: 44px; height: 44px; background-image: radial-gradient(circle at 4px 4px, var(--ink) 1.5px, transparent 1.6px); background-size: 8px 8px; opacity: 0.26; }
+  .a-r3 { top: 88px; height: 44px; background-image: radial-gradient(circle at 4px 4px, var(--ink) 1.0px, transparent 1.1px); background-size: 8px 8px; opacity: 0.22; }
+  .a-r4 { top: 132px; height: 48px; background-image: radial-gradient(circle at 4px 4px, var(--ink) 0.55px, transparent 0.65px); background-size: 8px 8px; opacity: 0.18; }
+  .a-key {
+    position: absolute; top: 0; height: 180px; left: calc(50% - 210px); width: 140px;
+    background-image: radial-gradient(circle at 4px 4px, var(--color-accent) 1.6px, transparent 1.7px);
+    background-size: 8px 8px; opacity: 0.34;
+    -webkit-mask-image: linear-gradient(180deg, #000 0 30%, transparent 92%);
+    mask-image: linear-gradient(180deg, #000 0 30%, transparent 92%);
+  }
+
+  /* ══ B · 排线 hatch ════════════════════════════════ */
+  .b-band { height: 190px; }
+  .b-band > div { position: absolute; left: 0; right: 0; }
+  .b-h1 { top: 0;   height: 52px; background-image: repeating-linear-gradient(45deg, var(--ink) 0 0.7px, transparent 0.7px 4px); opacity: 0.26; }
+  .b-h2 { top: 52px; height: 52px; background-image: repeating-linear-gradient(45deg, var(--ink) 0 0.7px, transparent 0.7px 6.5px); opacity: 0.24; }
+  .b-h3 { top: 104px; height: 46px; background-image: repeating-linear-gradient(45deg, var(--ink) 0 0.7px, transparent 0.7px 10px); opacity: 0.2; }
+  .b-h4 { top: 150px; height: 40px; background-image: repeating-linear-gradient(45deg, var(--ink) 0 0.7px, transparent 0.7px 16px); opacity: 0.16; }
+  .b-cross {
+    position: absolute; top: 0; height: 104px; left: calc(50% - 300px); width: 190px;
+    background-image: repeating-linear-gradient(-45deg, var(--color-accent) 0 0.7px, transparent 0.7px 9px);
+    opacity: 0.3;
+    -webkit-mask-image: linear-gradient(180deg, #000 0 34%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 0 34%, transparent 100%);
+  }
+
+  /* ══ C · 等高线 contour ════════════════════════════ */
+  .c-band { height: 230px; }
+  .c-band svg { position: absolute; inset: 0; width: 100%; height: 230px; }
+  .c-band path { fill: none; stroke: var(--ink); stroke-width: 0.9; vector-effect: non-scaling-stroke; }
+  .c-band path.key { stroke: var(--color-accent); stroke-width: 1.1; }
+
+  /* ══ D · 干涉 moiré ════════════════════════════════ */
+  .d-band { height: 200px; }
+  .d-band > div {
+    position: absolute; inset: 0;
+    -webkit-mask-image: linear-gradient(180deg, #000 0 34%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 0 34%, transparent 100%);
+  }
+  .d-l1 { background-image: repeating-linear-gradient(91deg, var(--ink) 0 0.8px, transparent 0.8px 5px); opacity: 0.2; }
+  .d-l2 { background-image: repeating-linear-gradient(89deg, var(--ink) 0 0.8px, transparent 0.8px 5px); opacity: 0.2; }
+  .d-l3 {
+    background-image: repeating-linear-gradient(90deg, var(--color-accent) 0 0.8px, transparent 0.8px 5.4px);
+    opacity: 0.14;
+  }
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <button onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">light · dark</button>
+  <button data-on="0" onclick="toggle('solid', this)">header solid</button>
+</div>
+
+<div class="shell">
+  <div class="page-head">
+    <h1>Post 天头纹理 · v3</h1>
+    <p>四种背景纹理，全部由数学生成：零随机 seed 位移、零噪点层、无纸质感（不用毛边 / 帘纹 / grain）。每一种都是<strong>连续周期场</strong>，所以 header 玻璃条 <code>backdrop-blur(16px)</code> 压上去糊出来的是规则的柔和而不是脏色。左边缘 Presence 轨也画了，纹理全部避开左侧 14px。accent 在每种里只作为「一个套色版」出现一小块。</p>
+  </div>
+
+  <section class="case">
+    <div class="case-label"><span class="idx">A</span><h2>网点 · Halftone</h2><span class="tag">印刷网屏</span></div>
+    <p class="case-note">最纯粹的印刷语言：等距点阵，点径自上而下 2.1 → 0.55px 递减到消失。渐变不靠 alpha 斜坡，所以不会有色阶断层，也就完全不需要 grain 去 dither——这正是现在那层噪点存在的唯一理由。accent 是一块偏置的套色网点区，位置由 seed 决定。</p>
+    <div class="frame" data-solid="0">
+      <div class="tex a-band">
+        <div class="a-r1"></div><div class="a-r2"></div><div class="a-r3"></div><div class="a-r4"></div>
+        <div class="a-key"></div>
+      </div>
+      <div class="presence"><span class="track"></span><span class="done"></span><span class="node"></span><span class="other" style="top:61%"></span></div>
+      <div class="hdr"><span class="logo"></span><span class="auth"></span>
+        <div class="pill"><i class="on">文稿</i><span class="sep"></span><i>思考</i><span class="sep"></span><i>时间线</i><span class="sep"></span><i>友链</i></div></div>
+      <div class="article">
+        <h3>在 WKWebView 里重新学会排版</h3>
+        <div class="meta">2026-08-30 · 随笔 · 12 min</div>
+        <div class="body">把一段正文放进 WebView 之前，我一直以为排版是 CSS 的事。后来发现，真正决定它好不好读的，是它上面那块什么都没有的地方。</div>
+      </div>
+    </div>
+    <p class="case-meta"><span>纯 CSS 4 层</span><span>噪点 0</span><span>无 alpha 斜坡 → 无 banding</span><span>seed：套色位置</span></p>
+  </section>
+
+  <section class="case">
+    <div class="case-label"><span class="idx">B</span><h2>排线 · Hatch</h2><span class="tag">铜版 / 制图</span></div>
+    <p class="case-note">45° 等距细线，间距 4 → 16px 递减密度做出明暗过渡，铜版画和工程制图的排线法。比网点更"手绘"一点、更有方向性。accent 是一块反向 -45° 的交叉排线（cross-hatch），两版叠加处自然变深，套色关系天然成立。</p>
+    <div class="frame" data-solid="0">
+      <div class="tex b-band">
+        <div class="b-h1"></div><div class="b-h2"></div><div class="b-h3"></div><div class="b-h4"></div>
+        <div class="b-cross"></div>
+      </div>
+      <div class="presence"><span class="track"></span><span class="done"></span><span class="node"></span><span class="other" style="top:61%"></span></div>
+      <div class="hdr"><span class="logo"></span><span class="auth"></span>
+        <div class="pill"><i class="on">文稿</i><span class="sep"></span><i>思考</i><span class="sep"></span><i>时间线</i><span class="sep"></span><i>友链</i></div></div>
+      <div class="article">
+        <h3>在 WKWebView 里重新学会排版</h3>
+        <div class="meta">2026-08-30 · 随笔 · 12 min</div>
+        <div class="body">把一段正文放进 WebView 之前，我一直以为排版是 CSS 的事。后来发现，真正决定它好不好读的，是它上面那块什么都没有的地方。</div>
+      </div>
+    </div>
+    <p class="case-meta"><span>纯 CSS 4 层</span><span>噪点 0</span><span>方向性强</span><span>seed：交叉区位置</span></p>
+  </section>
+
+  <section class="case">
+    <div class="case-label"><span class="idx">C</span><h2>等高线 · Contour</h2><span class="tag">地形 / 制图</span></div>
+    <p class="case-note">一组正弦等高线，振幅与相位由文章 seed 决定——形状因此"每篇不同"却是完全可复算的，不是 feTurbulence 那种不可控的随机。线是几何的，不带任何材质暗示。其中一条压成 accent，是这一页的"水位线"，位置可以绑阅读进度。</p>
+    <div class="frame" data-solid="0">
+      <div class="tex c-band"><svg id="contour" viewBox="0 0 1000 230" preserveAspectRatio="none" aria-hidden></svg></div>
+      <div class="presence"><span class="track"></span><span class="done"></span><span class="node"></span><span class="other" style="top:61%"></span></div>
+      <div class="hdr"><span class="logo"></span><span class="auth"></span>
+        <div class="pill"><i class="on">文稿</i><span class="sep"></span><i>思考</i><span class="sep"></span><i>时间线</i><span class="sep"></span><i>友链</i></div></div>
+      <div class="article">
+        <h3>在 WKWebView 里重新学会排版</h3>
+        <div class="meta">2026-08-30 · 随笔 · 12 min</div>
+        <div class="body">把一段正文放进 WebView 之前，我一直以为排版是 CSS 的事。后来发现，真正决定它好不好读的，是它上面那块什么都没有的地方。</div>
+      </div>
+    </div>
+    <p class="case-meta"><span>SVG · seed 可复算</span><span>噪点 0</span><span>每篇形状不同但可控</span><span>accent：水位线</span></p>
+  </section>
+
+  <section class="case">
+    <div class="case-label"><span class="idx">D</span><h2>干涉 · Moiré</h2><span class="tag">网屏叠印</span></div>
+    <p class="case-note">两组几乎同频的竖线（91° / 89°，间距 5px）叠加产生的拍频，再加一版 5.4px 的 accent 线。视觉上是缓慢起伏的明暗带，但没有任何一像素是随机的——摩尔纹本身就是印刷套准偏差的产物。风险：细线在非整数缩放 / 低 DPR 屏上会闪，实现时要靠 SVG 或整数像素兜底。</p>
+    <div class="frame" data-solid="0">
+      <div class="tex d-band"><div class="d-l1"></div><div class="d-l2"></div><div class="d-l3"></div></div>
+      <div class="presence"><span class="track"></span><span class="done"></span><span class="node"></span><span class="other" style="top:61%"></span></div>
+      <div class="hdr"><span class="logo"></span><span class="auth"></span>
+        <div class="pill"><i class="on">文稿</i><span class="sep"></span><i>思考</i><span class="sep"></span><i>时间线</i><span class="sep"></span><i>友链</i></div></div>
+      <div class="article">
+        <h3>在 WKWebView 里重新学会排版</h3>
+        <div class="meta">2026-08-30 · 随笔 · 12 min</div>
+        <div class="body">把一段正文放进 WebView 之前，我一直以为排版是 CSS 的事。后来发现，真正决定它好不好读的，是它上面那块什么都没有的地方。</div>
+      </div>
+    </div>
+    <p class="case-meta"><span>纯 CSS 3 层</span><span>噪点 0</span><span>⚠ 细线闪烁风险</span><span>seed：夹角 / 频差</span></p>
+  </section>
+</div>
+
+<script>
+  function toggle(key, btn) {
+    const on = btn.dataset.on === '1' ? '0' : '1'
+    btn.dataset.on = on
+    document.querySelectorAll('.frame').forEach((f) => { f.dataset[key] = on })
+  }
+
+  // 等高线：seed → 相位/振幅，完全可复算
+  const seed = 0.37
+  const svg = document.getElementById('contour')
+  const lines = 9
+  let out = ''
+  for (let i = 0; i < lines; i++) {
+    const base = 14 + i * 22
+    const amp = 15 * (1 - i / lines) + 3
+    const phase = seed * 6.28 + i * 0.42
+    let d = ''
+    for (let x = 0; x <= 1000; x += 20) {
+      const y = base + Math.sin(x / 150 + phase) * amp + Math.sin(x / 61 + phase * 1.7) * amp * 0.35
+      d += (x === 0 ? 'M' : 'L') + x + ' ' + y.toFixed(2) + ' '
+    }
+    const fade = (1 - i / lines) * 0.42 + 0.06
+    const isKey = i === 3
+    out += `<path d="${d}" class="${isKey ? 'key' : ''}" opacity="${isKey ? 0.4 : fade.toFixed(3)}" />`
+  }
+  svg.innerHTML = out
+</script>
+</body>
+</html>

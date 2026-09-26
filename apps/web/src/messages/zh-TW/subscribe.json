@@ -1,0 +1,15 @@
+{
+  "not_enabled": "訂閱暫未開啟。",
+  "type_post": "文稿",
+  "type_note": "手記",
+  "type_say": "說說",
+  "type_recently": "速記",
+  "success": "訂閱已成，謝君青睞。",
+  "welcome": "歡迎訂閱「{title}」，新墨既成，當即飛書入君郵筒。",
+  "rss_hint": "你也可以通過",
+  "rss_suffix": "訂閱「{title}」的 RSS 流。",
+  "telegram_hint": "也可以訂閱 Telegram 頻道",
+  "submit": "訂閱",
+  "form_email": "請留郵箱 *",
+  "bell_intro": "郵件訂閱已啓，點亮小鈴，不誤新墨。"
+}

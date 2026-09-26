@@ -1,0 +1,56 @@
+// apps/web/src/components/modules/yohaku/constants.ts
+export const YOHAKU_LAYOUT = {
+  PAPER_W: 960,
+  NOTE_TARGET_W: 750,
+  NOTE_MIN_W: 560,
+  OVERLAP_MIN: 80,
+  OVERLAP_MAX: 600,
+  PEEK_MIN: 100,
+  SIDE_PAD: 24,
+  NOTE_OFFSET_Y: 16,
+  NOTE_BOTTOM_GUTTER: 24,
+  PAPER_TOP: 36,
+  PAPER_BOTTOM: 20,
+  BREAKPOINT_SHEET_PX: 1108,
+} as const
+
+export const YOHAKU_POST_LAYOUT = {
+  PANEL_W_MIN: 560,
+  PANEL_W_MAX_PX: 900,
+  PANEL_W_MAX_VW_RATIO: 0.6,
+  PANEL_W_PREFERRED_PX: 720,
+  PANEL_W_PREFERRED_VW_RATIO: 0.45,
+  BREAKPOINT_SHEET_PX: 1108,
+  STORAGE_KEY: 'yohaku.post.panelW',
+} as const
+
+export const YOHAKU_MOTION = {
+  ANIM_MS: 520,
+  MAIN_SHIFT_DELAY_MS: 0,
+  NOTE_SLIDE_DELAY_MS: 160,
+  NOTE_CONTENT_DELAY_MS: 360,
+  NOTE_CONTENT_MS: 320,
+  EXIT_MS: 320,
+  EXIT_MAIN_DELAY_MS: 80,
+  LIFT_Y: 8,
+  SIDE_OPACITY_READING: 0,
+  SIDE_FADE_MS: 200,
+  EASE_PAPER: 'cubic-bezier(0.22, 1, 0.36, 1)',
+  REDUCED_MOTION_FACTOR: 0.4,
+} as const
+
+export const YOHAKU_FLASH = {
+  DURATION_MS: 2000,
+  ALPHA: 38,
+} as const
+
+export const YOHAKU_SCROLL = {
+  SPRING_STIFFNESS: 1000,
+  SPRING_DAMPING: 250,
+  ELEMENT_OFFSET: 40,
+} as const
+
+export const YOHAKU_REF = {
+  TOAST_NOT_FOUND_MS: 2400,
+  QUOTE_WARN_PREVIEW_CHARS: 32,
+} as const

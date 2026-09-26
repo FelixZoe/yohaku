@@ -1,0 +1,9 @@
+{
+  "current_readers": "當前",
+  "reading_now": "人正披覽",
+  "reading_now_short": "{count} 在讀",
+  "realtime_tooltip": "此刻同閱之人，可借左側時間線覽他人所至（移動端不可見）",
+  "presence_you": "你",
+  "presence_anonymous_readers": "{count} 位讀者",
+  "presence_and_others_after_one": "及其他 {count} 人"
+}

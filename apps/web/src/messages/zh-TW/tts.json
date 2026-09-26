@@ -1,0 +1,12 @@
+{
+  "error": "朗讀載入失敗",
+  "narrate": "朗讀本文",
+  "narration": "AI 朗讀",
+  "narrating": "正在朗讀",
+  "pause": "暫停",
+  "play": "播放朗讀",
+  "reveal": "定位到朗讀位置",
+  "segment_progress": "{current} / {total}",
+  "stale_warning": "正文已修改，朗讀可能與目前文字不一致",
+  "stop": "停止"
+}

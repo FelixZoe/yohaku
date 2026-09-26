@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PostItem Mobile — Strategy 2 × 3 Variants</title>
+  <style>
+    :root {
+      --color-neutral-1: #f9f8f5;
+      --color-neutral-2: #f0efeb;
+      --color-neutral-3: #e3e1db;
+      --color-neutral-4: #d0cec6;
+      --color-neutral-5: #a8a69f;
+      --color-neutral-6: #787670;
+      --color-neutral-7: #5c5a55;
+      --color-neutral-8: #403f3a;
+      --color-neutral-9: #24231f;
+      --color-neutral-10: #141312;
+
+      --color-accent: #c56473;
+      --color-info: #3d6896;
+      --color-success: #5e9f7e;
+      --color-warning: #a87a3d;
+      --color-error: #a64953;
+
+      --color-paper: #faf9f5;
+      --color-border: rgba(24, 24, 27, 0.1);
+
+      --font-sans: -apple-system, 'PingFang SC', 'Microsoft YaHei',
+                   'Noto Sans SC', 'Hiragino Sans GB', system-ui, sans-serif;
+      --font-serif: 'Noto Serif CJK SC', 'Source Han Serif SC', SongTi SC,
+                    STSong, Georgia, serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', Consolas, Monaco,
+                   'Hannotate SC', monospace;
+    }
+
+    [data-theme='dark'] {
+      --color-neutral-1: #141414;
+      --color-neutral-2: #242424;
+      --color-neutral-3: #404040;
+      --color-neutral-4: #5c5c5c;
+      --color-neutral-5: #787878;
+      --color-neutral-6: #a8a8a8;
+      --color-neutral-7: #d0d0d0;
+      --color-neutral-8: #e3e3e3;
+      --color-neutral-9: #f0f0f0;
+      --color-neutral-10: #f8f8f8;
+
+      --color-paper: #1a1814;
+      --color-border: rgba(255, 255, 255, 0.1);
+    }
+
+    * { box-sizing: border-box; }
+    html { font-size: 14px; line-height: 1.5; letter-spacing: 0.01em; }
+    body {
+      margin: 0; padding: 0;
+      background: var(--color-neutral-2);
+      color: var(--color-neutral-9);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .toolbar {
+      position: fixed; top: 12px; right: 12px; z-index: 10;
+      background: var(--color-paper);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 4px 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--color-neutral-7);
+    }
+    .toolbar button {
+      background: none; border: none; cursor: pointer;
+      color: inherit; font: inherit; padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .toolbar button:hover { background: var(--color-neutral-3); }
+
+    .shell {
+      max-width: 1760px; margin: 0 auto;
+      padding: 32px 24px 80px;
+    }
+    .shell-header { margin-bottom: 32px; }
+    .shell-header h1 {
+      margin: 0 0 6px;
+      font-size: 24px;
+      font-weight: 500;
+      color: var(--color-neutral-10);
+    }
+    .shell-header p {
+      margin: 0;
+      color: var(--color-neutral-7);
+      font-size: 13px;
+      line-height: 1.55;
+      max-width: 760px;
+    }
+    .shell-header code {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      background: var(--color-neutral-3);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 28px 24px;
+      align-items: start;
+    }
+
+    .col-label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      padding: 0 4px;
+    }
+    .col-label h2 {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--color-neutral-9);
+      text-transform: uppercase;
+    }
+    .col-label .col-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--color-neutral-7);
+    }
+    .col-note {
+      margin: 0 4px 12px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--color-neutral-7);
+    }
+    .col-note b {
+      color: var(--color-neutral-9);
+      font-weight: 500;
+    }
+    .col-note code {
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .phone {
+      width: 100%;
+      max-width: 390px;
+      background: var(--color-paper);
+      border-radius: 22px;
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.6) inset,
+        0 0 0 1px var(--color-border),
+        0 24px 48px -24px rgba(0,0,0,0.18);
+      overflow: hidden;
+    }
+    .phone-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 18px 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--color-neutral-7);
+    }
+    .phone-bar .dots {
+      display: inline-flex; gap: 4px;
+    }
+    .phone-bar .dots span {
+      width: 6px; height: 6px;
+      border-radius: 999px;
+      background: var(--color-neutral-4);
+    }
+    .phone-body { padding: 12px 20px 24px; }
+
+    /* ── Shared item parts ───────────────────────────── */
+
+    .item-link {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      padding: 14px 16px;
+      margin: 4px -16px;
+      border-radius: 8px;
+    }
+    .item-link + .item-divider {
+      height: 1px;
+      background: var(--color-border);
+      margin: 0 -4px;
+    }
+
+    .featured {
+      display: block;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.5);
+      border: 1px solid var(--color-border);
+      padding: 18px 18px 16px;
+    }
+    [data-theme='dark'] .featured {
+      background: rgba(255,255,255,0.04);
+    }
+    .pinned-label {
+      font-size: 11px;
+      letter-spacing: 1.2px;
+      color: var(--color-accent);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+    .pinned-label.jp {
+      letter-spacing: 1px;
+      text-transform: none;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .title {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.45;
+      font-weight: 500;
+      color: var(--color-neutral-9);
+      text-wrap: pretty;
+      flex: 1;
+      min-width: 0;
+    }
+    .summary {
+      margin: 8px 0 0;
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--color-neutral-6);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .summary.one-line { -webkit-line-clamp: 1; }
+
+    /* Badges */
+    .badge-i18n {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: color-mix(in oklab, var(--color-accent) 14%, transparent);
+      color: var(--color-accent);
+      font-size: 11px;
+      line-height: 1.4;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .badge-i18n.compact {
+      padding: 1px 6px;
+      font-size: 10px;
+      letter-spacing: 0.04em;
+    }
+    .badge-i18n.dot {
+      padding: 0;
+      width: 6px; height: 6px;
+      border-radius: 999px;
+      background: var(--color-accent);
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-accent) 14%, transparent);
+      margin-left: 4px;
+      align-self: center;
+    }
+
+    /* Stats */
+    .stats {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--color-neutral-5);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .stat {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+    .stat svg { width: 12px; height: 12px; }
+
+    /* Meta text */
+    .meta-text { color: var(--color-neutral-5); font-size: 12px; white-space: nowrap; }
+    .meta-sep  { color: var(--color-neutral-4); white-space: nowrap; }
+    .meta-tag  {
+      color: var(--color-accent);
+      text-decoration: underline;
+      text-decoration-color: color-mix(in oklab, var(--color-accent) 35%, transparent);
+      text-underline-offset: 3px;
+      white-space: nowrap;
+    }
+    .meta-tag.dim { color: var(--color-neutral-6); text-decoration: none; }
+
+    /* ── Variant A · gentle two-row ──────────────────── */
+
+    .vA .meta-row {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      column-gap: 8px;
+      row-gap: 4px;
+    }
+    .vA .meta-row > * { white-space: nowrap; }
+    .vA .stats-row {
+      margin-top: 8px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* ── Variant B · hair-line two-row ───────────────── */
+
+    .vB .meta-row {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      column-gap: 8px;
+      row-gap: 4px;
+    }
+    .vB .meta-row > * { white-space: nowrap; }
+    .vB .stats-row {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--color-border);
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* ── Variant C · stats hoisted next to title ─────── */
+
+    .vC .title-flank {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .vC .title-flank .title { flex: 1; min-width: 0; }
+    .vC .title-flank .stats {
+      flex-shrink: 0;
+      align-self: flex-start;
+      margin-top: 4px;
+      color: var(--color-neutral-4);
+    }
+    .vC .meta-row {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      column-gap: 8px;
+      row-gap: 4px;
+    }
+    .vC .meta-row > * { white-space: nowrap; }
+
+    /* ── Variant D · single trimmed row ──────────────── */
+
+    .vD .meta-row {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      column-gap: 8px;
+      row-gap: 4px;
+    }
+    .vD .meta-row > * { white-space: nowrap; }
+    .vD .meta-row .stats { margin-left: auto; color: var(--color-neutral-4); }
+
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">
+      light · dark
+    </button>
+  </div>
+
+  <main class="shell">
+    <header class="shell-header">
+      <h1>PostItem · mobile — strategy 2 × 3 combined, four variants</h1>
+      <p>
+        All four variants apply strategy 3's trimming (drop the <code>(編集済み)</code>
+        word, cap visible tags at one or two, lift the translated badge out of the meta row).
+        They differ in <b>where the stats cluster lives</b> and <b>how strongly the row break is announced</b>.
+        Each phone frame mocks a ~390&nbsp;px viewport so the wrap behaviour is real.
+      </p>
+    </header>
+
+    <div class="grid">
+
+      <!-- ═══════ Variant A · gentle two-row ═══════ -->
+      <section class="vA">
+        <div class="col-label">
+          <h2>A · gentle two-row</h2>
+          <span class="col-tag">stats below · no divider</span>
+        </div>
+        <p class="col-note">
+          Two rows separated only by an 8 px gap. Stats are right-aligned and use
+          <code>neutral-5</code> so they read as quiet siblings, not a second
+          section. <b>Use when</b> the list is long and you want the lightest
+          rhythm.
+        </p>
+        <div class="phone">
+          <div class="phone-bar"><span>9:41</span><span class="dots"><span></span><span></span><span></span></span></div>
+          <div class="phone-body">
+
+            <article class="featured">
+              <div class="pinned-label jp">ピン留め</div>
+              <div class="title-row">
+                <h3 class="title">AI 時代の効率のパラドックス：生産性が向上してもむしろ疲弊をもたらす</h3>
+                <span class="badge-i18n compact">JA</span>
+              </div>
+              <p class="summary">昨日、ある記事を見ました。AI が私たちに疲労感をもたらすかどうかについて（https://siddhantkhare.com/wr…</p>
+              <div class="meta-row">
+                <span class="meta-text">2026年3月1日</span>
+                <span class="meta-sep">·</span>
+                <span class="meta-tag">経験</span>
+                <span class="meta-sep">/</span>
+                <span class="meta-tag">ai</span>
+                <span class="meta-sep">,</span>
+                <span class="meta-tag">productivity</span>
+              </div>
+              <div class="stats-row">
+                <div class="stats">
+                  <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>2428</span>
+                  <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21l7.78-7.55 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>18</span>
+                </div>
+              </div>
+            </article>
+
+            <div style="height:6px"></div>
+
+            <a class="item-link">
+              <div class="title-row">
+                <h3 class="title">hydration を React UI から切り離す：SPA 起動時の境界修正についての記録</h3>
+                <span class="badge-i18n compact">JA</span>
+              </div>
+              <p class="summary one-line">React SPA のコールドスタートには、ある特有のビジュアル…</p>
+              <div class="meta-row">
+                <span class="meta-text">13 時間前</span>
+                <span class="meta-sep">·</span>
+                <span class="meta-tag">技術</span>
+                <span class="meta-sep">/</span>
+                <span class="meta-tag">React</span>
+                <span class="meta-tag dim">+4</span>
+              </div>
+              <div class="stats-row">
+                <div class="stats">
+                  <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>312</span>
+                  <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21l7.78-7.55 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>7</span>
+                </div>
+              </div>
+            </a>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ Variant B · hair-line two-row ═══════ -->
+      <section class="vB">
+        <div class="col-label">
+          <h2>B · hair-line two-row</h2>
+          <span class="col-tag">stats below · dashed divider · full i18n badge</span>
+        </div>
+        <p class="col-note">
+          Same shape as A but the stats row is fenced off with a dashed hair-line.
+          Translated badge keeps its full <b>簡体中文 → 日本語</b> form and now
+          sits at the <i>end of the meta row</i> for both featured and list
+          items — so the title always gets the full row to itself.
+          <b>Use when</b> the list is short and each card deserves a clearer footer.
+        </p>
+        <div class="phone">
+          <div class="phone-bar"><span>9:41</span><span class="dots"><span></span><span></span><span></span></span></div>
+          <div class="phone-body">
+
+            <article class="featured">
+              <div class="pinned-label jp">ピン留め</div>
+              <h3 class="title">AI 時代の効率のパラドックス：生産性が向上してもむしろ疲弊をもたらす</h3>
+              <p class="summary">昨日、ある記事を見ました。AI が私たちに疲労感をもたらすかどうかについて（https://siddhantkhare.com/wr…</p>
+              <div class="meta-row">
+                <span class="meta-text">2026年3月1日</span>
+                <span class="meta-sep">·</span>
+                <span class="meta-tag">経験</span>
+                <span class="meta-sep">/</span>
+                <span class="meta-tag">ai</span>
+                <span class="meta-sep">,</span>
+                <span class="meta-tag">productivity</span>
+                <span class="badge-i18n">簡体中文 → 日本語</span>
+              </div>
+              <div class="stats-row">
+                <div class="stats">
+                  <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>2428</span>
+                  <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21l7.78-7.55 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>18</span>
+                </div>
+              </div>
+            </article>
+
+            <div style="height:6px"></div>
+
+            <a class="item-link">
+              <h3 class="title">hydration を React UI から切り離す：SPA 起動時の境界修正についての記録</h3>
+              <p class="summary one-line">React SPA のコールドスタートには、ある特有のビジュアル…</p>
+              <div class="meta-row">
+                <span class="meta-text">13 時間前</span>
+                <span class="meta-sep">·</span>
+                <span class="meta-tag">技術</span>
+                <span class="meta-sep">/</span>
+                <span class="meta-tag">React</span>
+                <span class="meta-tag dim">+4</span>
+                <span class="badge-i18n">簡体中文 → 日本語</span>
+              </div>
+              <div class="stats-row">
+                <div class="stats">
+                  <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>312</span>
+                  <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21l7.78-7.55 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>7</span>
+                </div>
+              </div>
+            </a>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ Variant C · stats hoisted ═══════ -->
+      <section class="vC">
+        <div class="col-label">
+          <h2>C · stats hoisted</h2>
+          <span class="col-tag">stats flank the title</span>
+        </div>
+        <p class="col-note">
+          Stats climb up next to the title (right side, top-aligned, muted color).
+          The meta row gets the full width and can carry one more tag without
+          wrapping. <b>Use when</b> read/like counts matter at a glance — they
+          appear at the strongest visual entry point.
+        </p>
+        <div class="phone">
+          <div class="phone-bar"><span>9:41</span><span class="dots"><span></span><span></span><span></span></span></div>
+          <div class="phone-body">
+
+            <article class="featured">
+              <div class="pinned-label jp">ピン留め</div>
+              <div class="title-flank">
+                <h3 class="title">AI 時代の効率のパラドックス：生産性が向上してもむしろ疲弊をもたらす</h3>
+                <div class="stats">
+                  <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>2428</span>
+                  <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21l7.78-7.55 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>18</span>
+                </div>
+              </div>
+              <p class="summary">昨日、ある記事を見ました。AI が私たちに疲労感をもたらすかどうかについて（https://siddhantkhare.com/wr…</p>
+              <div class="meta-row">
+                <span class="meta-text">2026年3月1日</span>
+                <span class="meta-sep">·</span>
+                <span class="meta-tag">経験</span>
+                <span class="meta-sep">/</span>
+                <span class="meta-tag">ai</span>
+                <span class="meta-sep">,</span>
+                <span class="meta-tag">productivity</span>
+                <span class="badge-i18n compact">JA</span>
+              </div>
+            </article>
+
+            <div style="height:6px"></div>
+
+            <a class="item-link">
+              <div class="title-flank">
+                <h3 class="title">hydration を React UI から切り離す：SPA 起動時の境界修正についての記録</h3>
+                <div class="stats">
+                  <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>312</span>
+                  <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21l7.78-7.55 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>7</span>
+                </div>
+              </div>
+              <p class="summary one-line">React SPA のコールドスタートには、ある特有のビジュアル…</p>
+              <div class="meta-row">
+                <span class="meta-text">13 時間前</span>
+                <span class="meta-sep">·</span>
+                <span class="meta-tag">技術</span>
+                <span class="meta-sep">/</span>
+                <span class="meta-tag">React</span>
+                <span class="meta-sep">,</span>
+                <span class="meta-tag">SWR</span>
+                <span class="meta-tag dim">+3</span>
+                <span class="badge-i18n compact">JA</span>
+              </div>
+            </a>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ Variant D · single trimmed row ═══════ -->
+      <section class="vD">
+        <div class="col-label">
+          <h2>D · single trimmed row</h2>
+          <span class="col-tag">stats inline · stripped</span>
+        </div>
+        <p class="col-note">
+          Trim hard. Date · one tag · <code>+N</code> · stats — all on one row
+          with <code>flex-wrap</code> as the safety net. Translated badge is a
+          tiny dot beside the title. <b>Use when</b> mobile density matters most;
+          tap a tag in the modal to see all.
+        </p>
+        <div class="phone">
+          <div class="phone-bar"><span>9:41</span><span class="dots"><span></span><span></span><span></span></span></div>
+          <div class="phone-body">
+
+            <article class="featured">
+              <div class="pinned-label jp">ピン留め</div>
+              <div class="title-row">
+                <h3 class="title">AI 時代の効率のパラドックス：生産性が向上してもむしろ疲弊をもたらす<span class="badge-i18n dot" aria-label="translated"></span></h3>
+              </div>
+              <p class="summary">昨日、ある記事を見ました。AI が私たちに疲労感をもたらすかどうかについて（https://siddhantkhare.com/wr…</p>
+              <div class="meta-row">
+                <span class="meta-text">2026年3月1日</span>
+                <span class="meta-sep">·</span>
+                <span class="meta-tag">経験</span>
+                <span class="meta-sep">/</span>
+                <span class="meta-tag">ai</span>
+                <span class="meta-tag dim">+1</span>
+                <div class="stats">
+                  <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>2428</span>
+                  <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21l7.78-7.55 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>18</span>
+                </div>
+              </div>
+            </article>
+
+            <div style="height:6px"></div>
+
+            <a class="item-link">
+              <div class="title-row">
+                <h3 class="title">hydration を React UI から切り離す：SPA 起動時の境界修正についての記録<span class="badge-i18n dot" aria-label="translated"></span></h3>
+              </div>
+              <p class="summary one-line">React SPA のコールドスタートには、ある特有のビジュアル…</p>
+              <div class="meta-row">
+                <span class="meta-text">13 時間前</span>
+                <span class="meta-sep">·</span>
+                <span class="meta-tag">技術</span>
+                <span class="meta-tag dim">+5</span>
+                <div class="stats">
+                  <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>312</span>
+                  <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21l7.78-7.55 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>7</span>
+                </div>
+              </div>
+            </a>
+
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <footer style="margin-top:36px; padding:16px 18px; border-radius:8px; background:var(--color-paper); border:1px solid var(--color-border);">
+      <p style="margin:0 0 6px; font-size:13px; color:var(--color-neutral-9); font-weight:500;">Decision cheatsheet</p>
+      <table style="width:100%; border-collapse:collapse; font-size:12px; color:var(--color-neutral-7);">
+        <thead>
+          <tr style="text-align:left; color:var(--color-neutral-9); font-weight:500;">
+            <th style="padding:6px 8px; border-bottom:1px solid var(--color-border);">Variant</th>
+            <th style="padding:6px 8px; border-bottom:1px solid var(--color-border);">Stats live at</th>
+            <th style="padding:6px 8px; border-bottom:1px solid var(--color-border);">Row break</th>
+            <th style="padding:6px 8px; border-bottom:1px solid var(--color-border);">Best when</th>
+            <th style="padding:6px 8px; border-bottom:1px solid var(--color-border);">Cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:6px 8px;"><b style="color:var(--color-neutral-9);font-weight:500">A · gentle</b></td>
+            <td style="padding:6px 8px;">below meta, right-aligned</td>
+            <td style="padding:6px 8px;">8&nbsp;px gap only</td>
+            <td style="padding:6px 8px;">long lists, calm rhythm</td>
+            <td style="padding:6px 8px;">stats may read as ambient noise</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 8px;"><b style="color:var(--color-neutral-9);font-weight:500">B · hair-line</b></td>
+            <td style="padding:6px 8px;">below meta, right-aligned</td>
+            <td style="padding:6px 8px;">dashed divider</td>
+            <td style="padding:6px 8px;">short lists, clear footer</td>
+            <td style="padding:6px 8px;">one more visible element per card</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 8px;"><b style="color:var(--color-neutral-9);font-weight:500">C · hoisted</b></td>
+            <td style="padding:6px 8px;">flanking the title</td>
+            <td style="padding:6px 8px;">none (single meta row)</td>
+            <td style="padding:6px 8px;">read/like is signal, not decoration</td>
+            <td style="padding:6px 8px;">title gets less width on long titles</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 8px;"><b style="color:var(--color-neutral-9);font-weight:500">D · trimmed row</b></td>
+            <td style="padding:6px 8px;">inline at row end</td>
+            <td style="padding:6px 8px;">flex-wrap fallback only</td>
+            <td style="padding:6px 8px;">density-first mobile</td>
+            <td style="padding:6px 8px;">tags clipped to one; needs +N modal</td>
+          </tr>
+        </tbody>
+      </table>
+    </footer>
+  </main>
+</body>
+</html>

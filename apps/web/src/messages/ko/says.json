@@ -1,0 +1,14 @@
+{
+  "page_title": "한마디",
+  "edit_say": "한마디 고치기",
+  "publish_say": "한마디 띄우기",
+  "update_success": "고쳤어요.",
+  "publish_success": "띄웠어요.",
+  "update": "고치기",
+  "publish": "띄우기",
+  "content": "내용",
+  "source": "출처",
+  "author": "글쓴이",
+  "author_label": "글쓴이: {author}",
+  "owner_says": "주인장이 적은 한마디"
+}

@@ -1,0 +1,20 @@
+{
+  "404_description": "이 별엔 아직 글이 닿지 않았어요. 다른 곳도 둘러봐 주세요.",
+  "404_torn_line1": "페이지가 보이지 않아요,",
+  "404_torn_line2": "바람에 실려 갔는지도 몰라요.",
+  "404_torn_todo": "할 일",
+  "404_torn_signature": "— 길 잃은 어느 손님",
+  "404_backHome": "홈으로 돌아가기",
+  "500_title": "서버에 잠시 문제가 있어요.",
+  "api_fetchError": "초기 데이터를 가져오지 못했어요. API 서버가 실행 중인지 확인해 주세요. 오류 메시지:",
+  "render_error": "이 페이지를 그리는 사이, 작은 어긋남이 생겼어요.",
+  "render_error_contact": "문제가 자주 생기면 개발자에게 알려 주세요",
+  "render_error_thanks": "，고마워요!",
+  "page_deleted": "이 페이지는 지워졌어요",
+  "back_home": "홈으로 돌아가기",
+  "refresh": "새로 고침",
+  "biz_error_title": "데이터가 닿지 않았어요.",
+  "biz_error_http_status": "HTTP Status: {status}",
+  "biz_error_message": "오류 메시지: {message}",
+  "share_link_expired": "이 공유 링크는 더 이상 사용할 수 없습니다"
+}

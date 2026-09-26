@@ -1,0 +1,20 @@
+{
+  "_meta": {
+    "date": "2026-05-13",
+    "host": "http://127.0.0.1:3939",
+    "api": "http://localhost:2333 (local mx-core)",
+    "preset": "lighthouse 13.3.0 — mobile, slow-4g, 4× cpu (default)",
+    "rounds": "warm-up discarded + 3 measured runs (median per metric)",
+    "locale_note": "Using /en/* paths. Reason: next start + next-intl 'as-needed' default-locale leaks rewrite as 307 location:/ on the root path locally (Vercel edge consumes this in prod). /en/* serves canonical 200, gives stable baselines. Translation bundle differs from zh; numbers are commit-to-commit comparable but should not be reported as user-facing zh perf.",
+    "excluded": {
+      "thinking": "Page has a known issue under audit — needs investigation before re-including. Excluded from the benchmark suite.",
+      "notes": "Lighthouse Runtime.evaluate timeout (~90s). Client JS blocks the DevTools protocol response; cause unidentified. Re-include when /en/notes/* can complete an audit."
+    }
+  },
+  "pages": [
+    { "slug": "home",     "path": "/en" },
+    { "slug": "posts",    "path": "/en/posts" },
+    { "slug": "post",     "path": "/en/posts/experience/ai-era-efficiency-paradox-productivity-gains-cause-fatigue" },
+    { "slug": "timeline", "path": "/en/timeline" }
+  ]
+}

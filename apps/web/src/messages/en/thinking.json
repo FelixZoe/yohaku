@@ -1,0 +1,16 @@
+{
+  "page_title": "Thinking",
+  "page_subtitle": "Thank you for lending an ear.",
+  "post_placeholder": "What's on your mind?",
+  "send": "Send",
+  "detected_link": "Detected link",
+  "resolving": "resolving",
+  "emoji_label": "Emoji",
+  "feed_reference": "Reference: {title}",
+  "feed_comment_cta": "Finished reading? Say a word.",
+  "moment_application": "Application",
+  "moment_window": "Window",
+  "moment_media": "Media",
+  "moment_playback_at": "at {position}",
+  "moment_playback_progress": "at {position} of {duration}"
+}

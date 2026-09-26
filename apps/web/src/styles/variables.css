@@ -1,0 +1,156 @@
+html {
+  /* Accent color for form controls */
+  accent-color: var(--color-accent);
+
+  /* make app like native app in mobile */
+  -webkit-tap-highlight-color: transparent;
+
+  font-family: var(--font-sans);
+  background-color: var(--color-root-bg);
+}
+
+a,
+details summary {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+:root {
+  --bg-opacity: rgba(254, 253, 251, 0.72);
+  --color-root-bg: #fefefb;
+  --surface-paper: var(--color-root-bg);
+  --color-border: rgba(24, 24, 27, 0.1);
+  --color-hair: rgba(24, 24, 27, 0.08);
+
+  /* Field system */
+  --field-bg: var(--surface-paper);
+  --field-border: rgba(0, 0, 0, 0.05);
+  --field-shadow: 0 1px 1px rgba(0, 0, 0, 0.02);
+  --field-gradient: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-accent) 3%, transparent) 0%,
+    transparent 26%
+  );
+  --field-border-focus: color-mix(
+    in srgb,
+    var(--color-accent) 35%,
+    transparent
+  );
+  --field-ring: 0 0 0 3px
+    color-mix(in srgb, var(--color-accent) 10%, transparent);
+
+  /* Selection command floating toolbar shadow (drop + inset highlight) */
+  --selection-command-shadow:
+    0 2px 10px -4px rgba(0, 0, 0, 0.18), 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+
+  /* Spring easing approximation via linear() — stiffness:400, damping:35
+     Generated to match Motion's spring feel: snappy with a slight natural overshoot */
+  --ease-spring: linear(
+    0,
+    0.009 2.2%,
+    0.035 4.5%,
+    0.141 9.4%,
+    0.447 18.5%,
+    0.718 27.4%,
+    0.843 32%,
+    0.929 36.8%,
+    0.978 41.8%,
+    1.003 47.3%,
+    1.014 52.8%,
+    1.016 58.6%,
+    1.013 64.4%,
+    1.007 70.5%,
+    1.003 76.7%,
+    1.001 83.1%,
+    1
+  );
+}
+
+[data-theme='dark'] {
+  --color-accent: #e095a4;
+  --color-neutral-1: #141414;
+  --color-neutral-2: #242424;
+  --color-neutral-3: #404040;
+  --color-neutral-4: #5c5c5c;
+  --color-neutral-5: #787878;
+  --color-neutral-6: #a8a8a8;
+  --color-neutral-7: #d0d0d0;
+  --color-neutral-8: #e3e3e3;
+  --color-neutral-9: #f0f0f0;
+  --color-neutral-10: #f8f8f8;
+  --color-info: #7090b3;
+  --color-success: #8cbea3;
+  --color-warning: #c8a06b;
+  --color-error: #c8767f;
+  --bg-opacity: rgba(29, 29, 31, 0.72);
+  --color-root-bg: rgb(28, 28, 30);
+  --surface-paper: var(--color-neutral-2);
+  --color-border: #3f3f46;
+  --color-hair: rgba(255, 255, 255, 0.1);
+
+  /* Field system */
+  --field-bg: var(--surface-paper);
+  --field-border: rgba(255, 255, 255, 0.08);
+  --field-shadow: 0 1px 1px rgba(0, 0, 0, 0.18);
+  --field-gradient: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-accent) 7%, transparent) 0%,
+    transparent 26%
+  );
+  --field-border-focus: color-mix(
+    in srgb,
+    var(--color-accent) 35%,
+    transparent
+  );
+  --field-ring: 0 0 0 3px
+    color-mix(in srgb, var(--color-accent) 8%, transparent);
+
+  --selection-command-shadow:
+    0 2px 12px -4px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+
+::selection {
+  background-color: color-mix(in oklab, var(--color-accent) 30%, transparent);
+  text-shadow: none;
+}
+
+/* SelectionInk paints the live selection on fine pointers inside containers
+   that opted in via attachSelectionInk. Elsewhere — and on coarse pointers —
+   the native accent tint must stay. */
+@media (pointer: fine) {
+  [data-selection-ink] ::selection,
+  [data-selection-ink]::selection {
+    background-color: transparent;
+  }
+}
+
+html[data-vt-root]::view-transition-new(root) {
+  animation: turnOff 800ms ease-in-out;
+}
+html[data-vt-root]::view-transition-old(root) {
+  animation: none;
+}
+
+@keyframes turnOn {
+  0% {
+    clip-path: polygon(0% 0%, 100% 0, 100% 0, 0 0);
+  }
+  100% {
+    clip-path: polygon(0% 0%, 100% 0, 100% 100%, 0 100%);
+  }
+}
+
+html[data-theme='dark'][data-vt-root]::view-transition-new(root) {
+  animation: turnOn 800ms ease-in-out;
+}
+html[data-theme='dark'][data-vt-root]::view-transition-old(root) {
+  animation: none;
+}
+
+@keyframes turnOff {
+  0% {
+    clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0% 100%);
+  }
+  100% {
+    clip-path: polygon(0 100%, 100% 100%, 100% 0, 0 0);
+  }
+}

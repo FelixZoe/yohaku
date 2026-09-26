@@ -1,0 +1,15 @@
+{
+  "not_enabled": "구독은 아직 열려 있지 않아요.",
+  "type_post": "글",
+  "type_note": "수첩",
+  "type_say": "한마디",
+  "type_recently": "스케치",
+  "success": "구독이 이어졌어요. 마음 주셔서 고마워요.",
+  "welcome": "「{title}」 구독을 환영해요. 새 글이 닿으면 곧장 그대의 메일함으로 띄워 드릴게요.",
+  "rss_hint": "다음을 통해서도",
+  "rss_suffix": "「{title}」의 RSS를 구독하실 수 있어요.",
+  "telegram_hint": "Telegram 채널에서도 받아 보실 수 있어요",
+  "submit": "구독하기",
+  "form_email": "이메일을 알려 주세요 *",
+  "bell_intro": "메일 구독이 켜졌어요. 종을 켜 두시면 새 글을 놓치지 않아요."
+}

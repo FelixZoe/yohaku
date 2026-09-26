@@ -1,0 +1,92 @@
+// @ts-check
+import { defineConfig } from '@lobehub/lint'
+import reactPlugin from 'eslint-plugin-react'
+import reactHooksPlugin from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+
+export default defineConfig(
+  {
+    ignores: ['**/*.md', 'apps/web/scripts/**', 'packages/dom-webview/**'],
+    react: 'next',
+    next: true,
+    sortImports: true,
+    sortKeys: true,
+    regexp: true,
+    yml: true,
+  },
+  {
+    files: ['**/*.jsx', '**/*.tsx', '**/*.js', '**/*.ts'],
+    plugins: {
+      react: reactPlugin,
+      'react-hooks': reactHooksPlugin,
+      'react-refresh': reactRefresh,
+    },
+    rules: {
+      'react/no-context-provider': 'off',
+      '@typescript-eslint/no-use-before-define': 0,
+      'no-restricted-syntax': 'off',
+      'import/no-anonymous-default-export': 'off',
+      eqeqeq: 'warn',
+
+      'unicorn/no-useless-undefined': 0,
+      'no-console': 'warn',
+      'unicorn/prefer-math-trunc': 'off',
+      'unicorn/prefer-dom-node-remove': 'off',
+      '@typescript-eslint/no-unsafe-function-type': 'off',
+      'no-empty': 'off',
+      '@typescript-eslint/no-empty-object-type': 'warn',
+      'unicorn/prefer-query-selector': 0,
+      'regexp/no-super-linear-backtracking': 0,
+
+      'regexp/no-useless-assertions': 0,
+      'unicorn/no-new-array': 0,
+      '@typescript-eslint/method-signature-style': 0,
+      'unicorn/prefer-code-point': 'warn',
+      'unicorn/no-object-as-default-parameter': 'warn',
+      'unused-imports/no-unused-vars': 'warn',
+      'react/no-unstable-default-props': 'off',
+      'unicorn/prefer-regexp-test': 'warn',
+      'no-unsafe-optional-chaining': 'warn',
+      'unicorn/prefer-logical-operator-over-ternary': 'warn',
+      'arrow-body-style': 0,
+      'unicorn/no-array-callback-reference': 0,
+      'prefer-regex-literals': 0,
+      'regexp/optimal-quantifier-concatenation': 'warn',
+      'unicorn/prefer-string-slice': 0,
+      'array-callback-return': 0,
+      'regexp/no-unused-capturing-group': 1,
+      'unicorn/no-anonymous-default-export': 0,
+      'unicorn/no-magic-array-flat-depth': 1,
+      'react-refresh/only-export-components': 0,
+      'react/no-clone-element': 0,
+      'react-hooks/set-state-in-effect': 0,
+      'react-hooks/preserve-manual-memoization': 0,
+      'react-hooks/refs': 0,
+      'import/consistent-type-specifier-style': 'off',
+      'node/prefer-global/process': 'off',
+      'node/prefer-global/buffer': 'off',
+      '@typescript-eslint/ban-ts-comment': 'off',
+      'prefer-arrow-callback': 'off',
+      'no-useless-return': 'off',
+      'no-unneeded-ternary': 'off',
+      'no-cond-assign': 'warn',
+      'no-restricted-globals': 'off',
+      'dot-notation': 'off',
+      'one-var': 'off',
+      'prefer-promise-reject-errors': 'off',
+      'no-alert': 'off',
+      'react/no-unstable-context-value': 'off',
+      'node/handle-callback-err': 'off',
+      'eslint-comments/no-unlimited-disable': 'off',
+      '@next/next/no-html-link-for-pages': 'off',
+      'no-useless-assignment': 'warn',
+    },
+  },
+
+  {
+    files: ['**/*.yml', '**/*.yaml'],
+    rules: {
+      'yml/plain-scalar': 0,
+    },
+  },
+)

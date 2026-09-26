@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  yohaku:
+    container_name: yohaku
+    image: innei/yohaku:latest
+    volumes:
+      - ./.env:/app/.env
+    restart: always
+    ports:
+      - 2323:2323

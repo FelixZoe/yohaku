@@ -1,0 +1,164 @@
+import { type as typeScale } from '@yohaku/design-system/tokens'
+import { useMemo, useRef } from 'react'
+import { Modal, ScrollView, StyleSheet, View } from 'react-native'
+
+import type { ApiCommentRoot, CommentRefType } from '@/api/types'
+import { useSession } from '@/auth/session-store'
+import { AppText } from '@/components/ui'
+import { useTranslations } from '@/i18n'
+import { type CommentAnchor, isRangeAnchor } from '@/lib/comment-anchor'
+import { replyTargetAuthor } from '@/lib/comment-thread'
+import { usePalette } from '@/theme/palette'
+import { useNativeSerifFontStyle } from '@/theme/serif-font'
+
+import { CommentCell } from './comment-cell'
+import { CommentComposeEntry } from './comment-compose-entry'
+import { CommentComposeHost } from './comment-compose-provider'
+import { CommentLoginInline } from './comment-login-inline'
+
+export type SelectionSheetState =
+  | { anchor: CommentAnchor; kind: 'compose'; selectedText: string }
+  | { anchor: CommentAnchor; kind: 'thread' }
+
+function anchorResetKey(anchor: CommentAnchor): string {
+  if (isRangeAnchor(anchor)) {
+    return `${anchor.blockId}:${anchor.startOffset}:${anchor.endOffset}`
+  }
+  return `${anchor.blockId}:block`
+}
+
+export function SelectionCommentSheet({
+  refId,
+  refType,
+  roots,
+  state,
+  onClose,
+}: {
+  onClose: () => void
+  refId: string
+  refType: CommentRefType
+  roots: ApiCommentRoot[]
+  state: SelectionSheetState | null
+}) {
+  const t = useTranslations('comment')
+  const palette = usePalette()
+  const serifFont = useNativeSerifFontStyle()
+  const session = useSession()
+  const scrollRef = useRef<ScrollView>(null)
+  const resetKey = state
+    ? `${state.kind}:${anchorResetKey(state.anchor)}`
+    : undefined
+  const quote = useMemo(() => {
+    if (!state) return ''
+    return isRangeAnchor(state.anchor)
+      ? state.anchor.quote
+      : state.anchor.snapshotText
+  }, [state])
+
+  return (
+    <Modal
+      animationType="slide"
+      presentationStyle="pageSheet"
+      visible={state !== null}
+      onRequestClose={onClose}
+    >
+      {state ? (
+        <CommentComposeHost
+          anchor={state.anchor}
+          autoFocus={state.kind === 'compose'}
+          refId={refId}
+          refType={refType}
+          resetKey={resetKey}
+          scrollRef={scrollRef}
+          onRootSent={onClose}
+        >
+          {(compose) => (
+            <ScrollView
+              automaticallyAdjustKeyboardInsets={!compose.composing}
+              contentContainerStyle={styles.content}
+              ref={scrollRef}
+              style={{ backgroundColor: palette.surface.desk, flex: 1 }}
+              contentInset={
+                compose.composing
+                  ? { bottom: compose.scrollBottomInset }
+                  : undefined
+              }
+            >
+              <AppText color={palette.neutral[7]} variant="secondary">
+                {isRangeAnchor(state.anchor)
+                  ? t('selectionTitle')
+                  : t('blockTitle')}
+              </AppText>
+              <AppText
+                color={palette.neutral[8]}
+                numberOfLines={4}
+                style={[styles.quote, serifFont]}
+              >
+                {quote}
+              </AppText>
+              <View
+                style={[
+                  styles.hairline,
+                  { backgroundColor: palette.neutral[3] },
+                ]}
+              />
+              {state.kind === 'thread'
+                ? roots.map((root) => (
+                    <View key={root.id} style={styles.thread}>
+                      <CommentCell
+                        comment={root}
+                        showQuote={false}
+                        showReply={session !== null}
+                        onReply={compose.reply}
+                      />
+                      {(root.replies ?? []).map((reply) => (
+                        <CommentCell
+                          isReply
+                          comment={reply}
+                          key={reply.id}
+                          showQuote={false}
+                          showReply={session !== null}
+                          replyTargetName={replyTargetAuthor(reply, {
+                            replies: root.replies ?? [],
+                            root,
+                          })}
+                          onReply={compose.reply}
+                        />
+                      ))}
+                    </View>
+                  ))
+                : null}
+              {compose.composing ? null : session ? (
+                <CommentComposeEntry
+                  placeholder={t('placeholder')}
+                  onPress={compose.composeRoot}
+                />
+              ) : (
+                <CommentLoginInline />
+              )}
+            </ScrollView>
+          )}
+        </CommentComposeHost>
+      ) : null}
+    </Modal>
+  )
+}
+
+const styles = StyleSheet.create({
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 28,
+    paddingBottom: 40,
+    gap: 16,
+  },
+  quote: {
+    fontSize: typeScale.copy15.size,
+    lineHeight: typeScale.copy15.lineHeight,
+  },
+  hairline: {
+    height: StyleSheet.hairlineWidth,
+  },
+  thread: {
+    gap: 12,
+  },
+})

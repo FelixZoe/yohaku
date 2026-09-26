@@ -1,0 +1,1 @@
+export { SlotText } from './SlotText'

@@ -1,0 +1,9 @@
+{
+  "symbolNotFound": "Symbol not found",
+  "quoteUnavailable": "Quote unavailable",
+  "candlesIntraday": "{interval} candles",
+  "sessions": "{count} sessions",
+  "live": "Live",
+  "frozen": "Frozen",
+  "todayIntraday": "Today · intraday"
+}

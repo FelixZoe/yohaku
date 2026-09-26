@@ -1,0 +1,290 @@
+/* yohaku: warm palette tokens (mix project accent --a with warm anchor) */
+:root {
+  --yohaku-warm-base: oklch(0.78 0.08 82);
+  --yohaku-accent: color-mix(
+    in oklch,
+    var(--color-accent) 30%,
+    var(--yohaku-warm-base) 70%
+  );
+  --yohaku-accent-deep: color-mix(in oklch, var(--yohaku-accent), black 28%);
+  /* Paper base — anchored to design-system neutral-1 so it auto-inverts
+     with the theme and stays consistent with surface tier 1 elsewhere. */
+  --yohaku-paper-note-bg: var(--color-neutral-1);
+  --yohaku-paper-outline: rgb(0 0 0 / 0.05);
+  --yohaku-paper-hairline: rgb(0 0 0 / 0.07);
+}
+
+[data-theme='dark'] {
+  --yohaku-warm-base: oklch(0.62 0.08 82);
+  --yohaku-accent-deep: color-mix(in oklch, var(--yohaku-accent), white 22%);
+  --yohaku-paper-outline: rgb(255 255 255 / 0.06);
+  --yohaku-paper-hairline: rgb(255 255 255 / 0.08);
+}
+
+@layer components {
+  /* Note paper unfold entrance — scales from main paper's right edge.
+     transform-origin is set on the paper element itself. */
+  @keyframes yohaku-note-enter {
+    from {
+      transform: scaleX(0.02);
+      opacity: 0;
+    }
+    to {
+      transform: scaleX(1);
+      opacity: 1;
+    }
+  }
+
+  /* Exit: reverse unfold — fold back into main paper's right edge. */
+  @keyframes yohaku-note-exit {
+    from {
+      transform: scaleX(1);
+      opacity: 1;
+    }
+    to {
+      transform: scaleX(0.02);
+      opacity: 0;
+    }
+  }
+
+  /* Inner content layer fades in after the shell has unfolded,
+     preventing horizontal stretch artifacts during scaleX. */
+  @keyframes yohaku-note-content-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Post drawer slide-in/out — translateX from viewport right edge. */
+  @keyframes yohaku-drawer-enter {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+  @keyframes yohaku-drawer-exit {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(100%);
+    }
+  }
+
+  /* Layout-level drawer slot — width is driven by `--yohaku-panel-w`.
+     Smooth transition on state change; killed during an active drag so
+     the slot tracks the cursor instantly. */
+  .yohaku-layout-drawer-host {
+    transition: width var(--yohaku-anim-ms, 520ms)
+      var(--yohaku-ease-paper, cubic-bezier(0.22, 1, 0.36, 1));
+    transition-delay: var(--yohaku-main-shift-delay-ms, 0ms);
+  }
+  body[data-yohaku-state='closing'] .yohaku-layout-drawer-host {
+    transition-duration: var(--yohaku-exit-ms, 320ms);
+    transition-delay: var(--yohaku-exit-main-delay-ms, 80ms);
+  }
+  :root[data-yohaku-dragging='1'] .yohaku-layout-drawer-host {
+    transition: none !important;
+  }
+
+  /* Post page TOC column — animates its `width` (not grid-template-columns,
+     which browsers treat as discrete and refuse to interpolate cleanly).
+     The parent is plain flex; shrinking the TOC width lets the article
+     flex-1 sibling reflow smoothly. */
+  .yohaku-post-toc-col {
+    transition: width var(--yohaku-anim-ms, 520ms)
+      var(--yohaku-ease-paper, cubic-bezier(0.22, 1, 0.36, 1));
+  }
+  body[data-yohaku-state='reading']
+    [data-yohaku-mode='post']
+    .yohaku-post-toc-col,
+  body[data-yohaku-state='anchored']
+    [data-yohaku-mode='post']
+    .yohaku-post-toc-col {
+    overflow: hidden;
+    width: 0px !important;
+  }
+  body[data-yohaku-state='closing']
+    [data-yohaku-mode='post']
+    .yohaku-post-toc-col {
+    overflow: hidden;
+    transition-duration: var(--yohaku-exit-ms, 320ms);
+    transition-delay: var(--yohaku-exit-main-delay-ms, 80ms);
+  }
+
+  /* Article column on post mode — both width cap and padding are constant
+     across states so nothing animates here (the layout reflow comes from
+     the TOC column's `width` transition + flex re-layout).
+     920px content target + 16px × 2 padding (border-box) = 952px box.
+     Mobile (< md / 768px): drop the inline padding so the article hugs the
+     viewport edges and Container's own px-* padding handles spacing.
+     `data-yohaku-mode` is a static JSX attribute on the page's layout root
+     (NOT set from JS) so this rule applies on the SSR first paint — moving
+     it to a JS-set body attribute reintroduces a 16px CLS on hydration. */
+  [data-yohaku-mode='post'] .yohaku-paper-main-slot {
+    max-width: 952px;
+    margin-inline: auto;
+    padding-inline: 0;
+  }
+  @media (min-width: 768px) {
+    [data-yohaku-mode='post'] .yohaku-paper-main-slot {
+      padding-inline: 16px;
+    }
+  }
+
+  /* Post-mode header inset — the global nav bar is portaled to <body>
+     via RootPortal, so it can't ride the article's transform. Instead we
+     pull its right edge inward by the drawer width: the bar's
+     `justify-center` then re-centers the nav pill within the visible
+     (non-drawer) area. Scoped to post mode so Note path is unaffected. */
+  .yohaku-page-right-inset {
+    transition:
+      right var(--yohaku-anim-ms, 520ms)
+        var(--yohaku-ease-paper, cubic-bezier(0.22, 1, 0.36, 1)),
+      padding-right var(--yohaku-anim-ms, 520ms)
+        var(--yohaku-ease-paper, cubic-bezier(0.22, 1, 0.36, 1));
+  }
+  body[data-yohaku-state='reading'] .yohaku-page-right-inset,
+  body[data-yohaku-state='anchored'] .yohaku-page-right-inset {
+    right: var(--yohaku-panel-w, 0px) !important;
+  }
+  body[data-yohaku-state='closing'] .yohaku-page-right-inset {
+    transition-duration: var(--yohaku-exit-ms, 320ms);
+    transition-delay: var(--yohaku-exit-main-delay-ms, 80ms);
+  }
+  /* During an active drag the inset must track the cursor — kill transition. */
+  :root[data-yohaku-dragging='1'] .yohaku-page-right-inset {
+    transition: none !important;
+  }
+
+  /* Drawer paper sheet — sits behind the content/handle so any filter
+     applied by a variant does not displace the article text. Must stay
+     first child of the drawer aside (which is `isolate` so a negative
+     z-index lands behind normal-flow siblings without escaping the
+     stacking context). The variant-specific background, filter, and
+     hairline live on the component (`YohakuDrawerPaper`). */
+  .yohaku-drawer-paper-sheet {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* Resize handle — full-height hit area on the drawer's left edge. */
+  .yohaku-drawer-resize {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 8px;
+    cursor: col-resize;
+    /* Must outrank `.yohaku-note-content` (z-[1]) so the 8px hit area
+       isn't masked by the content layer. */
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+  }
+  .yohaku-drawer-resize::before {
+    content: '';
+    display: block;
+    width: 2px;
+    height: 36px;
+    border-radius: 2px;
+    background: transparent;
+    transition:
+      background 160ms ease,
+      height 160ms ease;
+  }
+  .yohaku-drawer-resize:hover::before,
+  :root[data-yohaku-dragging='1'] .yohaku-drawer-resize::before {
+    background: var(--color-accent);
+    height: 56px;
+  }
+
+  /* Main paper wrap — stable stacking context for the main paper.
+     No transform shift on state change; layering is handled purely by
+     z-index on the two papers. */
+  .yohaku-main-paper-wrap {
+    isolation: isolate;
+  }
+
+  .yohaku-note-paper {
+    transform-origin: left center;
+    transition: opacity 220ms ease;
+  }
+  body[data-yohaku-state='anchored'] .yohaku-note-paper {
+    opacity: 0.5 !important;
+  }
+
+  /* Sidebar hide tied to body state — TOC / action aside fade to 0 while
+     yohaku is open so nothing bleeds through the panel. Applies to both
+     Note and Post paths. */
+  body[data-yohaku-state='reading'] .yohaku-fadeable,
+  body[data-yohaku-state='anchored'] .yohaku-fadeable,
+  body[data-yohaku-state='closing'] .yohaku-fadeable {
+    opacity: var(--yohaku-side-opacity-reading, 0);
+    pointer-events: none;
+  }
+
+  /* Note close button — neutral ghost, lets the paper stay quiet. */
+  .yohaku-note-close {
+    @apply text-neutral-6;
+    background: transparent;
+    transition:
+      background 160ms ease,
+      color 160ms ease,
+      transform 160ms ease;
+  }
+  .yohaku-note-close:hover {
+    @apply text-neutral-9;
+    background: rgb(0 0 0 / 0.05);
+  }
+  [data-theme='dark'] .yohaku-note-close:hover {
+    background: rgb(255 255 255 / 0.06);
+  }
+  .yohaku-note-close:active {
+    transform: scale(0.94);
+  }
+
+  /* Flash highlight (CSS Custom Highlight API — no DOM mutation, no
+     `<mark>` specificity battles). The `::highlight(yohaku-flash)` rule
+     is injected at runtime by flash.ts because Turbopack's CSS parser
+     rejects the pseudo-element at build time. */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yohaku-paper-main-slot,
+  .yohaku-main-paper-wrap,
+  .yohaku-note-paper,
+  .yohaku-note-content,
+  .yohaku-post-drawer,
+  .yohaku-page-right-inset {
+    transition-duration: calc(var(--yohaku-anim-ms, 520ms) * 0.4) !important;
+    animation-duration: calc(var(--yohaku-anim-ms, 520ms) * 0.4) !important;
+  }
+  /* Reduced motion: swap scale/translate entrances for plain fade. */
+  .yohaku-note-paper,
+  .yohaku-post-drawer {
+    animation-name: yohaku-note-content-in !important;
+  }
+  .yohaku-flash {
+    transition-duration: 600ms !important;
+  }
+}
+
+@media print {
+  .yohaku-note-paper,
+  .yohaku-post-drawer,
+  [data-yohaku-sheet] {
+    display: none !important;
+  }
+  .yohaku-paper-main-slot,
+  .yohaku-main-paper-wrap {
+    transform: none !important;
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "current_readers": "지금",
+  "reading_now": "분이 함께 글을 펼치고 있어요",
+  "reading_now_short": "{count} 지금",
+  "realtime_tooltip": "지금 같이 읽고 있는 사람들이에요. 왼쪽 타임라인으로 다른 분들의 자취를 살펴볼 수 있어요（모바일에서는 보이지 않아요）",
+  "presence_you": "당신",
+  "presence_anonymous_readers": "독자 {count}분",
+  "presence_and_others_after_one": "외 {count}분"
+}

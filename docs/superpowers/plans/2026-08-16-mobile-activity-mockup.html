@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mobile Activity 表达 · 设计稿</title>
+  <style>
+    /*
+     * Mockup tokens — mirror @yohaku/design-system/src/tokens.css.
+     * The verify script (scripts/check.ts) lints these against the package.
+     */
+    :root {
+      --color-neutral-1: #f9f8f5;
+      --color-neutral-2: #f0efeb;
+      --color-neutral-3: #e3e1db;
+      --color-neutral-4: #d0cec6;
+      --color-neutral-5: #a8a69f;
+      --color-neutral-6: #787670;
+      --color-neutral-7: #5c5a55;
+      --color-neutral-8: #403f3a;
+      --color-neutral-9: #24231f;
+      --color-neutral-10: #141312;
+
+      --color-accent: #c56473;
+      --color-info: #3d6896;
+      --color-success: #5e9f7e;
+      --color-warning: #a87a3d;
+      --color-error: #a64953;
+
+      --color-paper: #faf9f5;
+      --color-border: rgba(24, 24, 27, 0.1);
+
+      --font-sans: -apple-system, 'PingFang SC', 'Microsoft YaHei',
+                   'Noto Sans SC', 'Hiragino Sans GB', system-ui, sans-serif;
+      --font-serif: 'Noto Serif CJK SC', 'Source Han Serif SC', SongTi SC,
+                    STSong, Georgia, serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', Consolas, Monaco,
+                   'Hannotate SC', monospace;
+    }
+
+    [data-theme='dark'] {
+      --color-neutral-1: #141414;
+      --color-neutral-2: #242424;
+      --color-neutral-3: #404040;
+      --color-neutral-4: #5c5c5c;
+      --color-neutral-5: #787878;
+      --color-neutral-6: #a8a8a8;
+      --color-neutral-7: #d0d0d0;
+      --color-neutral-8: #e3e3e3;
+      --color-neutral-9: #f0f0f0;
+      --color-neutral-10: #f8f8f8;
+
+      --color-paper: #1a1814;
+      --color-border: rgba(255, 255, 255, 0.1);
+    }
+
+    * { box-sizing: border-box; }
+    html { font-size: 14px; line-height: 1.5; letter-spacing: 0.01em; }
+    body {
+      margin: 0;
+      background: var(--color-paper);
+      color: var(--color-neutral-9);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+
+    .toolbar {
+      position: fixed; top: 12px; right: 12px; z-index: 10;
+      background: var(--color-neutral-2);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 4px 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--color-neutral-7);
+    }
+    .toolbar button {
+      background: none; border: none; cursor: pointer;
+      color: inherit; font: inherit; padding: 2px 6px; border-radius: 4px;
+    }
+    .toolbar button:hover { background: var(--color-neutral-3); }
+
+    .shell { max-width: 1180px; margin: 0 auto; padding: 48px 24px 96px; }
+
+    .eyebrow {
+      font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--color-neutral-5); margin: 0 0 8px;
+    }
+    h1 { font: 500 28px/1.29 var(--font-serif); color: var(--color-neutral-10); margin: 0 0 6px; }
+    .lede { font-size: 13px; color: var(--color-neutral-7); margin: 0 0 48px; max-width: 560px; }
+
+    h2 {
+      font: 500 20px/1.4 var(--font-sans); color: var(--color-neutral-9);
+      margin: 64px 0 4px;
+    }
+    .section-note { font-size: 12px; color: var(--color-neutral-7); margin: 0 0 28px; max-width: 640px; }
+
+    .row { display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start; }
+
+    .variant { width: 300px; }
+    .variant h3 { font: 500 14px/1.5 var(--font-sans); color: var(--color-neutral-9); margin: 16px 0 4px; }
+    .variant h3 .tag {
+      font: 400 10px/1 var(--font-mono); color: var(--color-accent);
+      border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+      border-radius: 999px; padding: 2px 7px; margin-left: 6px; vertical-align: 2px;
+    }
+    .variant ul { margin: 6px 0 0; padding: 0 0 0 16px; }
+    .variant li { font-size: 12px; color: var(--color-neutral-7); margin: 3px 0; }
+
+    .phone {
+      width: 300px; height: 600px; position: relative; overflow: hidden;
+      background: var(--color-paper);
+      border-radius: 36px;
+      box-shadow: 0 0 0 1px var(--color-border), 0 4px 24px rgba(0,0,0,0.05);
+    }
+    .notch {
+      position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+      width: 78px; height: 22px; border-radius: 999px;
+      background: var(--color-neutral-10); z-index: 5;
+    }
+
+    .navbar {
+      position: absolute; top: 0; left: 0; right: 0; height: 96px; z-index: 4;
+      display: flex; align-items: flex-end; padding: 0 12px 8px;
+      background: linear-gradient(
+        color-mix(in srgb, var(--color-paper) 92%, transparent) 40%,
+        color-mix(in srgb, var(--color-paper) 55%, transparent) 75%,
+        transparent
+      );
+    }
+    .glass {
+      width: 32px; height: 32px; border-radius: 999px; flex-shrink: 0;
+      display: grid; place-items: center;
+      background: color-mix(in srgb, var(--color-paper) 68%, transparent);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-border) 70%, transparent);
+      color: var(--color-neutral-8);
+    }
+    .glass.back { font-size: 17px; line-height: 1; }
+    .glass.more { font-size: 15px; line-height: 1; }
+    .navbar .navmid {
+      flex: 1; min-width: 0; align-self: flex-end;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 0 10px 6px;
+    }
+    .navbar .navtitle {
+      max-width: 100%; font-size: 13px; font-weight: 500;
+      color: var(--color-neutral-9); overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    }
+
+    .page { position: absolute; inset: 0; padding: 104px 20px 32px; overflow: hidden; }
+    .a-title { font: 500 20px/1.4 var(--font-serif); color: var(--color-neutral-10); margin: 0 0 6px; }
+    .a-meta { font-size: 11px; color: var(--color-neutral-6); margin: 0 0 18px; }
+    .page p { font-size: 13px; line-height: 1.85; color: var(--color-neutral-9); margin: 0 0 14px; text-align: justify; }
+    .page p.dim { color: var(--color-neutral-8); }
+
+    .ink-rail { position: absolute; top: 104px; bottom: 40px; right: 4px; width: 6px; z-index: 6; }
+    .ink-mark {
+      position: absolute; right: 1px; width: 2.5px; height: 11px; border-radius: 2px;
+      background: var(--color-neutral-8); opacity: 0.2;
+      transition: top 1.4s cubic-bezier(0.3, 0, 0.2, 1);
+    }
+    .ink-me {
+      position: absolute; right: 0.5px; width: 3px; height: 18px; border-radius: 2px;
+      background: color-mix(in srgb, var(--color-accent) 62%, transparent);
+    }
+    .ink-me::before {
+      content: ''; position: absolute; inset: 0; border-radius: 2px;
+      transform: translate(-1.5px, 1px);
+      background: color-mix(in srgb, var(--color-neutral-8) 14%, transparent);
+    }
+
+    .margin-blot { position: absolute; right: 6px; opacity: 0.75; }
+
+    .title-ink {
+      position: relative; width: 84px; height: 1.5px; border-radius: 1px;
+      background: color-mix(in srgb, var(--color-neutral-8) 12%, transparent);
+    }
+    .title-ink .fill {
+      position: absolute; left: 0; top: 0; bottom: 0; width: 34%; border-radius: 1px;
+      background: color-mix(in srgb, var(--color-neutral-8) 70%, transparent);
+    }
+    .title-ink .tick {
+      position: absolute; top: -1px; width: 1.5px; height: 3.5px; border-radius: 1px;
+      background: var(--color-neutral-6); opacity: 0.55;
+    }
+
+    .me-header { display: flex; align-items: center; gap: 12px; margin: 8px 0 22px; }
+    .me-avatar {
+      width: 52px; height: 52px; border-radius: 999px; background: var(--color-neutral-3);
+      box-shadow: 0 0 0 1px var(--color-border);
+      display: grid; place-items: center; font-size: 20px; color: var(--color-neutral-6);
+    }
+    .me-name { font-size: 16px; font-weight: 500; color: var(--color-neutral-10); }
+    .me-sub { font-size: 11px; color: var(--color-neutral-6); margin-top: 2px; }
+
+    .group { background: var(--color-neutral-2); border-radius: 10px; margin-bottom: 18px; overflow: hidden; }
+    .cell {
+      display: flex; align-items: center; gap: 10px; padding: 11px 14px;
+      font-size: 13px; color: var(--color-neutral-9);
+    }
+    .cell + .cell { border-top: 1px solid var(--color-border); }
+    .cell .glyph { width: 18px; text-align: center; color: var(--color-neutral-6); font-size: 13px; }
+    .cell .spacer { flex: 1; }
+    .cell .val { font-size: 12px; color: var(--color-neutral-6); font-variant-numeric: tabular-nums; }
+    .cell .chev { color: var(--color-neutral-5); font-size: 12px; }
+
+    .colophon { position: absolute; left: 0; right: 0; bottom: 88px; text-align: center; }
+    .desk-line {
+      display: inline-flex; align-items: center; gap: 7px;
+      font: italic 400 12px/1.5 var(--font-serif); color: var(--color-neutral-7);
+    }
+    .live-dot {
+      width: 5px; height: 5px; border-radius: 999px; background: var(--color-accent);
+      animation: breathe 2.6s ease-in-out infinite;
+    }
+    @keyframes breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+    .version { font: 400 10px/1.4 var(--font-mono); color: var(--color-neutral-5); margin-top: 8px; }
+
+    .tabbar {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 74px;
+      border-top: 1px solid var(--color-border);
+      background: color-mix(in srgb, var(--color-paper) 88%, transparent);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: flex-start; padding-top: 12px;
+    }
+    .tab { flex: 1; text-align: center; font-size: 10px; color: var(--color-neutral-6); }
+    .tab .ico { display: block; font-size: 17px; margin-bottom: 3px; }
+    .tab.on { color: var(--color-neutral-9); }
+
+    .scrim { position: absolute; inset: 0; background: rgba(0,0,0,0.28); z-index: 7; }
+    .formsheet {
+      position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 8;
+      background: var(--color-neutral-1); border-radius: 14px;
+      box-shadow: 0 0 0 1px var(--color-border), 0 4px 24px rgba(0,0,0,0.05);
+      padding: 8px 18px 20px;
+    }
+    .grabber { width: 34px; height: 4px; border-radius: 999px; background: var(--color-neutral-4); margin: 4px auto 14px; }
+    .sheet-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+    .sheet-eyebrow { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--color-neutral-6); }
+    .sheet-owner { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-neutral-7); }
+    .sheet-owner .live-dot { animation: none; }
+    .desk-body { display: flex; gap: 12px; align-items: flex-start; }
+    .app-slip {
+      width: 44px; height: 44px; border-radius: 9px; flex-shrink: 0;
+      background: var(--color-paper);
+      box-shadow: 0 0 0 1px var(--color-border);
+      display: grid; place-items: center;
+      font: 500 11px/1 var(--font-mono); color: var(--color-neutral-7);
+    }
+    .desk-title { font-size: 15px; font-weight: 500; color: var(--color-neutral-10); margin: 1px 0 2px; }
+    .desk-byline { font-size: 13px; color: var(--color-neutral-7); }
+    .desk-state { font-size: 12px; color: var(--color-neutral-6); margin-top: 2px; }
+    .desk-progress { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+    .meter { display: flex; align-items: flex-end; gap: 1.5px; height: 10px; }
+    .meter i { width: 2px; background: var(--color-neutral-6); border-radius: 1px; animation: ink 1.1s ease-in-out infinite; }
+    .meter i:nth-child(1) { height: 5px; }
+    .meter i:nth-child(2) { height: 9px; animation-delay: 0.18s; }
+    .meter i:nth-child(3) { height: 6px; animation-delay: 0.36s; }
+    @keyframes ink { 0%, 100% { transform: scaleY(0.55); } 50% { transform: scaleY(1); } }
+    .bar { flex: 1; height: 3px; border-radius: 999px; background: var(--color-neutral-3); overflow: hidden; }
+    .bar .bfill { display: block; height: 100%; width: 38%; border-radius: 999px; background: var(--color-neutral-8); }
+    .desk-time { font-size: 11px; color: var(--color-neutral-6); font-variant-numeric: tabular-nums; }
+    .desk-app-inline { font-size: 12px; font-style: italic; color: var(--color-neutral-6); margin-top: 12px; }
+    .desk-app-inline b { font-weight: 500; font-style: normal; color: var(--color-neutral-8); }
+
+    .spec { margin-top: 40px; border-top: 1px solid var(--color-border); padding-top: 20px; max-width: 720px; }
+    .spec h4 { font-size: 12px; font-weight: 500; color: var(--color-neutral-8); margin: 0 0 8px; }
+    .spec p { font-size: 12px; color: var(--color-neutral-7); margin: 4px 0; }
+    .spec code { font-family: var(--font-mono); font-size: 11px; color: var(--color-neutral-8); }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">
+      light · dark
+    </button>
+  </div>
+
+  <main class="shell">
+    <p class="eyebrow">Yohaku Mobile · Design Exploration</p>
+    <h1>Activity 的移动端表达</h1>
+    <p class="lede">
+      两个主题:① 阅读 Presence——匿名、纯氛围、保留位置感,三个方向对比;
+      ② 站长 LiveDesk——Me tab 彩蛋式存在。右上角可切换明暗。
+    </p>
+
+    <h2>一 · 阅读 Presence</h2>
+    <p class="section-note">
+      Web 的左缘轨道在 iOS 上不可直译:左缘是返回手势区、没有 hover;
+      且 iOS 26 Liquid Glass 导航没有实体 bar 底缘,任何线都必须锚在真实对象上。
+      以下三个方向都遵守:匿名(无头像无名字)、不可交互、空房间时完全不渲染、
+      透明度按氛围态规范压低(他人 /18–30,自己 accent 50–70%)。
+    </p>
+
+    <div class="row">
+      <div class="variant">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="navbar">
+            <span class="glass back">‹</span>
+            <span class="navmid"><span class="navtitle">余白与呼吸感</span></span>
+            <span class="glass more">⋯</span>
+          </div>
+          <div class="page">
+            <p>纸页上留出的空,不是没有内容,而是内容得以呼吸的地方。版面里的每一处停顿,都是给读者的一次换气。</p>
+            <p>把一段文字排得满满当当很容易,难的是舍得空。空出来的部分承担着节奏——它决定了眼睛在哪里休息,思绪在哪里转弯。</p>
+            <p class="dim">印刷的时代,排字工人用铅空条控制行距,每一条都有自己的名字。今天我们用变量与标记语言做同样的事,但目的没有变:让阅读成为一件从容的事。</p>
+            <p class="dim">当你在深夜读到这里,也许有另一个人正读到上一段。你们不会相遇,但墨线知道。</p>
+            <p class="dim">这种同在不需要被强调。它只需要在页面的边缘,淡淡地存在着,像纸背透过来的一点墨。</p>
+          </div>
+          <div class="ink-rail">
+            <span class="ink-mark" id="m1" style="top: 14%"></span>
+            <span class="ink-me" style="top: 33%"></span>
+            <span class="ink-mark" id="m2" style="top: 52%"></span>
+            <span class="ink-mark" id="m3" style="top: 81%"></span>
+          </div>
+        </div>
+        <h3>方向 A · 共读墨线<span class="tag">推荐</span></h3>
+        <ul>
+          <li>替代系统滚动指示条,一条线两个职能</li>
+          <li>自己 = accent/62 稍实墨痕 + 套色偏移残影,随滚动移动</li>
+          <li>他人 = neutral-8/20 淡墨点,位置更新以近临界阻尼缓动漂移</li>
+          <li>加入/离开:300ms 渐显渐隐,无弹跳</li>
+        </ul>
+      </div>
+
+      <div class="variant">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="navbar">
+            <span class="glass back">‹</span>
+            <span class="navmid"><span class="navtitle">余白与呼吸感</span></span>
+            <span class="glass more">⋯</span>
+          </div>
+          <div class="page">
+            <p>纸页上留出的空,不是没有内容,而是内容得以呼吸的地方。版面里的每一处停顿,都是给读者的一次换气。</p>
+            <p>把一段文字排得满满当当很容易,难的是舍得空。空出来的部分承担着节奏——它决定了眼睛在哪里休息,思绪在哪里转弯。</p>
+            <svg class="margin-blot" style="top: 268px" width="16" height="16" viewBox="0 0 16 16">
+              <filter id="bleed">
+                <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n" />
+                <feDisplacementMap in="SourceGraphic" in2="n" scale="5" />
+              </filter>
+              <circle cx="8" cy="8" r="5" filter="url(#bleed)"
+                fill="var(--color-neutral-8)" opacity="0.16" />
+            </svg>
+            <p class="dim">印刷的时代,排字工人用铅空条控制行距,每一条都有自己的名字。今天我们用变量与标记语言做同样的事,但目的没有变:让阅读成为一件从容的事。</p>
+            <p class="dim">当你在深夜读到这里,也许有另一个人正读到上一段。你们不会相遇,但洇痕知道。</p>
+            <p class="dim">这种同在不需要被强调。它只需要在页面的边缘,淡淡地存在着,像纸背透过来的一点墨。</p>
+          </div>
+        </div>
+        <h3>方向 B · 页边洇痕</h3>
+        <ul>
+          <li>洇渍落在他人实际阅读位置的右页边(内容坐标)</li>
+          <li>feTurbulence 撕边,软度来自颗粒而非 blur</li>
+          <li>滚动路过才相遇——最叙事,但可发现性低</li>
+          <li>位置更新时痕迹会"游走",在纸的隐喻里略出戏</li>
+        </ul>
+      </div>
+
+      <div class="variant">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="navbar">
+            <span class="glass back">‹</span>
+            <span class="navmid">
+              <span class="navtitle">余白与呼吸感</span>
+              <span class="title-ink">
+                <span class="fill"></span>
+                <span class="tick" style="left: 14%"></span>
+                <span class="tick" style="left: 52%"></span>
+                <span class="tick" style="left: 81%"></span>
+              </span>
+            </span>
+            <span class="glass more">⋯</span>
+          </div>
+          <div class="page">
+            <p>纸页上留出的空,不是没有内容,而是内容得以呼吸的地方。版面里的每一处停顿,都是给读者的一次换气。</p>
+            <p>把一段文字排得满满当当很容易,难的是舍得空。空出来的部分承担着节奏——它决定了眼睛在哪里休息,思绪在哪里转弯。</p>
+            <p class="dim">印刷的时代,排字工人用铅空条控制行距,每一条都有自己的名字。今天我们用变量与标记语言做同样的事,但目的没有变:让阅读成为一件从容的事。</p>
+            <p class="dim">当你在深夜读到这里,也许有另一个人正读到上一段。你们不会相遇,但刻度知道。</p>
+          </div>
+        </div>
+        <h3>方向 C′ · 标题墨线</h3>
+        <ul>
+          <li>iOS 26 无分界线 → 不吊在虚空,锚在折叠标题自身</li>
+          <li>与标题共享 progress,一同升起渐显;深读态专属</li>
+          <li>实段 = 自己,细刻度 = 他人;像读到哪划到哪的笔线</li>
+          <li>尺度小,位置只作氛围示意,空间分辨率低于方向 A</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>二 · 站长 LiveDesk · Me tab 彩蛋</h2>
+    <p class="section-note">
+      不常驻、不抢眼:住在 Me tab 底部的 colophon 区,与版本号为邻。
+      站长无活动时整行消失,只剩版本号——"有时在,有时不在"正是彩蛋的性格。
+      tap 后以 formSheet 展开完整纸票卡片(沿用 Web 移动胶囊的语言)。
+    </p>
+
+    <div class="row">
+      <div class="variant">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="page" style="padding-top: 64px">
+            <div class="me-header">
+              <div class="me-avatar">◐</div>
+              <div>
+                <div class="me-name">Innei</div>
+                <div class="me-sub">i@innei.dev · GitHub</div>
+              </div>
+            </div>
+            <div class="group">
+              <div class="cell"><span class="glyph">↺</span>阅读历史<span class="spacer"></span><span class="val">128</span><span class="chev">›</span></div>
+              <div class="cell"><span class="glyph">♡</span>喜欢<span class="spacer"></span><span class="val">42</span><span class="chev">›</span></div>
+              <div class="cell"><span class="glyph">✎</span>我的评论<span class="spacer"></span><span class="val">17</span><span class="chev">›</span></div>
+            </div>
+            <div class="group">
+              <div class="cell"><span class="glyph">文</span>语言<span class="spacer"></span><span class="val">简体中文</span><span class="chev">›</span></div>
+              <div class="cell"><span class="glyph">☾</span>外观<span class="spacer"></span><span class="val">跟随系统</span><span class="chev">›</span></div>
+            </div>
+          </div>
+          <div class="colophon">
+            <span class="desk-line"><span class="live-dot"></span>Innei 此刻 · 正在用 Xcode</span>
+            <div class="version">Yohaku 1.2.0 (233)</div>
+          </div>
+          <div class="tabbar">
+            <div class="tab"><span class="ico">▤</span>文稿</div>
+            <div class="tab"><span class="ico">✎</span>手记</div>
+            <div class="tab"><span class="ico">◌</span>碎碎念</div>
+            <div class="tab on"><span class="ico">◐</span>我</div>
+          </div>
+        </div>
+        <h3>常驻态 · colophon 一行</h3>
+        <ul>
+          <li>serif 斜体 + 呼吸 live dot,与版本号同区</li>
+          <li>标题变化用 SlotText 翻牌(Yohaku 签名动效)</li>
+          <li>无活动 → 整行消失,不占位</li>
+          <li>数据:tab 聚焦时拉取,不建常驻 socket</li>
+        </ul>
+      </div>
+
+      <div class="variant">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="page" style="padding-top: 64px">
+            <div class="me-header">
+              <div class="me-avatar">◐</div>
+              <div>
+                <div class="me-name">Innei</div>
+                <div class="me-sub">i@innei.dev · GitHub</div>
+              </div>
+            </div>
+            <div class="group">
+              <div class="cell"><span class="glyph">↺</span>阅读历史<span class="spacer"></span><span class="val">128</span><span class="chev">›</span></div>
+              <div class="cell"><span class="glyph">♡</span>喜欢<span class="spacer"></span><span class="val">42</span><span class="chev">›</span></div>
+              <div class="cell"><span class="glyph">✎</span>我的评论<span class="spacer"></span><span class="val">17</span><span class="chev">›</span></div>
+            </div>
+          </div>
+          <div class="scrim"></div>
+          <div class="formsheet">
+            <div class="grabber"></div>
+            <div class="sheet-head">
+              <span class="sheet-eyebrow">Live Desk</span>
+              <span class="sheet-owner"><span class="live-dot"></span>Innei</span>
+            </div>
+            <div class="desk-body">
+              <div class="app-slip">♪</div>
+              <div style="min-width: 0">
+                <div class="desk-title">One Last Kiss</div>
+                <div class="desk-byline">宇多田ヒカル</div>
+                <div class="desk-state">Apple Music · 正在播放</div>
+              </div>
+            </div>
+            <div class="desk-progress">
+              <span class="meter"><i></i><i></i><i></i></span>
+              <span class="bar"><span class="bfill"></span></span>
+              <span class="desk-time">1:34 / 4:11</span>
+            </div>
+            <div class="desk-app-inline">同时在用 <b>Xcode</b></div>
+          </div>
+          <div class="tabbar">
+            <div class="tab"><span class="ico">▤</span>文稿</div>
+            <div class="tab"><span class="ico">✎</span>手记</div>
+            <div class="tab"><span class="ico">◌</span>碎碎念</div>
+            <div class="tab on"><span class="ico">◐</span>我</div>
+          </div>
+        </div>
+        <h3>展开态 · formSheet 纸票</h3>
+        <ul>
+          <li>Web CapsuleExpandedCard 的 RN 移植:纸片图标 + ink meter</li>
+          <li>时间与标题用 SlotText 翻牌,进度 1s 线性推进</li>
+          <li>formSheet 注意:ScrollView 须为 screen 直接子级</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="spec">
+      <h4>实现注记(方向定稿后展开)</h4>
+      <p>· Presence 下行:REST 轮询 <code>getPresence(roomName)</code> 30s + socket 连接事件触发 refetch,与 Web 同构;mobile 现有 <code>use-reading-presence</code> 已覆盖上报侧。</p>
+      <p>· 展示层为纯 native overlay(reanimated),滚动指标已在 <code>useCollapsingTitle → onScrollMetrics</code> 流动,不触碰 WebView。</p>
+      <p>· 全部动效走 <code>src/theme/motion.ts</code> 近临界阻尼预设;墨点位置漂移 ≈ 1.4s 缓动,无回弹。</p>
+      <p>· 方向 A 需关闭详情页系统滚动指示条(<code>showsVerticalScrollIndicator=false</code>),墨线接管进度职能。</p>
+      <p>· 方向 C′ 在 <code>CollapsingHeaderTitle</code> 内绘制,复用其 <code>progress</code> sharedValue 同步升起;线宽跟随标题文本宽度。</p>
+    </div>
+  </main>
+
+  <script>
+    const drift = [
+      { el: document.getElementById('m1'), base: 14 },
+      { el: document.getElementById('m2'), base: 52 },
+      { el: document.getElementById('m3'), base: 81 },
+    ]
+    setInterval(() => {
+      for (const d of drift) {
+        d.base = Math.min(92, d.base + Math.random() * 2.2)
+        d.el.style.top = d.base + '%'
+      }
+    }, 3200)
+  </script>
+</body>
+</html>

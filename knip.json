@@ -1,0 +1,66 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["eslint.config.mjs", "taze.config.js", "ecosystem.config.js"],
+      "project": ["*.{ts,mjs,js}"]
+    },
+    "apps/web": {
+      "entry": [
+        "src/app/**/{page,layout,template,loading,error,not-found,route,default,sitemap,robots,opengraph-image,twitter-image,icon,apple-icon,manifest}.{ts,tsx}",
+        "src/app/**/middleware.ts",
+        "src/middleware.ts",
+        "src/instrumentation.ts",
+        "next.config.mjs",
+        "next.config.{ts,js,cjs,mjs}",
+        "ecosystem.config.{js,cjs}",
+        "vitest.config.ts",
+        "src/workers/**/*.ts",
+        "src/**/*.test.{ts,tsx}"
+      ],
+      "project": ["src/**/*.{ts,tsx,js,jsx}"],
+      "ignore": [
+        "public/**/*",
+        "src/types/api.ts",
+        "src/**/*.css"
+      ],
+      "ignoreBinaries": ["eslint"],
+      "next": true
+    },
+    "packages/design-system": {
+      "entry": ["src/index.ts", "scripts/check.ts"],
+      "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts"],
+      "ignore": ["showcase/**", "dist/**"],
+      "ignoreDependencies": [
+        "@tailwindcss/vite",
+        "@types/react",
+        "@types/react-dom",
+        "@vitejs/plugin-react",
+        "react",
+        "react-dom",
+        "tailwindcss"
+      ]
+    }
+  },
+  "ignore": ["yohaku-oss/**", "haklex/**"],
+  "ignoreDependencies": [
+    "typescript",
+    "prettier",
+    "@innei/prettier",
+    "@yohaku/design-system",
+    "mermaid",
+    "tw-animate-css",
+    "@tailwindcss/typography",
+    "@iconify-json/material-symbols",
+    "@iconify-json/mingcute",
+    "sharp",
+    "eslint-plugin-react",
+    "eslint-plugin-react-hooks",
+    "eslint-plugin-react-refresh",
+    "taze",
+    "zx",
+    "@types/katex",
+    "@types/react-responsive-masonry"
+  ],
+  "ignoreBinaries": ["pm2", "report", "compare", "prettier"]
+}

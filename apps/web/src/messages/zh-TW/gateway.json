@@ -1,0 +1,8 @@
+{
+  "connected": "已接",
+  "disconnected": "暫斷",
+  "reading_now": "人此刻在讀",
+  "websocket_intro": "當你打開這個頁面時，會自動建立 WebSocket 連接，當成功連接後服務器會推送當前瀏覽頁面的人數。",
+  "no_readers": "此間暫無人跡。",
+  "popular_content": "方興正盛："
+}

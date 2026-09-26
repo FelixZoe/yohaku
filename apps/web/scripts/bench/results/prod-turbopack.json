@@ -1,0 +1,32 @@
+{
+  "bundler": "turbopack",
+  "timestamp": "2026-05-13T06:31:25.273Z",
+  "runs": [
+    {
+      "wallMs": 11369,
+      "reportedCompileMs": 9500
+    },
+    {
+      "wallMs": 13284,
+      "reportedCompileMs": 11400
+    },
+    {
+      "wallMs": 13518,
+      "reportedCompileMs": 11600
+    }
+  ],
+  "summary": {
+    "wallMsMean": 12723.666666666666,
+    "wallMsMin": 11369,
+    "wallMsMax": 13518,
+    "reportedMsMean": 10833.333333333334
+  },
+  "artifacts": {
+    "nextTotalKb": 435564,
+    "staticKb": 53152,
+    "serverKb": 114956,
+    "standaloneKb": 266128,
+    "chunkFiles": 926,
+    "chunkJsFiles": 904
+  }
+}

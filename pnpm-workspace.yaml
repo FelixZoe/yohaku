@@ -1,0 +1,152 @@
+packages:
+  - apps/*
+  - packages/*
+  - haklex/*
+  # pnpm 12 does not follow symlinks when expanding the globs above (pnpm 11
+  # did), so the yohaku-oss submodule members must be listed explicitly. They
+  # are listed at their real paths, not through the apps/ or packages/ symlinks:
+  # pnpm writes a member's node_modules at the real path but computes the
+  # relative link target from the listed path, so `packages/design-system`
+  # links apps/mobile to the nonexistent yohaku-oss/packages/design-system.
+  - yohaku-oss/apps/mobile
+  - yohaku-oss/design-system
+  - yohaku-oss/packages/dom-webview
+  - yohaku-oss/packages/rich-content
+
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - '@swc/core'
+  - esbuild
+  - sharp
+  - simple-git-hooks
+
+allowBuilds:
+  '@parcel/watcher': false
+  '@swc/core': false
+  better-sqlite3: true
+  esbuild: false
+  # postinstall only downloads tree-sitter/RaTeX assets; both features are
+  # disabled via the app's "enriched-markdown" config, so skip it
+  react-native-enriched-markdown: false
+  sharp: false
+  simple-git-hooks: false
+  unrs-resolver: false
+
+minimumReleaseAgeExclude:
+  - '@haklex/*'
+  - '@mx-space/*'
+  - '@innei/react-tweet@4.0.0'
+  - '@code-inspector/core@1.6.3'
+  - '@code-inspector/esbuild@1.6.3'
+  - '@code-inspector/mako@1.6.3'
+  - '@code-inspector/turbopack@1.6.3'
+  - '@code-inspector/vite@1.6.3'
+  - '@code-inspector/webpack@1.6.3'
+  - code-inspector-plugin@1.6.3
+  - '@next/bundle-analyzer@16.3.0'
+  - '@next/env@16.3.0'
+  - '@next/swc-darwin-arm64@16.3.0'
+  - '@next/swc-darwin-x64@16.3.0'
+  - '@next/swc-linux-arm64-gnu@16.3.0'
+  - '@next/swc-linux-arm64-musl@16.3.0'
+  - '@next/swc-linux-x64-gnu@16.3.0'
+  - '@next/swc-linux-x64-musl@16.3.0'
+  - '@next/swc-win32-arm64-msvc@16.3.0'
+  - '@next/swc-win32-x64-msvc@16.3.0'
+  - next@16.3.0
+  - '@base-ui/react@1.7.0'
+  - '@base-ui/utils@0.3.2'
+  - '@vercel/cli-config@0.2.2'
+  - '@vercel/cli-exec@1.0.1'
+  - '@vercel/functions@3.7.7'
+  - '@vercel/oidc@3.8.2'
+  - mermaid@11.16.1
+  - expo-constants@57.0.16
+  - expo-notifications@57.0.15
+  - cn@0.2.4
+  - framer-motion@13.4.2
+  - motion-dom@13.4.2
+  - motion@13.4.2
+
+overrides:
+  react-tweet: 'npm:@innei/react-tweet@4.0.0'
+  array-includes: 'npm:@nolyfill/array-includes@^1.0.44'
+  array.prototype.findlastindex: 'npm:@nolyfill/array.prototype.findlastindex@^1.0.44'
+  array.prototype.flat: 'npm:@nolyfill/array.prototype.flat@^1.0.44'
+  array.prototype.flatmap: 'npm:@nolyfill/array.prototype.flatmap@^1.0.44'
+  array.prototype.tosorted: 'npm:@nolyfill/array.prototype.tosorted@^1.0.44'
+  better-auth>@better-auth/drizzle-adapter: '-'
+  better-auth>@better-auth/prisma-adapter: '-'
+  eslint-plugin-react-hooks: 7.1.1
+  # react-hooks 7.x imports 'zod-validation-error/v4', which only exists in 4.x
+  eslint-plugin-react-hooks>zod-validation-error: ^4.0.2
+  eslint-plugin-react-refresh: 0.5.3
+  has: 'npm:@nolyfill/has@^1.0.44'
+  is-core-module: 'npm:@nolyfill/is-core-module@^1.0.39'
+  object.assign: 'npm:@nolyfill/object.assign@^1.0.44'
+  object.entries: 'npm:@nolyfill/object.entries@^1.0.44'
+  object.fromentries: 'npm:@nolyfill/object.fromentries@^1.0.44'
+  object.groupby: 'npm:@nolyfill/object.groupby@^1.0.44'
+  object.hasown: 'npm:@nolyfill/object.hasown@^1.0.44'
+  object.values: 'npm:@nolyfill/object.values@^1.0.44'
+  string.prototype.matchall: 'npm:@nolyfill/string.prototype.matchall@^1.0.44'
+  # @haklex/rich-ext-chat -> @streamdown/code hard-deps shiki@^3.x while
+  # @haklex/rich-editor peers shiki>=4.0.0; force one runtime copy.
+  shiki: ^4.4.3
+  # apps/mobile pins react/react-dom exactly to match react-native's
+  # embedded renderer; force the same copy repo-wide so
+  # packages/rich-content (consumed inside the mobile WebView) never
+  # resolves a second react instance with a null hook dispatcher.
+  react: 19.2.3
+  react-dom: 19.2.3
+  '@yohaku/web>react': 19.3.0
+  '@yohaku/web>react-dom': 19.3.0
+  # Editor stack tracks a single lexical runtime copy; keep in lockstep with
+  # the @haklex/* peer floor (^0.49 as of @haklex 0.33.0).
+  lexical: 0.49.0
+  "@lexical/a11y": 0.49.0
+  "@lexical/clipboard": 0.49.0
+  "@lexical/code-core": 0.49.0
+  "@lexical/devtools-core": 0.49.0
+  "@lexical/dragon": 0.49.0
+  "@lexical/extension": 0.49.0
+  "@lexical/hashtag": 0.49.0
+  "@lexical/headless": 0.49.0
+  "@lexical/history": 0.49.0
+  "@lexical/html": 0.49.0
+  "@lexical/internal": 0.49.0
+  "@lexical/link": 0.49.0
+  "@lexical/list": 0.49.0
+  "@lexical/mark": 0.49.0
+  "@lexical/markdown": 0.49.0
+  "@lexical/overflow": 0.49.0
+  "@lexical/plain-text": 0.49.0
+  "@lexical/react": 0.49.0
+  "@lexical/rich-text": 0.49.0
+  "@lexical/selection": 0.49.0
+  "@lexical/table": 0.49.0
+  "@lexical/text": 0.49.0
+  "@lexical/utils": 0.49.0
+  "@lexical/yjs": 0.49.0
+  # Not link:./packages/dom-webview — pnpm 12 writes relative link: overrides
+  # importer-relative in the lockfile but compares them root-relative, so
+  # --frozen-lockfile rejects the lockfile pnpm itself just wrote.
+  # workspace:* links the same local package (packages/dom-webview).
+  '@expo/dom-webview': workspace:*
+  # expo lists this so autolinking ships ExpoFileSystem.framework; Yohaku
+  # never calls FileSystem APIs. Drop the package so it cannot re-enter the IPA.
+  expo-file-system: '-'
+
+patchedDependencies:
+  '@innei/markdown-to-jsx-yet': patches/@innei__markdown-to-jsx-yet.patch
+  expo-image@57.0.2: yohaku-oss/patches/expo-image@57.0.2.patch
+  expo-router@57.0.17: patches/expo-router@57.0.17.patch
+  react-native-enriched-markdown@1.0.2: yohaku-oss/patches/react-native-enriched-markdown@1.0.2.patch
+  react-native-screens@4.26.2: yohaku-oss/patches/react-native-screens@4.26.2.patch
+  slot-text@0.3.4: patches/slot-text@0.3.4.patch
+
+autoInstallPeers: false
+
+peerDependencyRules:
+  ignoreMissing:
+    - '@excalidraw/excalidraw'

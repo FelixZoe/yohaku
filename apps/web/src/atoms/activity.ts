@@ -1,0 +1,74 @@
+import { produce } from 'immer'
+import { atom } from 'jotai'
+
+import { jotaiStore } from '~/lib/store'
+import type { ActivityPresence } from '~/models/activity'
+
+type Activity = {
+  process: {
+    name: string
+    iconBase64?: string
+    iconUrl?: string
+    description?: string
+    verb?: string
+  } | null
+  media: {
+    title: string
+    artist: string
+    processName?: string
+    duration?: number
+
+    verb?: string
+  } | null
+}
+
+export const activityAtom = atom({
+  process: null,
+  media: null,
+} as Activity)
+
+const normalizeProcess = (process: Activity['process'] | null) => {
+  if (!process?.name) return null
+  return process
+}
+
+const normalizeMedia = (media: Activity['media']) => {
+  if (!media) return null
+  if (!media.title || !media.artist) return null
+  return media
+}
+
+export const setActivityProcessInfo = (process: Activity['process'] | null) =>
+  jotaiStore.set(activityAtom, (prev) => ({
+    ...prev,
+    process: normalizeProcess(process),
+  }))
+
+export const setActivityMediaInfo = (media: Activity['media']) =>
+  jotaiStore.set(activityAtom, (prev) => ({
+    ...prev,
+    media: normalizeMedia(media),
+  }))
+
+/////////
+
+export const activityPresenceAtom = atom({} as Record<string, ActivityPresence>)
+
+export const setActivityPresence = (presence: ActivityPresence) => {
+  jotaiStore.set(activityPresenceAtom, (prev) => ({
+    ...prev,
+    [presence.identity]: presence,
+  }))
+}
+
+export const deleteActivityPresence = (sessionId: string) => {
+  jotaiStore.set(activityPresenceAtom, (prev) =>
+    produce(prev, (draft) => {
+      delete draft[sessionId]
+    }),
+  )
+}
+
+export const resetActivityPresence = (
+  data?: Record<string, ActivityPresence>,
+) => jotaiStore.set(activityPresenceAtom, data || {})

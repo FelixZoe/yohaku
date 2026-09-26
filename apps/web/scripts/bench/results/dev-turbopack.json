@@ -1,0 +1,119 @@
+{
+  "bundler": "turbopack",
+  "timestamp": "2026-05-13T06:22:47.358Z",
+  "readyMs": 153,
+  "readyAtWallMs": 214,
+  "routes": [
+    {
+      "route": "/",
+      "status": 200,
+      "ms": 13121,
+      "bytes": 917119
+    },
+    {
+      "route": "/posts",
+      "status": 200,
+      "ms": 2774,
+      "bytes": 748530
+    },
+    {
+      "route": "/notes",
+      "status": 200,
+      "ms": 3942,
+      "bytes": 292014
+    },
+    {
+      "route": "/timeline",
+      "status": 200,
+      "ms": 2476,
+      "bytes": 212736
+    },
+    {
+      "route": "/search",
+      "status": 200,
+      "ms": 2137,
+      "bytes": 210527
+    },
+    {
+      "route": "/friends",
+      "status": 200,
+      "ms": 2443,
+      "bytes": 216512
+    },
+    {
+      "route": "/categories",
+      "status": 200,
+      "ms": 3572,
+      "bytes": 235796
+    },
+    {
+      "route": "/projects",
+      "status": 200,
+      "ms": 2366,
+      "bytes": 217663
+    },
+    {
+      "route": "/says",
+      "status": 200,
+      "ms": 2338,
+      "bytes": 216427
+    },
+    {
+      "route": "/thinking",
+      "status": 200,
+      "ms": 2966,
+      "bytes": 224152
+    }
+  ],
+  "compileEvents": [],
+  "memory": {
+    "totalKb": 13810192,
+    "totalMb": 13486.5,
+    "pids": [
+      58715,
+      58721,
+      58766,
+      58788,
+      58789,
+      58803,
+      58804
+    ],
+    "breakdown": [
+      {
+        "pid": 58715,
+        "rssKb": 77280,
+        "cmd": "node node_modules/.bin/../next/dist/bin/next dev -p 23230"
+      },
+      {
+        "pid": 58721,
+        "rssKb": 11878800,
+        "cmd": "Yohaku (NextJS)"
+      },
+      {
+        "pid": 58766,
+        "rssKb": 508752,
+        "cmd": "node /Users/innei/git/innei-repo/Yohaku/apps/web/.next/dev/build/postcss.js 49999"
+      },
+      {
+        "pid": 58788,
+        "rssKb": 370272,
+        "cmd": "node /Users/innei/git/innei-repo/Yohaku/apps/web/.next/dev/build/postcss.js 50001"
+      },
+      {
+        "pid": 58789,
+        "rssKb": 326816,
+        "cmd": "node /Users/innei/git/innei-repo/Yohaku/apps/web/.next/dev/build/postcss.js 50003"
+      },
+      {
+        "pid": 58803,
+        "rssKb": 321728,
+        "cmd": "node /Users/innei/git/innei-repo/Yohaku/apps/web/.next/dev/build/postcss.js 50005"
+      },
+      {
+        "pid": 58804,
+        "rssKb": 326544,
+        "cmd": "node /Users/innei/git/innei-repo/Yohaku/apps/web/.next/dev/build/postcss.js 50016"
+      }
+    ]
+  }
+}

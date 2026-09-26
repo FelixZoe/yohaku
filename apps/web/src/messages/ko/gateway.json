@@ -1,0 +1,8 @@
+{
+  "connected": "연결됨",
+  "disconnected": "잠시 끊김",
+  "reading_now": "명이 읽는 중",
+  "websocket_intro": "이 페이지를 여시면 자동으로 WebSocket 연결이 만들어져요. 연결이 닿으면, 서버가 지금 페이지를 같이 보고 있는 사람 수를 보내 줘요.",
+  "no_readers": "이곳엔 아직 발자국이 없어요.",
+  "popular_content": "한창 무르익어요:"
+}

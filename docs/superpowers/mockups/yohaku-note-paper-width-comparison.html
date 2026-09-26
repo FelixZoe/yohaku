@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Yohaku · N 宽度比较 mockup</title>
+    <style>
+      :root {
+        --bg: #f6f0df;
+        --ink: #2f2a20;
+        --ink-muted: #6f6452;
+        --accent: #d4a574;
+        --accent-deep: #8b6914;
+        --paper-main: #fffef5;
+        --paper-note: linear-gradient(180deg, #fffef5 0%, #fdf8e8 100%);
+        --rule: rgba(139, 105, 20, 0.18);
+        --shadow: 0 4px 18px rgba(60, 40, 10, 0.12);
+        --shadow-note: -6px 6px 22px rgba(212, 165, 116, 0.32);
+
+        --M: 960px;
+        --N: 560px;
+        --O: 80px;
+        --leftGutter: 0px;
+        --shift: 0px;
+
+        --O-MIN: 80;
+        --O-MAX: 240;
+        --SIDE-PAD: 24;
+      }
+
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: 'Noto Serif SC', 'Source Han Serif SC', Georgia, serif;
+        line-height: 1.75;
+      }
+
+      /* ========== toolbar ========== */
+      .toolbar {
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        right: 12px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        z-index: 200;
+        background: rgba(255, 253, 244, 0.94);
+        backdrop-filter: blur(6px);
+        border: 1px solid var(--rule);
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+      }
+      .toolbar .group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .toolbar label {
+        color: var(--accent-deep);
+        font-weight: 600;
+        letter-spacing: 0.1em;
+      }
+      .toolbar button {
+        border: 1px solid var(--rule);
+        background: #fff;
+        padding: 4px 10px;
+        font-size: 12px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .toolbar button[aria-pressed='true'] {
+        background: var(--accent);
+        color: #fff;
+        border-color: transparent;
+      }
+      .toolbar input[type='number'] {
+        width: 64px;
+        padding: 3px 6px;
+        border: 1px solid var(--rule);
+        border-radius: 3px;
+        font-family: inherit;
+        font-size: 12px;
+      }
+
+      /* ========== readout ========== */
+      .readout {
+        position: fixed;
+        bottom: 12px;
+        left: 12px;
+        right: 12px;
+        background: #2f2a20;
+        color: #fffef5;
+        padding: 8px 14px;
+        border-radius: 4px;
+        font-family: 'SF Mono', Consolas, monospace;
+        font-size: 11px;
+        letter-spacing: 0.05em;
+        z-index: 200;
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .readout span.num {
+        color: #d4a574;
+        font-weight: 600;
+      }
+      .readout .warn {
+        color: #ff8a65;
+        font-weight: 600;
+      }
+
+      /* ========== stage ========== */
+      .site {
+        min-height: 100vh;
+        padding: 70px 0 80px;
+      }
+      .stage {
+        position: relative;
+        width: 100%;
+        min-height: calc(100vh - 150px);
+      }
+
+      /* ========== gutters (visual aid) ========== */
+      .gutter-marker {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        background: repeating-linear-gradient(
+          45deg,
+          transparent 0 6px,
+          rgba(139, 105, 20, 0.06) 6px 7px
+        );
+        pointer-events: none;
+        z-index: 0;
+      }
+      .gutter-left {
+        left: 0;
+        width: var(--leftGutter);
+      }
+      .gutter-right {
+        right: 0;
+        width: var(--leftGutter);
+      }
+      .gutter-marker::after {
+        content: attr(data-label);
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-90deg);
+        font-size: 10px;
+        color: var(--accent-deep);
+        letter-spacing: 0.2em;
+        white-space: nowrap;
+      }
+
+      /* ========== papers ========== */
+      .paper-main {
+        position: absolute;
+        top: 0;
+        left: var(--leftGutter);
+        width: var(--M);
+        background: var(--paper-main);
+        box-shadow: var(--shadow);
+        padding: 56px 72px 80px;
+        border-radius: 2px;
+        z-index: 1;
+      }
+      .paper-main::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          0deg,
+          transparent 0 24px,
+          rgba(139, 105, 20, 0.035) 24px 25px
+        );
+      }
+
+      .paper-note {
+        position: absolute;
+        top: 52px;
+        left: calc(var(--leftGutter) + var(--M) - var(--O));
+        width: var(--N);
+        min-height: 560px;
+        background: var(--paper-note);
+        box-shadow: var(--shadow-note);
+        padding: 28px 32px 40px;
+        border-radius: 2px;
+        z-index: 2;
+      }
+
+      /* ========== content ========== */
+      .note-title {
+        font-size: 32px;
+        font-weight: 700;
+        margin: 0 0 8px;
+      }
+      .note-meta {
+        font-size: 13px;
+        color: var(--ink-muted);
+        margin-bottom: 28px;
+      }
+      .note-meta span + span::before {
+        content: '·';
+        margin: 0 8px;
+      }
+      .article p {
+        margin: 0 0 1.1em;
+        text-indent: 2em;
+        text-align: justify;
+      }
+      .article h2 {
+        font-size: 18px;
+        margin: 32px 0 12px;
+        padding-left: 8px;
+        border-left: 3px solid var(--accent);
+      }
+
+      .note-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: rgba(139, 105, 20, 0.15);
+        color: var(--accent-deep);
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      .yohaku-meta-header {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 14px;
+      }
+      .yohaku-meta-header .m {
+        font-size: 11px;
+        color: var(--accent-deep);
+        border: 1px solid var(--rule);
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.6);
+      }
+      .paper-note h2 {
+        font-size: 16px;
+        margin: 18px 0 6px;
+        color: var(--accent-deep);
+        letter-spacing: 0.05em;
+      }
+      .paper-note h2:first-of-type { margin-top: 0; }
+      /* typography: prose-like, ~65ch inside */
+      .paper-note p,
+      .paper-note li {
+        font-size: 15px;
+        color: var(--ink);
+        line-height: 1.8;
+      }
+      .paper-note ul {
+        padding-left: 20px;
+        margin: 4px 0 12px;
+      }
+
+      .ref {
+        display: inline-block;
+        vertical-align: super;
+        font-size: 0.68em;
+        padding: 0 6px;
+        margin: 0 2px;
+        border-radius: 10px;
+        background: var(--accent);
+        color: #fff;
+        cursor: pointer;
+        line-height: 1.25;
+        font-weight: 600;
+      }
+
+      /* ========== width ruler overlay (optional debug) ========== */
+      .ruler {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 60px;
+        height: 2px;
+        border-top: 1px dashed rgba(139, 105, 20, 0.4);
+        pointer-events: none;
+        z-index: 150;
+      }
+      .ruler::before {
+        content: 'V center';
+        position: absolute;
+        top: 4px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 9px;
+        color: var(--accent-deep);
+        background: var(--bg);
+        padding: 0 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar">
+      <div class="group">
+        <label>N 宽度</label>
+        <button data-n="430">430</button>
+        <button data-n="480">480</button>
+        <button data-n="560" aria-pressed="true">560</button>
+        <button data-n="600">600</button>
+        <button data-n="640">640</button>
+        <span style="color: var(--ink-muted)">|</span>
+        <label>自定</label>
+        <input type="number" id="n-custom" min="280" max="900" placeholder="px" />
+      </div>
+      <div class="group">
+        <label>sidePad</label>
+        <input type="number" id="sidepad" value="24" min="0" max="120" />
+      </div>
+      <div class="group">
+        <label>O 范围</label>
+        <input type="number" id="omin" value="80" min="0" max="400" style="width: 52px" />
+        —
+        <input type="number" id="omax" value="240" min="0" max="600" style="width: 52px" />
+      </div>
+    </div>
+
+    <main class="site">
+      <div class="stage" id="stage">
+        <div class="gutter-marker gutter-left" data-label="left gutter"></div>
+        <div class="gutter-marker gutter-right" data-label="right gutter"></div>
+
+        <article class="paper-main" id="paper-main">
+          <h1 class="note-title">念念不忘，也没有回响</h1>
+          <div class="note-meta">
+            <span>2026-04-21</span>
+            <span>杂记</span>
+            <span>6 分钟</span>
+          </div>
+
+          <div class="article">
+            <h2>引子</h2>
+            <p>
+              案上一册旧书，纸已发黄。翻开之际，四周空白如呼吸。所谓 "余白"，非空也，乃可容人伫足之处。
+            </p>
+            <h2>余白之于书</h2>
+            <p>
+              古人刻书，行列有度，天头地脚皆有法度。念念不忘，也没有回响——然留白之处，正是读者得以念想的地方。每翻一页，余白即重现。它不说话，却让文字得以呼吸。
+            </p>
+            <h2>纸页之间的呼吸</h2>
+            <p>
+              文字稠密之时，心亦窒。留白一张，念头方得舒展。一页之中，若字字相挨、行行相迫，则读者无处可停。惟留白处，可容目光徘徊、容心思转折。
+            </p>
+            <h2>收束</h2>
+            <p>
+              书读到末页，末页之后还有一页空白。那一页，是你自己的。
+            </p>
+          </div>
+        </article>
+
+        <aside class="paper-note" id="paper-note" aria-label="余白 · 精读手记">
+          <button class="note-close" aria-label="收起余白">×</button>
+          <div class="yohaku-meta-header">
+            <span class="m">6 min</span>
+            <span class="m">easy</span>
+            <span class="m">essay</span>
+          </div>
+
+          <h2>TL;DR</h2>
+          <p>
+            此文以 "余白" 为喻，探讨书页空白之美、及记忆不可挽留之事。所谓留白，非空白之谓，乃读者思绪栖留之所——若字字紧挨，目光便无处停；若留白得当，则念想自生。
+          </p>
+
+          <h2>情绪弧线</h2>
+          <ul>
+            <li>起：见旧书而感物</li>
+            <li>承：引古人制书之法，天头地脚皆有度</li>
+            <li>转：念念不忘无回响<span class="ref" data-quote="念念不忘，也没有回响">ref</span>，留白反成念想之所</li>
+            <li>合：末页之空白归己，余白终为读者所有</li>
+          </ul>
+
+          <h2>可摘句</h2>
+          <ul>
+            <li>"留白之处，正是读者得以念想的地方。"</li>
+            <li>"末页之后还有一页空白。那一页，是你自己的。"</li>
+          </ul>
+
+          <h2>盲点</h2>
+          <p>
+            未及西方书籍设计之 margin 传统对照；未讨论电子书余白之异化。电子之界非纸、无物理厚度，其"留白"或已变质为屏之负空间。
+          </p>
+
+          <h2>悬而未决</h2>
+          <p>
+            若无空白，记忆是否仍是记忆？<span class="ref" data-quote="余白即重现">ref</span> 此一问，值得另成一篇。
+          </p>
+        </aside>
+      </div>
+    </main>
+
+    <div class="ruler"></div>
+
+    <div class="readout" id="readout"></div>
+
+    <script>
+      const M = 960;
+      let N = 560;
+      let O_MIN = 80;
+      let O_MAX = 240;
+      let SIDE_PAD = 24;
+
+      const root = document.documentElement;
+      const readout = document.getElementById('readout');
+      const nButtons = document.querySelectorAll('[data-n]');
+      const nCustom = document.getElementById('n-custom');
+      const sidepadInput = document.getElementById('sidepad');
+      const ominInput = document.getElementById('omin');
+      const omaxInput = document.getElementById('omax');
+
+      function compute() {
+        const V = window.innerWidth;
+        const required = M + N - V + 2 * SIDE_PAD;
+        const O_raw = Math.max(O_MIN, required);
+        const O = Math.min(O_MAX, O_raw);
+        const U = M + N - O;
+        const leftGutter = (V - U) / 2;
+        const shift = (N - O) / 2;
+        const overflow = U > V - 2 * SIDE_PAD;
+        const wasted = O_raw > O_MAX ? O_raw - O_MAX : 0;
+
+        root.style.setProperty('--M', M + 'px');
+        root.style.setProperty('--N', N + 'px');
+        root.style.setProperty('--O', O + 'px');
+        root.style.setProperty('--leftGutter', Math.max(0, leftGutter) + 'px');
+        root.style.setProperty('--shift', shift + 'px');
+
+        const warn = overflow
+          ? `<span class="warn">OVERFLOW by ${Math.ceil(wasted)}px → sheet fallback 应触发</span>`
+          : '';
+        const gutter = leftGutter < 0
+          ? `<span class="warn">${leftGutter.toFixed(0)} (negative!)</span>`
+          : `<span class="num">${leftGutter.toFixed(0)}</span>`;
+
+        readout.innerHTML = `
+          <span>V: <span class="num">${V}</span></span>
+          <span>M: <span class="num">${M}</span></span>
+          <span>N: <span class="num">${N}</span></span>
+          <span>O: <span class="num">${O.toFixed(0)}</span> (raw ${O_raw.toFixed(0)}, range ${O_MIN}—${O_MAX})</span>
+          <span>U: <span class="num">${U.toFixed(0)}</span></span>
+          <span>gutter: ${gutter} × 2</span>
+          <span>shift: <span class="num">${shift.toFixed(0)}</span> ←</span>
+          <span>N/M: <span class="num">${(N / M).toFixed(3)}</span></span>
+          ${warn}
+        `;
+      }
+
+      function setN(v) {
+        N = v;
+        nButtons.forEach((b) =>
+          b.setAttribute('aria-pressed', Number(b.dataset.n) === v ? 'true' : 'false'),
+        );
+        compute();
+      }
+
+      nButtons.forEach((b) =>
+        b.addEventListener('click', () => {
+          nCustom.value = '';
+          setN(Number(b.dataset.n));
+        }),
+      );
+      nCustom.addEventListener('input', () => {
+        const v = Number(nCustom.value);
+        if (v >= 280 && v <= 900) {
+          nButtons.forEach((b) => b.setAttribute('aria-pressed', 'false'));
+          N = v;
+          compute();
+        }
+      });
+      sidepadInput.addEventListener('input', () => {
+        const v = Number(sidepadInput.value);
+        if (v >= 0 && v <= 200) { SIDE_PAD = v; compute(); }
+      });
+      ominInput.addEventListener('input', () => {
+        const v = Number(ominInput.value);
+        if (v >= 0 && v <= 500) { O_MIN = v; compute(); }
+      });
+      omaxInput.addEventListener('input', () => {
+        const v = Number(omaxInput.value);
+        if (v >= 0 && v <= 700 && v >= O_MIN) { O_MAX = v; compute(); }
+      });
+      window.addEventListener('resize', compute);
+      compute();
+    </script>
+  </body>
+</html>

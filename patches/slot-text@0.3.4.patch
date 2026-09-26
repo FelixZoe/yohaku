@@ -1,0 +1,38 @@
+diff --git a/dist/dom.js b/dist/dom.js
+index d55ca24c36aee1c071711918eabe6ea8326e5399..15e86917b4f3572f0cc3918d6dd575302e85a5ff 100644
+--- a/dist/dom.js
++++ b/dist/dom.js
+@@ -145,6 +145,8 @@ export function prepareSlotAnimation(measurement, targetSegmentCount, characterH
+     incomingFace.style.transform =
+         `translateY(${incomingOffsetY}px) ` +
+             `rotate(${timing.startingTiltDegrees}deg)`;
++    incomingFace.style.opacity = "0";
++    incomingFace.style.filter = "blur(2px)";
+     if (incomingColor)
+         incomingFace.style.color = incomingColor;
+     slot.appendChild(incomingFace);
+@@ -167,7 +169,7 @@ export function scheduleSlotAnimation(preparedAnimation, characterHeight, restin
+     const { measurement, timing, widthTiming, incomingFace } = preparedAnimation;
+     const { slot, previousFace, targetWidth, widthWillChange } = measurement;
+     const outgoingOffsetY = options.direction === "down" ? characterHeight : -characterHeight;
+-    const rollTransition = `transform ${timing.durationMs}ms ${options.easing}`;
++    const rollTransition = `transform ${timing.durationMs}ms ${options.easing}, opacity ${timing.durationMs}ms ${options.easing}, filter ${timing.durationMs}ms ${options.easing}`;
+     const incomingTransition = options.color
+         ? `${rollTransition}, color ${options.colorFade}ms linear ${timing.durationMs}ms`
+         : rollTransition;
+@@ -184,11 +186,15 @@ export function scheduleSlotAnimation(preparedAnimation, characterHeight, restin
+             previousFace.style.transform =
+                 `translateY(${outgoingOffsetY}px) ` +
+                     `rotate(${-timing.startingTiltDegrees}deg)`;
++            previousFace.style.opacity = "0";
++            previousFace.style.filter = "blur(2px)";
+         }, timing.startDelayMs);
+     }
+     scheduleTask(() => {
+         incomingFace.style.transition = incomingTransition;
+         incomingFace.style.transform = layout.characterRestTransform;
++        incomingFace.style.opacity = "1";
++        incomingFace.style.filter = "blur(0px)";
+         if (options.color)
+             incomingFace.style.color = restingColor;
+         const finishOnTransformEnd = (event) => {

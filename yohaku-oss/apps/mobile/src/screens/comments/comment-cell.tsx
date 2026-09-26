@@ -1,0 +1,274 @@
+import { type MenuAction, MenuView } from '@react-native-menu/menu'
+import { type as typeScale } from '@yohaku/design-system/tokens'
+import * as Clipboard from 'expo-clipboard'
+import { useRef } from 'react'
+import { Alert, StyleSheet, View } from 'react-native'
+
+import { api } from '@/api/client'
+import type { ApiComment } from '@/api/types'
+import { useSession } from '@/auth/session-store'
+import {
+  AppText,
+  MarkdownBody,
+  RemoteImage,
+  SinkPressable,
+} from '@/components/ui'
+import { useLocale, useTranslations } from '@/i18n'
+import { isRangeAnchor } from '@/lib/comment-anchor'
+import { commentAvatar, commentDisplayName } from '@/lib/comment-thread'
+import { formatRelativeTime } from '@/lib/datetime'
+import { usePalette } from '@/theme/palette'
+import { useNativeSerifFontStyle } from '@/theme/serif-font'
+
+import { blockReaderLocally, useReaderBlocked } from './blocked-readers'
+import { useOptionalCommentCompose } from './comment-compose-provider'
+
+export function CommentCell({
+  comment,
+  isReply = false,
+  replyTargetName,
+  showQuote = true,
+  showReply,
+  onReply,
+}: {
+  comment: ApiComment
+  isReply?: boolean
+  replyTargetName?: string | null
+  showQuote?: boolean
+  showReply: boolean
+  onReply: (comment: ApiComment, anchor?: View) => void
+}) {
+  const t = useTranslations('comment')
+  const ta = useTranslations('auth')
+  const tc = useTranslations('common')
+  const locale = useLocale()
+  const palette = usePalette()
+  const serifFont = useNativeSerifFontStyle()
+  const rowRef = useRef<View>(null)
+  const session = useSession()
+  const compose = useOptionalCommentCompose()
+  const avatar = commentAvatar(comment)
+  const name = commentDisplayName(comment)
+  const avatarSize = isReply ? 24 : 32
+  const isOwn = session !== null && comment.reader?.id === session.id
+  const isBlocked = useReaderBlocked(comment.reader?.id)
+
+  const report = () => {
+    Alert.alert(t('report'), t('reportConfirm'), [
+      { style: 'cancel', text: tc('cancel') },
+      {
+        style: 'destructive',
+        text: t('report'),
+        onPress: () => {
+          void api
+            .reportComment(comment.id)
+            .then(() => {
+              Alert.alert(t('report'), t('reportDone'))
+            })
+            .catch(() => {
+              Alert.alert(t('report'), t('reportFailed'))
+            })
+        },
+      },
+    ])
+  }
+
+  const reportAndBlock = () => {
+    Alert.alert(t('blockUser'), t('blockUserConfirm', { name }), [
+      { style: 'cancel', text: tc('cancel') },
+      {
+        style: 'destructive',
+        text: t('blockUser'),
+        onPress: () => {
+          void api
+            .reportAndBlockComment(comment.id)
+            .then(({ blockedReaderId }) => {
+              blockReaderLocally(blockedReaderId)
+              Alert.alert(t('blockUser'), t('blockUserDone'))
+            })
+            .catch(() => {
+              Alert.alert(t('blockUser'), t('blockUserFailed'))
+            })
+        },
+      },
+    ])
+  }
+
+  const menuActions: MenuAction[] = [
+    { id: 'copy', image: 'doc.on.doc', title: t('copyText') },
+  ]
+  if (isOwn && compose !== null) {
+    menuActions.push({ id: 'edit', image: 'pencil', title: t('edit') })
+  }
+  if (!isOwn) {
+    menuActions.push({
+      id: 'report',
+      image: 'exclamationmark.bubble',
+      title: t('report'),
+      attributes: { destructive: true },
+    })
+  }
+  if (session !== null && comment.reader !== null && !isOwn) {
+    menuActions.push({
+      id: 'block',
+      image: 'person.crop.circle.badge.xmark',
+      title: t('blockUser'),
+      attributes: { destructive: true },
+    })
+  }
+
+  const onMenuAction = (event: string) => {
+    if (event === 'copy') void Clipboard.setStringAsync(comment.text)
+    else if (event === 'edit')
+      compose?.edit(comment, rowRef.current ?? undefined)
+    else if (event === 'report') report()
+    else if (event === 'block') reportAndBlock()
+  }
+
+  if (isBlocked) return null
+
+  return (
+    <View collapsable={false} ref={rowRef}>
+      <View style={styles.rowPress}>
+        <View
+          style={{
+            width: avatarSize,
+            height: avatarSize,
+            borderRadius: avatarSize / 2,
+            backgroundColor: palette.neutral[3],
+            overflow: 'hidden',
+          }}
+        >
+          {avatar ? (
+            <RemoteImage
+              contentFit="cover"
+              style={{ width: avatarSize, height: avatarSize }}
+              uri={avatar}
+            />
+          ) : null}
+        </View>
+        <View style={styles.main}>
+          <View style={styles.nameRow}>
+            <AppText
+              color={palette.neutral[8]}
+              numberOfLines={1}
+              style={styles.name}
+              variant="secondary"
+            >
+              {name}
+            </AppText>
+            {replyTargetName ? (
+              <>
+                <AppText color={palette.neutral[6]} style={styles.arrow}>
+                  ›
+                </AppText>
+                <AppText
+                  color={palette.accent}
+                  numberOfLines={1}
+                  style={styles.to}
+                  variant="meta"
+                >
+                  {replyTargetName}
+                </AppText>
+              </>
+            ) : null}
+            {comment.reader?.role === 'owner' ? (
+              <AppText color={palette.accent} variant="meta">
+                {ta('owner')}
+              </AppText>
+            ) : null}
+            {comment.pin ? (
+              <AppText color={palette.accent} variant="meta">
+                {t('pinned')}
+              </AppText>
+            ) : null}
+            <AppText variant="meta">
+              {formatRelativeTime(new Date(comment.createdAt), locale)}
+            </AppText>
+          </View>
+          {showQuote &&
+          !isReply &&
+          isRangeAnchor(comment.anchor) &&
+          comment.anchor.quote ? (
+            <AppText
+              color={palette.neutral[7]}
+              numberOfLines={2}
+              style={[styles.quote, serifFont]}
+            >
+              「{comment.anchor.quote}」
+            </AppText>
+          ) : null}
+          <MarkdownBody markdown={comment.text} />
+        </View>
+      </View>
+      <View style={[styles.actions, { marginLeft: avatarSize + 10 }]}>
+        {showReply ? (
+          <SinkPressable
+            accessibilityLabel={t('reply')}
+            hitSlop={8}
+            style={styles.actionButton}
+            onPress={() => onReply(comment, rowRef.current ?? undefined)}
+          >
+            <AppText color={palette.neutral[6]} variant="meta">
+              {t('reply')}
+            </AppText>
+          </SinkPressable>
+        ) : null}
+        <MenuView
+          actions={menuActions}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          onPressAction={({ nativeEvent }) => onMenuAction(nativeEvent.event)}
+        >
+          <View
+            accessibilityLabel={t('moreActions')}
+            accessibilityRole="button"
+            style={styles.actionButton}
+          >
+            <AppText color={palette.neutral[6]} variant="meta">
+              ···
+            </AppText>
+          </View>
+        </MenuView>
+      </View>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  rowPress: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  main: {
+    flex: 1,
+    gap: 4,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+  },
+  name: {
+    flexShrink: 1,
+  },
+  arrow: {
+    fontSize: 11,
+    lineHeight: typeScale.label12.lineHeight,
+  },
+  to: {
+    flexShrink: 1,
+  },
+  quote: {
+    fontSize: typeScale.copy13.size,
+    lineHeight: typeScale.copy13.lineHeight,
+  },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+    marginTop: 2,
+  },
+  actionButton: {
+    paddingVertical: 6,
+  },
+})

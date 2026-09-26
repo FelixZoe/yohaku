@@ -1,0 +1,8 @@
+{
+  "connected": "Line open.",
+  "disconnected": "Line closed.",
+  "reading_now": "reading now",
+  "websocket_intro": "When you open this page, a WebSocket connection is automatically established. Once connected, the server will push the current number of readers.",
+  "no_readers": "No reader stirs just now.",
+  "popular_content": "Drawing many eyes:"
+}

@@ -1,0 +1,21 @@
+---
+description: After any yohaku-oss commit or push, bump the parent submodule pin
+alwaysApply: true
+---
+
+# yohaku-oss pin
+
+`yohaku-oss/` is a submodule of this closed repo (`Innei-dev/Yohaku` → `Innei/Yohaku`). A public commit or push is **not done** until the parent gitlink matches `yohaku-oss` HEAD.
+
+## Required close-out
+
+1. In `yohaku-oss/`: commit, then `git push` to `Innei/Yohaku`.
+2. In the parent: `git add yohaku-oss`. If the public tree added or changed a pnpm patch, also stage parent `pnpm-workspace.yaml` and `pnpm-lock.yaml`.
+3. Commit: `chore(mobile): bump public iOS source — <latest oss subject>`
+4. Push the parent (`Innei-dev/Yohaku`).
+
+## Do not
+
+- Treat `yohaku-oss` push as complete while `git submodule status yohaku-oss` starts with `+`
+- Leave the pin for a later chat
+- Commit unrelated parent WIP (docs, canvas, IAP specs) with the pin

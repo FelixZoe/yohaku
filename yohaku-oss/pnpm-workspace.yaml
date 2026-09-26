@@ -1,0 +1,26 @@
+packages:
+  - design-system
+  - apps/*
+  - packages/*
+
+allowBuilds:
+  '@parcel/watcher': true
+  better-sqlite3: true
+  esbuild: false
+  # postinstall only downloads tree-sitter/RaTeX assets; both features are
+  # disabled via the app's "enriched-markdown" config, so skip it
+  react-native-enriched-markdown: false
+
+overrides:
+  '@expo/dom-webview': link:./packages/dom-webview
+  react: 19.2.3
+  react-dom: 19.2.3
+  # expo lists this so autolinking ships ExpoFileSystem.framework; Yohaku
+  # never calls FileSystem APIs. Drop the package so it cannot re-enter the IPA.
+  expo-file-system: '-'
+
+patchedDependencies:
+  expo-image@57.0.2: patches/expo-image@57.0.2.patch
+  expo-router@57.0.17: patches/expo-router@57.0.17.patch
+  react-native-enriched-markdown@1.0.2: patches/react-native-enriched-markdown@1.0.2.patch
+  react-native-screens@4.26.2: patches/react-native-screens@4.26.2.patch

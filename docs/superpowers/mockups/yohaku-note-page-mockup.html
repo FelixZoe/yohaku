@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Yohaku · Note 页精读 companion · Mockup</title>
+    <style>
+      :root {
+        --bg: #f6f0df;
+        --ink: #2f2a20;
+        --ink-muted: #6f6452;
+        --accent: #d4a574;
+        --accent-deep: #8b6914;
+        --paper-main: #fffef5;
+        --paper-note: linear-gradient(180deg, #fffef5 0%, #fdf8e8 100%);
+        --rule: rgba(139, 105, 20, 0.18);
+        --shadow: 0 4px 18px rgba(60, 40, 10, 0.12);
+        --shadow-note: -6px 6px 22px rgba(212, 165, 116, 0.32);
+
+        /* yohaku tokens */
+        --yohaku-paper-left-pct: 6%;
+        --yohaku-anim-ms: 560ms;
+        --yohaku-main-shift-delay-ms: 60ms;
+        --yohaku-note-slide-delay-ms: 220ms;
+        --yohaku-side-opacity-reading: 0.18;
+        --yohaku-side-grayscale: 0.6;
+        --yohaku-side-fade-ms: 200ms;
+        --yohaku-ease-paper: cubic-bezier(0.22, 1, 0.36, 1);
+        --yohaku-flash-ms: 2000ms;
+        --yohaku-flash-alpha: 38%;
+        --yohaku-lift-y: 8px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          'Noto Serif SC', 'Source Han Serif SC', Georgia, serif;
+        line-height: 1.75;
+      }
+
+      /* ========== layout skeleton ========== */
+      .site {
+        min-height: 100vh;
+        padding: 40px 0 120px;
+      }
+
+      .toolbar {
+        position: fixed;
+        top: 12px;
+        right: 16px;
+        display: flex;
+        gap: 8px;
+        z-index: 200;
+      }
+      .toolbar button {
+        border: 1px solid var(--rule);
+        background: #fff;
+        padding: 6px 12px;
+        font-size: 12px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .toolbar button[aria-pressed='true'] {
+        background: var(--accent);
+        color: #fff;
+        border-color: transparent;
+      }
+
+      /* left side navigation fadeable */
+      .side-left {
+        position: fixed;
+        left: 24px;
+        top: 80px;
+        width: 140px;
+        font-size: 13px;
+        color: var(--ink-muted);
+        transition:
+          opacity var(--yohaku-side-fade-ms) ease,
+          filter var(--yohaku-side-fade-ms) ease;
+      }
+      .side-left h4 {
+        font-size: 11px;
+        letter-spacing: 0.2em;
+        margin: 0 0 12px;
+        color: var(--accent-deep);
+      }
+      .side-left ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 6px;
+      }
+
+      /* right toc fadeable */
+      .side-right {
+        position: fixed;
+        right: 24px;
+        top: 120px;
+        width: 180px;
+        font-size: 12px;
+        color: var(--ink-muted);
+        transition:
+          opacity var(--yohaku-side-fade-ms) ease,
+          filter var(--yohaku-side-fade-ms) ease;
+      }
+      .side-right ol {
+        list-style: none;
+        padding-left: 12px;
+        margin: 0;
+        border-left: 1px solid var(--rule);
+        display: grid;
+        gap: 6px;
+      }
+
+      /* stage holds both papers; 50% translateX base */
+      .stage {
+        position: relative;
+        width: 100%;
+        min-height: 1200px;
+      }
+
+      /* main paper — centered idle, absolute-anchored reading. */
+      .paper-main {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(960px, calc(100vw - 340px));
+        background: var(--paper-main);
+        box-shadow: var(--shadow);
+        padding: 56px 72px 80px;
+        border-radius: 2px;
+        transition:
+          left var(--yohaku-anim-ms) var(--yohaku-ease-paper)
+            var(--yohaku-main-shift-delay-ms),
+          transform var(--yohaku-anim-ms) var(--yohaku-ease-paper)
+            var(--yohaku-main-shift-delay-ms),
+          box-shadow 260ms ease-out;
+        z-index: 1;
+      }
+      /* subtle texture */
+      .paper-main::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+          repeating-linear-gradient(
+            0deg,
+            transparent 0 24px,
+            rgba(139, 105, 20, 0.035) 24px 25px
+          );
+      }
+
+      /* note paper — hidden in idle, slides from 120% on reading */
+      .paper-note {
+        position: absolute;
+        top: 52px;
+        width: 430px;
+        min-height: 520px;
+        background: var(--paper-note);
+        box-shadow: var(--shadow-note);
+        padding: 28px 32px 40px;
+        border-radius: 2px;
+        left: calc(var(--yohaku-paper-left-pct) + min(960px, calc(100vw - 340px)) - 80px);
+        transform: translateX(120%);
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          transform var(--yohaku-anim-ms) var(--yohaku-ease-paper)
+            var(--yohaku-note-slide-delay-ms),
+          opacity var(--yohaku-anim-ms) ease var(--yohaku-note-slide-delay-ms),
+          z-index 0s;
+        z-index: 2;
+      }
+
+      /* state: reading */
+      body[data-yohaku='reading'] .side-left,
+      body[data-yohaku='reading'] .side-right,
+      body[data-yohaku='anchored'] .side-left,
+      body[data-yohaku='anchored'] .side-right {
+        opacity: var(--yohaku-side-opacity-reading);
+        filter: grayscale(var(--yohaku-side-grayscale));
+        pointer-events: none;
+      }
+
+      body[data-yohaku='reading'] .paper-main,
+      body[data-yohaku='anchored'] .paper-main {
+        left: var(--yohaku-paper-left-pct);
+        transform: translateX(0);
+      }
+
+      body[data-yohaku='reading'] .paper-note,
+      body[data-yohaku='anchored'] .paper-note {
+        transform: translateX(0);
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      /* anchored: main lifts, note recedes */
+      body[data-yohaku='anchored'] .paper-main {
+        z-index: 3;
+        transform: translateX(0) translateY(calc(-1 * var(--yohaku-lift-y)));
+        box-shadow: 0 12px 32px rgba(60, 40, 10, 0.22);
+        cursor: pointer;
+      }
+      body[data-yohaku='anchored'] .paper-note {
+        z-index: 1;
+        cursor: pointer;
+      }
+
+      /* ribbon bookmark — vertical strip tucked under top edge of paper */
+      .ribbon {
+        position: absolute;
+        top: -4px;
+        right: 36px;
+        writing-mode: vertical-rl;
+        padding: 18px 10px 14px;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 600;
+        letter-spacing: 0.25em;
+        font-size: 12px;
+        border-radius: 0 0 3px 3px;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+        z-index: 10;
+        transition:
+          background 160ms ease,
+          transform 160ms ease;
+      }
+      .ribbon::before {
+        /* bookmark fold at bottom */
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        left: 0;
+        right: 0;
+        height: 10px;
+        background: inherit;
+        clip-path: polygon(0 0, 50% 80%, 100% 0);
+      }
+      .ribbon:hover {
+        transform: translateY(-1px);
+      }
+      body[data-yohaku='reading'] .ribbon,
+      body[data-yohaku='anchored'] .ribbon {
+        background: var(--accent-deep);
+      }
+
+      /* content: title / meta / notice / body */
+      .note-title {
+        font-size: 32px;
+        font-weight: 700;
+        margin: 0 0 8px;
+        letter-spacing: 0.01em;
+      }
+      .note-meta {
+        font-size: 13px;
+        color: var(--ink-muted);
+        margin-bottom: 28px;
+      }
+      .note-meta span + span::before {
+        content: '·';
+        margin: 0 8px;
+      }
+
+      .notice-card {
+        border: 1px solid var(--rule);
+        border-radius: 2px;
+        overflow: hidden;
+        margin: 0 0 40px;
+        background: #fffdf4;
+      }
+      .notice-item {
+        padding: 12px 18px;
+        font-size: 13px;
+        color: var(--ink-muted);
+      }
+      .notice-item + .notice-item {
+        border-top: 1px dashed var(--rule);
+      }
+      .notice-item.summary {
+        background:
+          linear-gradient(
+            135deg,
+            rgba(212, 165, 116, 0.04),
+            rgba(255, 228, 180, 0.06)
+          );
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border: 1px solid var(--accent);
+        border-radius: 999px;
+        background: transparent;
+        color: var(--accent-deep);
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .chip[aria-expanded='true'] {
+        background: var(--accent);
+        color: #fff;
+      }
+      .chip .dot {
+        font-size: 10px;
+      }
+
+      .article p {
+        margin: 0 0 1.1em;
+        text-indent: 2em;
+        text-align: justify;
+      }
+      .article h2 {
+        font-size: 18px;
+        margin: 32px 0 12px;
+        padding-left: 8px;
+        border-left: 3px solid var(--accent);
+      }
+
+      /* flash highlight */
+      .yohaku-flash {
+        background: color-mix(
+          in srgb,
+          var(--accent) var(--yohaku-flash-alpha),
+          transparent
+        );
+        transition: background var(--yohaku-flash-ms) ease-out;
+      }
+
+      /* note paper content */
+      .note-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: rgba(139, 105, 20, 0.15);
+        color: var(--accent-deep);
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      .yohaku-meta-header {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 14px;
+      }
+      .yohaku-meta-header .m {
+        font-size: 11px;
+        color: var(--accent-deep);
+        border: 1px solid var(--rule);
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.6);
+      }
+      .paper-note h2 {
+        font-size: 16px;
+        margin: 18px 0 6px;
+        color: var(--accent-deep);
+        letter-spacing: 0.05em;
+      }
+      .paper-note h2:first-of-type {
+        margin-top: 0;
+      }
+      .paper-note p,
+      .paper-note li {
+        font-size: 14px;
+        color: var(--ink);
+        line-height: 1.8;
+      }
+      .paper-note ul {
+        padding-left: 20px;
+        margin: 4px 0 12px;
+      }
+
+      .ref {
+        display: inline-block;
+        vertical-align: super;
+        font-size: 0.68em;
+        padding: 0 6px;
+        margin: 0 2px;
+        border-radius: 10px;
+        background: var(--accent);
+        color: #fff;
+        cursor: pointer;
+        user-select: none;
+        line-height: 1.25;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        transition:
+          background 150ms,
+          transform 150ms;
+      }
+      .ref:hover {
+        background: var(--accent-deep);
+        transform: translateY(-1px);
+      }
+
+      /* ========== STATE LABEL ========== */
+      .state-label {
+        position: fixed;
+        bottom: 16px;
+        left: 16px;
+        font-size: 11px;
+        background: #2f2a20;
+        color: #fff;
+        padding: 4px 10px;
+        border-radius: 3px;
+        letter-spacing: 0.12em;
+        z-index: 200;
+      }
+
+      @media (max-width: 1279px) {
+        .paper-main {
+          width: min(880px, calc(100vw - 220px));
+        }
+        .paper-note {
+          width: 340px;
+          left: calc(
+            var(--yohaku-paper-left-pct) + min(880px, calc(100vw - 220px)) -
+              160px
+          );
+        }
+      }
+
+      @media (max-width: 1023px) {
+        .side-left,
+        .side-right {
+          display: none;
+        }
+        .ribbon {
+          display: none;
+        }
+        .paper-main {
+          width: calc(100vw - 32px);
+        }
+        body[data-yohaku='reading'] .paper-main,
+        body[data-yohaku='anchored'] .paper-main {
+          left: 50%;
+          transform: translateX(-50%);
+        }
+        body[data-yohaku='anchored'] .paper-main {
+          transform: translateX(-50%) translateY(calc(-1 * var(--yohaku-lift-y)));
+        }
+        .paper-note {
+          display: none;
+        }
+      }
+      /* Sheet: mobile only; hidden on desktop regardless of state */
+      .sheet-backdrop,
+      .sheet {
+        display: none;
+      }
+      @media (max-width: 1023px) {
+        .sheet-backdrop {
+          display: block;
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.35);
+          z-index: 90;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 200ms;
+        }
+        body[data-yohaku='reading'] .sheet-backdrop,
+        body[data-yohaku='anchored'] .sheet-backdrop {
+          opacity: 1;
+          pointer-events: auto;
+        }
+        .sheet {
+          display: block;
+          position: fixed;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          height: 70vh;
+          background: var(--paper-note);
+          box-shadow: 0 -10px 24px rgba(0, 0, 0, 0.2);
+          border-radius: 12px 12px 0 0;
+          padding: 20px 24px;
+          transform: translateY(100%);
+          transition: transform 280ms var(--yohaku-ease-paper);
+          z-index: 100;
+          overflow-y: auto;
+        }
+        body[data-yohaku='reading'] .sheet,
+        body[data-yohaku='anchored'] .sheet {
+          transform: translateY(0);
+        }
+      }
+      .sheet-handle {
+        width: 40px;
+        height: 4px;
+        background: var(--rule);
+        border-radius: 2px;
+        margin: 0 auto 12px;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition-duration: 180ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body data-yohaku="idle">
+    <div class="toolbar" aria-label="mockup controls">
+      <button data-state="idle" aria-pressed="true">idle</button>
+      <button data-state="reading">reading</button>
+      <button data-state="anchored">anchored</button>
+    </div>
+
+    <nav class="side-left yohaku-fadeable" aria-label="navigation">
+      <h4>NAVIGATION</h4>
+      <ul>
+        <li>Home</li>
+        <li>Notes</li>
+        <li>Posts</li>
+        <li>Timeline</li>
+        <li>Thinking</li>
+        <li>Friends</li>
+      </ul>
+    </nav>
+
+    <aside class="side-right yohaku-fadeable" aria-label="toc">
+      <h4>目录</h4>
+      <ol>
+        <li>引子</li>
+        <li>余白之于书</li>
+        <li>纸页之间的呼吸</li>
+        <li>念念不忘，也没有回响</li>
+        <li>收束</li>
+      </ol>
+    </aside>
+
+    <main class="site">
+      <div class="stage">
+        <article class="paper-main" id="paper-main">
+          <button class="ribbon" id="ribbon" aria-expanded="false" aria-label="展开余白">
+            余&nbsp;&nbsp;白
+          </button>
+
+          <h1 class="note-title">念念不忘，也没有回响</h1>
+          <div class="note-meta">
+            <span>2026-04-21</span>
+            <span>杂记</span>
+            <span>6 分钟</span>
+          </div>
+
+          <div class="notice-card">
+            <div class="notice-item summary">
+              <strong>AI 摘要：</strong>
+              关于书页留白之美，及记忆之不可挽留。
+            </div>
+            <div class="notice-item">
+              <button class="chip" id="chip" aria-expanded="false">
+                <span class="dot">◆</span><span>此文有余白</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="article">
+            <h2>引子</h2>
+            <p>
+              案上一册旧书，纸已发黄。翻开之际，四周空白如呼吸。所谓 "余白"，非空也，乃可容人伫足之处。
+            </p>
+            <h2>余白之于书</h2>
+            <p>
+              古人刻书，行列有度，天头地脚皆有法度。<span id="q1"
+                >念念不忘，也没有回响</span
+              >——然留白之处，正是读者得以念想的地方。
+            </p>
+            <p>
+              每翻一页，余白即重现。它不说话，却让文字得以呼吸。
+            </p>
+            <h2>纸页之间的呼吸</h2>
+            <p>
+              文字稠密之时，心亦窒。留白一张，念头方得舒展。
+            </p>
+            <h2>收束</h2>
+            <p>
+              书读到末页，末页之后还有一页空白。那一页，是你自己的。
+            </p>
+          </div>
+        </article>
+
+        <aside
+          class="paper-note"
+          id="paper-note"
+          role="complementary"
+          aria-label="余白 · 精读手记"
+        >
+          <button class="note-close" id="note-close" aria-label="收起余白">×</button>
+          <div class="yohaku-meta-header">
+            <span class="m">6 min</span>
+            <span class="m">easy</span>
+            <span class="m">essay</span>
+          </div>
+
+          <h2>TL;DR</h2>
+          <p>
+            此文以 "余白" 为喻，探讨书页空白之美、及记忆不可挽留之事。
+          </p>
+
+          <h2>情绪弧线</h2>
+          <ul>
+            <li>起：见旧书而感物</li>
+            <li>承：引古人之制</li>
+            <li>转：念念不忘无回响<span class="ref" data-quote="念念不忘，也没有回响">ref</span></li>
+            <li>合：余白归己</li>
+          </ul>
+
+          <h2>可摘句</h2>
+          <ul>
+            <li>"留白之处，正是读者得以念想的地方。"</li>
+            <li>"末页之后还有一页空白。那一页，是你自己的。"</li>
+          </ul>
+
+          <h2>盲点</h2>
+          <p>
+            未及西方书籍设计之 margin 传统对照；未讨论电子书余白之异化。
+          </p>
+
+          <h2>悬而未决</h2>
+          <p>
+            若无空白，记忆是否仍是记忆？<span
+              class="ref"
+              data-quote="余白即重现"
+              >ref</span
+            >
+          </p>
+        </aside>
+      </div>
+    </main>
+
+    <div class="sheet-backdrop"></div>
+    <aside class="sheet" aria-label="余白 · 精读手记（mobile）">
+      <div class="sheet-handle"></div>
+      <div class="yohaku-meta-header">
+        <span class="m">6 min</span>
+        <span class="m">easy</span>
+        <span class="m">essay</span>
+      </div>
+      <h2>TL;DR</h2>
+      <p>此文以 "余白" 为喻…</p>
+      <h2>可摘句</h2>
+      <p>"末页之后还有一页空白。那一页，是你自己的。"</p>
+    </aside>
+
+    <div class="state-label" id="state-label">STATE: idle</div>
+
+    <script>
+      const body = document.body
+      const label = document.getElementById('state-label')
+      const toolbarBtns = document.querySelectorAll('.toolbar button')
+      const ribbon = document.getElementById('ribbon')
+      const chip = document.getElementById('chip')
+      const closeBtn = document.getElementById('note-close')
+      const paperMain = document.getElementById('paper-main')
+      const paperNote = document.getElementById('paper-note')
+
+      function setState(s) {
+        body.dataset.yohaku = s
+        label.textContent = 'STATE: ' + s
+        toolbarBtns.forEach((b) =>
+          b.setAttribute('aria-pressed', b.dataset.state === s ? 'true' : 'false'),
+        )
+        const active = s !== 'idle'
+        ribbon.setAttribute('aria-expanded', String(active))
+        ribbon.setAttribute('aria-label', active ? '关闭余白' : '展开余白')
+        ribbon.textContent = active ? '关 闭' : '余  白'
+        chip.setAttribute('aria-expanded', String(active))
+        chip.innerHTML = active
+          ? '<span class="dot">◆</span><span>关闭余白</span>'
+          : '<span class="dot">◆</span><span>此文有余白</span>'
+      }
+
+      toolbarBtns.forEach((b) =>
+        b.addEventListener('click', () => setState(b.dataset.state)),
+      )
+      ribbon.addEventListener('click', () =>
+        setState(body.dataset.yohaku === 'idle' ? 'reading' : 'idle'),
+      )
+      chip.addEventListener('click', () =>
+        setState(body.dataset.yohaku === 'idle' ? 'reading' : 'idle'),
+      )
+      closeBtn.addEventListener('click', () => setState('idle'))
+
+      paperMain.addEventListener('click', (e) => {
+        if (e.target.closest('.ref') || e.target.closest('.ribbon')) return
+        if (body.dataset.yohaku === 'reading') setState('anchored')
+      })
+      paperNote.addEventListener('click', (e) => {
+        if (e.target.closest('.ref') || e.target.closest('.note-close')) return
+        if (body.dataset.yohaku === 'anchored') setState('reading')
+      })
+
+      document.querySelectorAll('.ref').forEach((el) => {
+        el.addEventListener('click', (e) => {
+          e.stopPropagation()
+          const quote = el.dataset.quote
+          if (!quote) return
+          const host = document.querySelector('.article')
+          if (!host) return
+          const walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT)
+          let node
+          let flat = ''
+          const nodes = []
+          while ((node = walker.nextNode())) {
+            nodes.push({ node, start: flat.length })
+            flat += node.textContent
+          }
+          const idx = flat.indexOf(quote)
+          if (idx < 0) return
+          let startNode, startOffset, endNode, endOffset
+          for (const n of nodes) {
+            const end = n.start + n.node.textContent.length
+            if (idx >= n.start && idx < end) {
+              startNode = n.node
+              startOffset = idx - n.start
+            }
+            if (idx + quote.length > n.start && idx + quote.length <= end) {
+              endNode = n.node
+              endOffset = idx + quote.length - n.start
+              break
+            }
+          }
+          if (!startNode || !endNode) return
+          const range = document.createRange()
+          range.setStart(startNode, startOffset)
+          range.setEnd(endNode, endOffset)
+          try {
+            const mark = document.createElement('mark')
+            mark.className = 'yohaku-flash'
+            range.surroundContents(mark)
+            setState('anchored')
+            mark.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            setTimeout(() => {
+              const parent = mark.parentNode
+              if (!parent) return
+              while (mark.firstChild) parent.insertBefore(mark.firstChild, mark)
+              parent.removeChild(mark)
+            }, 2000)
+          } catch (err) {
+            console.warn('range error', err)
+          }
+        })
+      })
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && body.dataset.yohaku !== 'idle') setState('idle')
+      })
+    </script>
+  </body>
+</html>

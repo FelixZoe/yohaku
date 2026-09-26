@@ -1,0 +1,12 @@
+{
+  "error": "Failed to load narration",
+  "narrate": "Listen to this article",
+  "narration": "AI Narration",
+  "narrating": "Narrating",
+  "pause": "Pause",
+  "play": "Play narration",
+  "reveal": "Reveal current position",
+  "segment_progress": "{current} / {total}",
+  "stale_warning": "Article edited — audio may not match the text",
+  "stop": "Stop"
+}

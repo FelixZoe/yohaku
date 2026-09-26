@@ -1,0 +1,7 @@
+/* slot-text inline-flex pushes its baseline to the box bottom, so a number
+   inline with text sits above the surrounding baseline. Align char-slots on
+   their own text baseline so the slot-text exposes that baseline upward. */
+.slot-text {
+  align-items: baseline;
+  vertical-align: baseline;
+}

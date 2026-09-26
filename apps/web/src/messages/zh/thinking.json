@@ -1,0 +1,16 @@
+{
+  "page_title": "思考",
+  "page_subtitle": "感君倾耳。",
+  "post_placeholder": "此刻在想什么？",
+  "send": "发送",
+  "detected_link": "检测到链接",
+  "resolving": "解析中",
+  "emoji_label": "表情",
+  "feed_reference": "引用：{title}",
+  "feed_comment_cta": "览毕，何不一言？",
+  "moment_application": "应用",
+  "moment_window": "窗口",
+  "moment_media": "媒体",
+  "moment_playback_at": "播放至 {position}",
+  "moment_playback_progress": "播放至 {position} / {duration}"
+}

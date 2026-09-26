@@ -1,0 +1,252 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@config "../../tailwind.config.ts";
+
+@source "./src/**/*.{js,jsx,ts,tsx}";
+@source "../../node_modules/@ferrucc-io/emoji-picker/dist/**/*.{js,jsx,ts,tsx}";
+@source inline("w-full! w-full");
+@source "../../../../packages/rich-content/src/**/*.{ts,tsx}";
+
+@plugin "@tailwindcss/typography";
+
+@import './checkbox.css';
+@import './layer.css';
+@import './animation.css';
+@import './image-zoom.css';
+@import './yohaku.css';
+
+@import '@yohaku/design-system/tokens.css';
+
+html {
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+}
+
+html body {
+  @apply max-w-screen overflow-x-hidden;
+}
+
+@media print {
+  html {
+    font-size: 12px;
+  }
+}
+
+/* @media (min-width: 2160px) {
+  html {
+    font-size: 15px;
+  }
+} */
+
+.rich-content {
+  text-autospace: normal;
+}
+
+.prose {
+  @apply dark:prose-invert text-copy-15;
+
+  max-width: 100% !important;
+  text-autospace: normal;
+
+  p {
+    @apply break-words;
+  }
+
+  figure img {
+    @apply mb-0 mt-0;
+  }
+}
+
+@layer utilities {
+  *:focus {
+    outline: none;
+  }
+
+  * {
+    tab-size: 2;
+
+    @apply border-neutral-9/10;
+    &:hover {
+      scrollbar-color: auto;
+    }
+  }
+}
+
+.animate-ping {
+  animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes ping {
+  75%,
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+@keyframes dotPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 4px color-mix(in srgb, var(--color-accent) 20%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 10px color-mix(in srgb, var(--color-accent) 45%, transparent),
+      0 0 20px color-mix(in srgb, var(--color-accent) 10%, transparent);
+  }
+}
+
+/* input,
+textarea {
+  font-size: max(16px, 1rem);
+} */
+
+a {
+  @apply break-all;
+}
+
+@media (width >= 1024px) {
+  input,
+  textarea {
+    @apply text-copy-14;
+  }
+}
+
+/* @highlighters/core mounts its selection overlay as a trailing child of the
+   nearest positioned ancestor, which would knock the closing paragraph out of
+   `:last-child` and reflow the sheet for as long as text stays selected. */
+.prose p:nth-last-child(1 of :not([data-highlighters-overlay])) {
+  margin-bottom: 0;
+}
+
+.prose
+  :where(blockquote):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+  @apply relative border-0;
+
+  &::before {
+    content: '';
+    display: block;
+    width: 3px;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    background-color: var(--color-accent);
+    border-radius: 1em;
+  }
+}
+
+@utility radio {
+  --size: calc(var(--size-selector, 0.25rem) * 6);
+  --input-color: currentColor;
+
+  cursor: pointer;
+  appearance: none;
+  vertical-align: middle;
+  border: var(--border, 1px) solid
+    color-mix(in srgb, var(--input-color) 20%, transparent);
+  box-shadow: 0 1px oklch(0% 0 0 / calc(var(--depth, 1) * 0.1)) inset;
+  width: var(--size);
+  height: var(--size);
+  color: var(--input-color);
+  border-radius: 9999px;
+  flex-shrink: 0;
+  padding: 0.25rem;
+  display: inline-block;
+  position: relative;
+
+  &::before {
+    content: '';
+    width: 100%;
+    height: 100%;
+    display: block;
+    border-radius: 9999px;
+    background-size: auto, calc(var(--noise, 0) * 100%);
+    background-image: none, var(--fx-noise, none);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--input-color);
+    outline-offset: 2px;
+  }
+
+  &:checked,
+  &[aria-checked='true'] {
+    background-color: var(--color-neutral-1);
+    border-color: currentColor;
+    animation: radio-pop 0.2s ease-out;
+
+    &::before {
+      box-shadow:
+        0 -1px oklch(0% 0 0 / calc(var(--depth, 1) * 0.1)) inset,
+        0 8px 0 -4px oklch(100% 0 0 / calc(var(--depth, 1) * 0.1)) inset,
+        0 1px oklch(0% 0 0 / calc(var(--depth, 1) * 0.1));
+      background-color: currentColor;
+    }
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.2;
+  }
+}
+
+@utility radio-xs {
+  --size: calc(var(--size-selector, 0.25rem) * 4);
+  padding: 0.125rem;
+}
+
+@utility radio-sm {
+  --size: calc(var(--size-selector, 0.25rem) * 5);
+  padding: 0.1875rem;
+}
+
+@utility radio-md {
+  --size: calc(var(--size-selector, 0.25rem) * 6);
+  padding: 0.25rem;
+}
+
+@utility radio-lg {
+  --size: calc(var(--size-selector, 0.25rem) * 7);
+  padding: 0.3125rem;
+}
+
+@utility radio-xl {
+  --size: calc(var(--size-selector, 0.25rem) * 8);
+  padding: 0.375rem;
+}
+
+@utility radio-accent {
+  --input-color: var(--color-accent);
+}
+
+@utility radio-neutral {
+  --input-color: var(--color-neutral-8);
+}
+
+@utility radio-info {
+  --input-color: var(--color-info);
+}
+
+@utility radio-success {
+  --input-color: var(--color-success);
+}
+
+@utility radio-warning {
+  --input-color: var(--color-warning);
+}
+
+@utility radio-error {
+  --input-color: var(--color-error);
+}
+
+@keyframes radio-pop {
+  0% {
+    padding: 5px;
+  }
+  50% {
+    padding: 3px;
+  }
+}

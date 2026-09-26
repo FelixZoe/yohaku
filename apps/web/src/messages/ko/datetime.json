@@ -1,0 +1,9 @@
+{
+  "relative_justNow": "방금",
+  "relative_secondsAgo": "{count}초 전",
+  "relative_minutesAgo": "{count}분 전",
+  "relative_hoursAgo": "{count}시간 전",
+  "relative_daysAgo": "{count}일 전",
+  "relative_monthsAgo": "{count}달 전",
+  "relative_yearsAgo": "{count}년 전"
+}

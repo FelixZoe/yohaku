@@ -1,0 +1,15 @@
+{
+  "not_enabled": "Subscriptions aren't open yet.",
+  "type_post": "Posts",
+  "type_note": "Notes",
+  "type_say": "Quotes",
+  "type_recently": "Quick notes",
+  "success": "You are on the list. With thanks.",
+  "welcome": "Thank you for subscribing to \"{title}\". New pieces will find their way to your inbox.",
+  "rss_hint": "You can also subscribe via",
+  "rss_suffix": "to subscribe to the RSS feed for \"{title}\".",
+  "telegram_hint": "You can also subscribe to the Telegram channel",
+  "submit": "Subscribe",
+  "form_email": "Your Email *",
+  "bell_intro": "Email subscriptions are open — ring the bell, and new pieces will find you."
+}

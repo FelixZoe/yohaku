@@ -1,0 +1,50 @@
+/* KoPub World (KOPUS). Loaded from jsdelivr CDN, pinned to 1.0.3. */
+/* Source: https://www.npmjs.com/package/font-kopubworld */
+@font-face {
+  font-family: 'KoPubWorld Dotum';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local('KoPubWorldDotum'),
+    url('https://cdn.jsdelivr.net/npm/font-kopubworld@1.0.3/fonts/KoPubWorld-Dotum-Medium.woff2')
+      format('woff2'),
+    url('https://cdn.jsdelivr.net/npm/font-kopubworld@1.0.3/fonts/KoPubWorld-Dotum-Medium.woff')
+      format('woff');
+}
+@font-face {
+  font-family: 'KoPubWorld Dotum';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    local('KoPubWorldDotum'),
+    url('https://cdn.jsdelivr.net/npm/font-kopubworld@1.0.3/fonts/KoPubWorld-Dotum-Bold.woff2')
+      format('woff2'),
+    url('https://cdn.jsdelivr.net/npm/font-kopubworld@1.0.3/fonts/KoPubWorld-Dotum-Bold.woff')
+      format('woff');
+}
+@font-face {
+  font-family: 'KoPubWorld Batang';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local('KoPubWorldBatang'),
+    url('https://cdn.jsdelivr.net/npm/font-kopubworld@1.0.3/fonts/KoPubWorld-Batang-Medium.woff2')
+      format('woff2'),
+    url('https://cdn.jsdelivr.net/npm/font-kopubworld@1.0.3/fonts/KoPubWorld-Batang-Medium.woff')
+      format('woff');
+}
+@font-face {
+  font-family: 'KoPubWorld Batang';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    local('KoPubWorldBatang'),
+    url('https://cdn.jsdelivr.net/npm/font-kopubworld@1.0.3/fonts/KoPubWorld-Batang-Bold.woff2')
+      format('woff2'),
+    url('https://cdn.jsdelivr.net/npm/font-kopubworld@1.0.3/fonts/KoPubWorld-Batang-Bold.woff')
+      format('woff');
+}

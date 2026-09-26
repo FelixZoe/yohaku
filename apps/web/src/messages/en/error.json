@@ -1,0 +1,20 @@
+{
+  "404_description": "No knowledge dwells here — wander on.",
+  "404_torn_line1": "This page is gone,",
+  "404_torn_line2": "maybe the wind carried it away.",
+  "404_torn_todo": "TO DO",
+  "404_torn_signature": "— a wandering visitor",
+  "404_backHome": "Back to Home",
+  "500_title": "The server is unwell.",
+  "api_fetchError": "Failed to fetch initial data. Please check if the API server is running. Error message:",
+  "render_error": "Something faltered as this page was drawn.",
+  "render_error_contact": "If this error persists, please contact the developer",
+  "render_error_thanks": ", thank you!",
+  "page_deleted": "This page has been unwritten.",
+  "back_home": "Back to Home",
+  "refresh": "Refresh",
+  "biz_error_title": "No answer from the server.",
+  "biz_error_http_status": "HTTP Status: {status}",
+  "biz_error_message": "Error: {message}",
+  "share_link_expired": "This share link is no longer available"
+}

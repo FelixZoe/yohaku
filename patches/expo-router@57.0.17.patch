@@ -1,0 +1,49 @@
+diff --git a/build/link/LinkWithPreview.js b/build/link/LinkWithPreview.js
+--- a/build/link/LinkWithPreview.js
++++ b/build/link/LinkWithPreview.js
+@@ -38,7 +38,9 @@
+ const jsx_runtime_1 = require("react/jsx-runtime");
+ const react_1 = __importStar(require("react"));
+ const react_native_1 = require("react-native");
++const store_1 = require("../global-state/store");
+ const hooks_1 = require("../hooks");
++const navigationParams_1 = require("../navigationParams");
+ const BaseExpoRouterLink_1 = require("./BaseExpoRouterLink");
+ const InternalLinkPreviewContext_1 = require("./InternalLinkPreviewContext");
+ const NativeMenuContext_1 = require("./NativeMenuContext");
+@@ -122,6 +124,24 @@
+             if (!isPad) {
+                 router.navigate(rest.href, { __internal__PreviewKey: nextScreenId });
+             }
++        }, onPreviewTappedAnimationCompleted: () => {
++            if (!hasPreview) {
++                return;
++            }
++            let unsubscribe = () => { };
++            const clearPreviewNavigationAnimationState = () => {
++                const currentRoute = store_1.store.navigationRef.current?.getCurrentRoute();
++                if (nextScreenId && currentRoute?.key !== nextScreenId) {
++                    return;
++                }
++                unsubscribe();
++                if ((0, navigationParams_1.hasParam)(currentRoute?.params, navigationParams_1.INTERNAL_EXPO_ROUTER_NO_ANIMATION_PARAM_NAME)) {
++                    store_1.store.navigationRef.current?.replaceParams((0, navigationParams_1.removeParams)(currentRoute?.params, [navigationParams_1.INTERNAL_EXPO_ROUTER_NO_ANIMATION_PARAM_NAME]));
++                }
++                setOpenPreviewKey(undefined);
++            };
++            unsubscribe = store_1.store.navigationRef.addListener('state', clearPreviewNavigationAnimationState);
++            clearPreviewNavigationAnimationState();
+         }, style: { display: 'contents' }, disableForceFlatten: true, children: (0, jsx_runtime_1.jsx)(NativeMenuContext_1.NativeMenuContext, { value: true, children: (0, jsx_runtime_1.jsxs)(InternalLinkPreviewContext_1.InternalLinkPreviewContext, { value: {
+                     isVisible: isCurrentPreviewOpen,
+                     href: rest.hrefForPreviewNavigation,
+diff --git a/ios/LinkPreview/LinkPreviewNativeView.swift b/ios/LinkPreview/LinkPreviewNativeView.swift
+--- a/ios/LinkPreview/LinkPreviewNativeView.swift
++++ b/ios/LinkPreview/LinkPreviewNativeView.swift
+@@ -105,6 +105,7 @@ class NativeLinkPreviewView: RouterViewWithLogger, UIContextMenuInteractionDeleg
+           }
+         }
+         super.unmountChildComponentView(child, index: index)
++        self.directChild = nil
+       } else {
+         logger?.warn(
+           "[expo-router] No link child found to unmount. This is most likely a bug in expo-router."

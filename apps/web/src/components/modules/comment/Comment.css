@@ -1,0 +1,549 @@
+@reference "../../../styles/tailwindcss.css";
+
+.comment__message {
+  @apply text-copy-13 leading-7 tracking-[0.01em] text-neutral-8;
+}
+
+.comment__message * {
+  @apply break-words;
+}
+
+.comment__message a {
+  @apply text-accent underline-offset-2 no-underline hover:underline;
+}
+
+.comment__message code {
+  @apply rounded-md bg-neutral-9/5 px-1.5 py-0.5 font-mono text-[0.85em] text-neutral-8;
+}
+
+.comment__message pre {
+  @apply my-2 rounded-lg bg-neutral-9/10 p-3 font-mono text-[0.85em] leading-6 text-neutral-9;
+}
+
+.comment__message pre code {
+  @apply rounded-none bg-transparent p-0;
+}
+
+.comment__message blockquote {
+  @apply relative my-2 border-l-2 border-accent/60 pl-3 not-italic text-neutral-8;
+}
+
+.comment__message h1,
+.comment__message h2,
+.comment__message h3,
+.comment__message h4,
+.comment__message h5,
+.comment__message h6 {
+  @apply font-semibold tracking-tight text-neutral-9;
+}
+
+.comment__message h1 {
+  @apply text-copy-16;
+}
+
+.comment__message h2 {
+  @apply text-copy-14;
+}
+
+.comment__message ul,
+.comment__message ol {
+  @apply my-2 pl-5;
+}
+
+.comment__message ul {
+  @apply list-disc;
+}
+
+.comment__message ol {
+  @apply list-decimal;
+}
+
+.comment__message li {
+  @apply my-1;
+}
+
+.comment__message p {
+  @apply my-0;
+}
+
+/* ---------------------------------------------------------------------
+ * Comment block gutter — seal + connector + pulse + overflow stack
+ * ------------------------------------------------------------------ */
+
+.comment-gutter-trig-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 0;
+  outline: none;
+  white-space: nowrap;
+}
+
+.comment-gutter-trig-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: 9999px;
+}
+
+/* Seal — base ink-stamp aesthetic */
+.comment-seal {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  isolation: isolate;
+  box-shadow:
+    inset 0 0 0 1.5px var(--color-neutral-1),
+    0 1px 0 rgba(0, 0, 0, 0.06),
+    0 0 0 0 transparent;
+  transition:
+    transform 220ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 220ms ease;
+}
+
+.comment-seal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.32),
+    inset -0.5px -1px 0 rgba(0, 0, 0, 0.18);
+  z-index: 2;
+}
+
+.comment-gutter-trig-btn:hover > .comment-seal {
+  transform: scale(1.06);
+}
+
+.comment-gutter-trig-btn.is-active > .comment-seal {
+  transform: scale(1.04);
+  box-shadow:
+    inset 0 0 0 1.5px var(--color-neutral-1),
+    0 0 0 2px color-mix(in srgb, var(--color-accent) 28%, transparent),
+    0 1px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* New-comment pulse — soft accent halo for fresh activity (<24h) */
+@keyframes comment-seal-pulse {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 0 1.5px var(--color-neutral-1),
+      0 1px 0 rgba(0, 0, 0, 0.06),
+      0 0 0 0 transparent;
+  }
+
+  50% {
+    box-shadow:
+      inset 0 0 0 1.5px var(--color-neutral-1),
+      0 1px 0 rgba(0, 0, 0, 0.06),
+      0 0 0 3px color-mix(in srgb, var(--color-accent) 20%, transparent),
+      0 0 0 6px color-mix(in srgb, var(--color-accent) 8%, transparent);
+  }
+}
+
+.comment-seal.is-new {
+  animation: comment-seal-pulse 2.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .comment-seal.is-new {
+    animation: none;
+  }
+}
+
+/* Count badge */
+.comment-gutter-badge {
+  @apply bg-neutral-1 text-neutral-9 font-mono;
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 9999px;
+  font-feature-settings: 'tnum' 1;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-caption-10);
+  font-weight: 500;
+  line-height: 14px;
+  text-align: center;
+  letter-spacing: -0.02em;
+  box-shadow:
+    0 0 0 1.5px var(--color-neutral-1),
+    inset 0 0 0 1px var(--color-border);
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Connector — range mode only */
+.comment-gutter-trig-btn[data-mode='range']::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 50%;
+  width: 14px;
+  border-top: 1px dashed
+    color-mix(in srgb, var(--color-accent) 55%, transparent);
+  transform: translateY(0.5px);
+  transition:
+    width 220ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    left 220ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    border-color 160ms ease;
+  pointer-events: none;
+}
+
+.comment-gutter-trig-btn[data-mode='range']:hover::before,
+.comment-gutter-trig-btn[data-mode='range'].is-active::before {
+  width: 22px;
+  left: -18px;
+  border-top-color: var(--color-accent);
+}
+
+/* Hover overflow — extra seals slide out into the right margin */
+.comment-gutter-overflow {
+  position: absolute;
+  left: calc(100% + 6px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.comment-gutter-trig-btn:hover .comment-gutter-overflow,
+.comment-gutter-trig-btn.is-active .comment-gutter-overflow {
+  opacity: 1;
+}
+
+.comment-gutter-overflow .comment-seal {
+  margin-left: -7px;
+  transform: translateX(-6px);
+  transition: transform 240ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.comment-gutter-overflow .comment-seal:nth-child(1) {
+  transition-delay: 0ms;
+}
+
+.comment-gutter-overflow .comment-seal:nth-child(2) {
+  transition-delay: 50ms;
+}
+
+.comment-gutter-overflow .comment-seal:nth-child(3) {
+  transition-delay: 100ms;
+}
+
+.comment-gutter-trig-btn:hover .comment-gutter-overflow .comment-seal,
+.comment-gutter-trig-btn.is-active .comment-gutter-overflow .comment-seal {
+  transform: translateX(0);
+}
+
+.comment-gutter-overflow-label {
+  @apply text-label-12 bg-neutral-9 text-neutral-1;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  transform: translateX(-6px);
+  transition: transform 240ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: 200ms;
+}
+
+.comment-gutter-trig-btn:hover .comment-gutter-overflow-label,
+.comment-gutter-trig-btn.is-active .comment-gutter-overflow-label {
+  transform: translateX(0);
+}
+
+/* ---------------------------------------------------------------------
+ * Range anchor hover fill — uses CSS Custom Highlight API.
+ * Rules live in `CommentAnchorHighlight.tsx#ensureHighlightStyle` because
+ * Turbopack's CSS parser rejects `::highlight()` selectors.
+ * ------------------------------------------------------------------ */
+
+/* ---------------------------------------------------------------------
+ * Comment block thread panel — section model
+ * ------------------------------------------------------------------ */
+
+.thread-panel {
+  @apply text-copy-13 font-sans;
+}
+
+.thread-header {
+  padding: 12px 20px 10px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--color-border) 25%, transparent);
+}
+
+.thread-header-l {
+  @apply text-caption-10;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+.thread-header-r {
+  @apply text-label-12;
+  color: var(--color-muted-foreground);
+  font-feature-settings: 'tnum' 1;
+}
+
+.thread-header-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: -4px -6px -4px 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-muted-foreground);
+  cursor: pointer;
+  border-radius: 6px;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.thread-header-close:hover {
+  background: color-mix(in srgb, var(--color-foreground) 8%, transparent);
+  color: var(--color-foreground);
+}
+
+.thread-section {
+  padding: 14px 0 16px;
+}
+
+.thread-section + .thread-section {
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 22%, transparent);
+}
+
+/* quote section */
+.thread-quote {
+  padding: 6px 20px 10px 20px;
+  position: relative;
+  cursor: pointer;
+}
+
+.thread-quote-bar {
+  position: absolute;
+  left: 20px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: color-mix(in srgb, var(--color-accent) 70%, transparent);
+  border-radius: 1px;
+  transition:
+    background 200ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    width 200ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 200ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.thread-section[data-anchor-active='true'] .thread-quote-bar {
+  @apply bg-accent;
+  width: 3px;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+.thread-quote-text {
+  @apply font-serif;
+  padding-left: 14px;
+  font-size: var(--text-copy-15);
+  line-height: 1.55;
+  font-style: italic;
+  color: var(--color-foreground);
+}
+
+/* block section label */
+.thread-blocklabel {
+  @apply text-caption-10;
+  padding: 6px 20px 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(
+    in srgb,
+    var(--color-accent) 60%,
+    var(--color-muted-foreground)
+  );
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.thread-blocklabel::before,
+.thread-blocklabel::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: color-mix(in srgb, var(--color-border) 40%, transparent);
+}
+
+/* comment row */
+.thread-comment {
+  padding: 8px 20px 10px 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.thread-comment-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.thread-c-avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1.5px var(--color-neutral-1);
+  transition: transform 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.thread-comment:hover .thread-c-avatar {
+  transform: scale(1.04);
+}
+
+.thread-c-avatar.is-op {
+  box-shadow:
+    inset 0 0 0 1.5px var(--color-neutral-1),
+    0 0 0 1.5px color-mix(in srgb, var(--color-accent) 70%, transparent);
+}
+
+@keyframes thread-c-avatar-pulse {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 0 1.5px var(--color-neutral-1),
+      0 0 0 0 transparent;
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 1.5px var(--color-neutral-1),
+      0 0 0 3px color-mix(in srgb, var(--color-accent) 14%, transparent),
+      0 0 0 6px color-mix(in srgb, var(--color-accent) 6%, transparent);
+  }
+}
+
+.thread-c-avatar.is-new {
+  animation: thread-c-avatar-pulse 2.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thread-c-avatar.is-new {
+    animation: none;
+  }
+}
+
+.thread-c-name {
+  @apply text-copy-13;
+  font-weight: 500;
+  color: var(--color-foreground);
+}
+
+.thread-c-arrow {
+  @apply text-label-12;
+  color: var(--color-muted-foreground);
+  margin: 0 -2px;
+}
+
+.thread-c-to {
+  @apply text-label-12;
+  font-weight: 500;
+  color: color-mix(
+    in srgb,
+    var(--color-accent) 75%,
+    var(--color-muted-foreground)
+  );
+}
+
+.thread-c-time {
+  @apply text-label-12;
+  color: var(--color-muted-foreground);
+  margin-left: auto;
+  font-feature-settings: 'tnum' 1;
+  letter-spacing: 0.02em;
+}
+
+.thread-c-text {
+  font-size: var(--text-copy-14);
+  line-height: 1.75;
+  color: var(--color-foreground);
+  padding-left: 26px;
+  word-break: break-word;
+}
+
+/* compose chip */
+.thread-box {
+  padding: 12px 20px 14px;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 35%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.thread-chip {
+  @apply text-label-12;
+  color: var(--color-muted-foreground);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.thread-chip-pill {
+  @apply text-label-12;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  color: color-mix(in srgb, var(--color-accent) 70%, var(--color-foreground));
+}
+
+.thread-chip-pill.is-quote {
+  @apply font-serif;
+  font-style: italic;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thread-chip-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-muted-foreground);
+  cursor: pointer;
+  border-radius: 9999px;
+  transition: background 160ms ease;
+}
+
+.thread-chip-x:hover {
+  background: color-mix(in srgb, var(--color-foreground) 8%, transparent);
+}
+
+.thread-quote-stale {
+  @apply text-label-12;
+  margin-left: 8px;
+  font-style: italic;
+  color: var(--color-muted-foreground);
+}

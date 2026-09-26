@@ -1,0 +1,22 @@
+@reference "tailwindcss";
+
+:root {
+  --lumeo-overlay-bg: var(--color-paper);
+  --lumeo-ink: var(--color-neutral-9);
+  --lumeo-ink-subtle: var(--color-neutral-7);
+  --lumeo-accent: var(--a, var(--color-accent));
+  --lumeo-shadow: 0 14px 36px rgba(0, 0, 0, 0.18);
+  --lumeo-font-serif: var(--font-serif);
+}
+
+.dark {
+  --lumeo-shadow: 0 14px 36px rgba(0, 0, 0, 0.55);
+}
+
+.medium-zoom-overlay {
+  z-index: 99;
+}
+
+.medium-zoom-image--opened {
+  z-index: 100;
+}

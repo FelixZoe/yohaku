@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>正文页「回到列表」入口 · Mockup</title>
+  <style>
+    :root {
+      --color-neutral-1: #f9f8f5;
+      --color-neutral-2: #f0efeb;
+      --color-neutral-3: #e3e1db;
+      --color-neutral-4: #d0cec6;
+      --color-neutral-5: #a8a69f;
+      --color-neutral-6: #787670;
+      --color-neutral-7: #5c5a55;
+      --color-neutral-8: #403f3a;
+      --color-neutral-9: #24231f;
+      --color-neutral-10: #141312;
+
+      --color-accent: #c56473;
+      --color-info: #3d6896;
+      --color-success: #5e9f7e;
+      --color-warning: #a87a3d;
+      --color-error: #a64953;
+
+      --color-paper: #faf9f5;
+      --color-border: rgba(24, 24, 27, 0.1);
+
+      --font-sans: -apple-system, 'PingFang SC', 'Microsoft YaHei',
+                   'Noto Sans SC', 'Hiragino Sans GB', system-ui, sans-serif;
+      --font-serif: 'Noto Serif CJK SC', 'Source Han Serif SC', SongTi SC,
+                    STSong, Georgia, serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', Consolas, Monaco,
+                   'Hannotate SC', monospace;
+    }
+
+    [data-theme='dark'] {
+      --color-neutral-1: #141414;
+      --color-neutral-2: #242424;
+      --color-neutral-3: #404040;
+      --color-neutral-4: #5c5c5c;
+      --color-neutral-5: #787878;
+      --color-neutral-6: #a8a8a8;
+      --color-neutral-7: #d0d0d0;
+      --color-neutral-8: #e3e3e3;
+      --color-neutral-9: #f0f0f0;
+      --color-neutral-10: #f8f8f8;
+
+      --color-paper: #1a1814;
+      --color-border: rgba(255, 255, 255, 0.1);
+    }
+
+    * { box-sizing: border-box; }
+    html { font-size: 14px; line-height: 1.5; letter-spacing: 0.01em; }
+    body {
+      margin: 0;
+      background: var(--color-neutral-1);
+      color: var(--color-neutral-9);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+
+    .toolbar {
+      position: fixed; top: 12px; right: 12px; z-index: 20;
+      background: var(--color-neutral-2);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 4px 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--color-neutral-7);
+    }
+    .toolbar button {
+      background: none; border: none; cursor: pointer;
+      color: inherit; font: inherit; padding: 2px 6px; border-radius: 4px;
+    }
+    .toolbar button:hover { background: var(--color-neutral-3); }
+
+    .shell { max-width: 1080px; margin: 0 auto; padding: 48px 24px 96px; }
+
+    .page-head { margin-bottom: 40px; }
+    .page-head h1 { font-size: 28px; line-height: 1.29; font-weight: 500; color: var(--color-neutral-10); margin: 0 0 8px; }
+    .page-head p { font-size: 13px; line-height: 1.54; color: var(--color-neutral-7); margin: 0; max-width: 62ch; }
+
+    .variant { margin-bottom: 56px; }
+    .variant > header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+    .variant h2 { font-size: 20px; line-height: 1.4; font-weight: 500; color: var(--color-neutral-9); margin: 0; }
+    .variant .tag {
+      font-size: 10px; line-height: 1.4; text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--color-neutral-5);
+    }
+    .variant > p.note { font-size: 13px; line-height: 1.54; color: var(--color-neutral-7); margin: 0 0 16px; max-width: 62ch; }
+    .variant > p.note b { font-weight: 500; color: var(--color-neutral-9); }
+
+    /* 纸面 */
+    .paper {
+      position: relative;
+      background: var(--color-paper);
+      border-radius: 12px;
+      border: 1px solid var(--color-border);
+      padding: 40px 56px 48px;
+      max-width: 720px;
+    }
+    .paper.scrollable { max-height: 320px; overflow-y: auto; padding-top: 0; }
+
+    .article-title { font-size: 28px; line-height: 1.29; font-weight: 500; color: var(--color-neutral-10); margin: 0 0 12px; text-align: center; }
+    .meta {
+      display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px;
+      font-size: 12px; line-height: 1.5; color: var(--color-neutral-6); margin-bottom: 32px;
+    }
+    .meta .dot { color: var(--color-neutral-5); }
+    .meta a { color: var(--color-accent); text-decoration: none; border-bottom: 1px solid transparent; }
+    .meta a:hover { border-bottom-color: currentColor; }
+
+    .body p { font-size: 15px; line-height: 1.6; color: var(--color-neutral-9); margin: 0 0 16px; }
+    .body p:last-child { margin-bottom: 0; }
+    .fade { -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent); mask-image: linear-gradient(to bottom, #000 60%, transparent); }
+
+    /* A · 面包屑返回行 */
+    .backline {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; line-height: 1.5; color: var(--color-neutral-7);
+      text-decoration: none; margin-bottom: 24px;
+    }
+    .backline .arrow { font-size: 14px; color: var(--color-neutral-5); transition: transform .18s ease, color .18s ease; }
+    .backline:hover { color: var(--color-neutral-9); }
+    .backline:hover .arrow { transform: translateX(-3px); color: var(--color-accent); }
+    .backline .count { color: var(--color-neutral-5); }
+
+    /* B · 错版套色返回（左缘外侧） */
+    .paper.with-margin-back { padding-left: 56px; }
+    .margin-back {
+      position: absolute; left: -14px; top: 40px;
+      display: inline-flex; align-items: center; gap: 6px;
+      writing-mode: vertical-rl;
+      font-size: 12px; line-height: 1.5; letter-spacing: .08em;
+      color: var(--color-neutral-6); text-decoration: none;
+      padding: 10px 3px; border-radius: 999px;
+      background: var(--color-neutral-2);
+      border: 1px solid var(--color-border);
+    }
+    .margin-back {
+      box-shadow: 3px 3px 0 color-mix(in srgb, var(--color-accent) 20%, transparent);
+    }
+    .margin-back:hover { color: var(--color-neutral-9); }
+
+    /* C · 粘顶页眉 */
+    .sticky-bar {
+      position: sticky; top: 0; z-index: 5;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 10px 0; margin: 0 0 8px;
+      background: color-mix(in srgb, var(--color-paper) 82%, transparent);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid var(--color-border);
+    }
+    .sticky-bar .crumb {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; color: var(--color-neutral-7); text-decoration: none;
+    }
+    .sticky-bar .crumb:hover { color: var(--color-neutral-9); }
+    .sticky-bar .now { font-size: 12px; color: var(--color-neutral-5); max-width: 40ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .scroll-hint { font-size: 12px; color: var(--color-neutral-5); margin-top: 8px; font-family: var(--font-mono); }
+
+    /* 文末落点 */
+    .footer-exit {
+      max-width: 720px; margin-top: 0;
+      border-top: 1px solid var(--color-border);
+      padding: 20px 56px; display: flex; align-items: center; justify-content: center;
+      background: var(--color-paper);
+      border-radius: 0 0 12px 12px;
+      border-left: 1px solid var(--color-border);
+      border-right: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--color-border);
+    }
+    .paper.attached { border-radius: 12px 12px 0 0; border-bottom: none; padding-bottom: 24px; }
+
+    .compare { display: grid; gap: 16px; }
+
+    /* ── D polished ───────────────────────────────── */
+    .backline .cat-dot {
+      width: 6px; height: 6px; border-radius: 999px;
+      background: color-mix(in srgb, var(--color-accent) 45%, transparent);
+      flex: none;
+    }
+    .backline.refined { gap: 8px; margin-bottom: 28px; color: var(--color-neutral-6); }
+    .backline.refined:hover { color: var(--color-neutral-9); }
+
+    .exit {
+      max-width: 720px;
+      background: var(--color-paper);
+      border: 1px solid var(--color-border);
+      border-top: none;
+      border-radius: 0 0 12px 12px;
+      padding: 8px 56px 44px;
+    }
+    .ornament { display: flex; align-items: center; gap: 14px; margin: 0 0 32px; }
+    .ornament .rule { flex: 1; height: 1px; background: var(--color-border); }
+    .ornament .mark {
+      width: 5px; height: 5px; transform: rotate(45deg);
+      background: var(--color-neutral-4);
+    }
+
+    .exit-link {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      width: fit-content; margin: 0 auto;
+      padding: 13px 24px; border-radius: 999px;
+      font-size: 13px; line-height: 1.54; text-decoration: none;
+      color: var(--color-neutral-8);
+      background: var(--color-neutral-2);
+      border: 1px solid var(--color-border);
+      transition: box-shadow .22s cubic-bezier(.22,1,.36,1),
+                  transform .22s cubic-bezier(.22,1,.36,1),
+                  color .22s ease;
+    }
+    .exit-link .arrow { color: var(--color-neutral-5); transition: transform .22s cubic-bezier(.22,1,.36,1), color .22s ease; }
+    .exit-link .num {
+      font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+      font-size: 12px; color: var(--color-neutral-6);
+    }
+    .exit-link:hover {
+      color: var(--color-neutral-10);
+      transform: translate(-1px, -1px);
+      box-shadow: 3px 3px 0 color-mix(in srgb, var(--color-accent) 20%, transparent);
+    }
+    .exit-link:hover .arrow { color: var(--color-accent); transform: translateX(-3px); }
+
+    .exit-sub {
+      display: block; text-align: center; margin-top: 16px;
+      font-size: 12px; color: var(--color-neutral-6); text-decoration: none;
+    }
+    .exit-sub:hover { color: var(--color-neutral-9); }
+    .exit-sub u { text-decoration-color: var(--color-neutral-4); text-underline-offset: 3px; }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">
+      light · dark
+    </button>
+  </div>
+
+  <main class="shell">
+    <div class="page-head">
+      <h1>正文页「回到列表」入口</h1>
+      <p>四个方案，同一篇文章。纸面宽度、标题居中、meta 行都按现有 <code>PostDetailClient</code> 的实际结构还原。切换右上角可看深色。</p>
+    </div>
+
+    <!-- 现状 -->
+    <section class="variant">
+      <header><h2>现状</h2><span class="tag">baseline</span></header>
+      <p class="note">返回入口<b>其实存在</b>——meta 行里的「开发」两个字。但它和时间、标签、阅读数并排，12px 灰底居中，读者不会把它读成导航。</p>
+      <div class="paper">
+        <h3 class="article-title">Metro 打包为什么在 Release 才炸</h3>
+        <div class="meta">
+          <span>2 天前</span><span class="dot">·</span>
+          <span><a href="#">开发</a> / react-native, metro</span><span class="dot">·</span>
+          <span>320 阅读</span>
+        </div>
+        <div class="body fade">
+          <p>Xcode 归档时 <code>expo export:embed</code> 走的是裸 node，不是 pnpm shim，所以 NODE_PATH 里根本没有 workspace 的软链。</p>
+          <p>这件事只在 Release 归档时炸，Debug 一路绿灯，因为 Debug 用的是 Metro dev server，依赖解析完全走另一条路径。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- A -->
+    <section class="variant">
+      <header><h2>A · 面包屑返回行</h2><span class="tag">最小 diff</span></header>
+      <p class="note">标题上方一行，左对齐，跟着正文栏起。<b>不新增接口</b>，分类数据 post 详情已经带了。悬停时箭头左移 + 染 accent。缺点：读到底就滚没了。</p>
+      <div class="paper">
+        <a class="backline" href="#"><span class="arrow">←</span>开发<span class="count">· 12 篇</span></a>
+        <h3 class="article-title">Metro 打包为什么在 Release 才炸</h3>
+        <div class="meta">
+          <span>2 天前</span><span class="dot">·</span>
+          <span><a href="#">开发</a> / react-native, metro</span><span class="dot">·</span>
+          <span>320 阅读</span>
+        </div>
+        <div class="body fade">
+          <p>Xcode 归档时 <code>expo export:embed</code> 走的是裸 node，不是 pnpm shim，所以 NODE_PATH 里根本没有 workspace 的软链。</p>
+          <p>这件事只在 Release 归档时炸，Debug 一路绿灯，因为 Debug 用的是 Metro dev server，依赖解析完全走另一条路径。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- B -->
+    <section class="variant">
+      <header><h2>B · 左缘错版书签</h2><span class="tag">Yohaku 语言</span></header>
+      <p class="note">竖排贴在纸的左缘外侧，底下压一层偏移 2px 的 accent 套色——和 Presence 那套错版印刷同源。<b>不占标题上方的留白</b>，页面进场时标题仍是第一眼。缺点：竖排在窄屏要退化成 A。</p>
+      <div class="paper with-margin-back">
+        <a class="margin-back" href="#">← 开发</a>
+        <h3 class="article-title">Metro 打包为什么在 Release 才炸</h3>
+        <div class="meta">
+          <span>2 天前</span><span class="dot">·</span>
+          <span><a href="#">开发</a> / react-native, metro</span><span class="dot">·</span>
+          <span>320 阅读</span>
+        </div>
+        <div class="body fade">
+          <p>Xcode 归档时 <code>expo export:embed</code> 走的是裸 node，不是 pnpm shim，所以 NODE_PATH 里根本没有 workspace 的软链。</p>
+          <p>这件事只在 Release 归档时炸，Debug 一路绿灯，因为 Debug 用的是 Metro dev server，依赖解析完全走另一条路径。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- C -->
+    <section class="variant">
+      <header><h2>C · 粘顶页眉</h2><span class="tag">全程在场</span></header>
+      <p class="note">滚动时跟随，右侧显示当前标题。<b>唯一一个读完时还在屏幕上的方案</b>。缺点：要和现有 floating header（<code>HeaderContent</code>，滚过 160px 变实心）抢同一条视觉带。往下滚这个框试试。</p>
+      <div class="paper scrollable">
+        <div class="sticky-bar">
+          <a class="crumb" href="#"><span>←</span>开发</a>
+          <span class="now">Metro 打包为什么在 Release 才炸</span>
+        </div>
+        <h3 class="article-title">Metro 打包为什么在 Release 才炸</h3>
+        <div class="meta">
+          <span>2 天前</span><span class="dot">·</span>
+          <span><a href="#">开发</a> / react-native, metro</span><span class="dot">·</span>
+          <span>320 阅读</span>
+        </div>
+        <div class="body">
+          <p>Xcode 归档时 <code>expo export:embed</code> 走的是裸 node，不是 pnpm shim，所以 NODE_PATH 里根本没有 workspace 的软链。</p>
+          <p>这件事只在 Release 归档时炸，Debug 一路绿灯，因为 Debug 用的是 Metro dev server，依赖解析完全走另一条路径。</p>
+          <p>把 babel 和 metro 的间接依赖提成直接依赖，问题就消失了。但这不是根因，根因是 Xcode 的 Bundle React Native code 阶段没有继承 shell 的 PATH。</p>
+          <p>验证方式很朴素：在 build phase 里 echo 一遍 which node，看它指到哪。</p>
+          <p>结论是，凡是只在归档时炸的依赖问题，先怀疑执行环境而不是代码。</p>
+        </div>
+      </div>
+      <p class="scroll-hint">↑ 这个框可以滚动</p>
+    </section>
+
+    <!-- D -->
+    <section class="variant" id="polished">
+      <header><h2>D · A + 文末出口</h2><span class="tag">polished</span></header>
+      <p class="note">顶部一行给坐标（分类点 + 名字 + 篇数），文末一个收束块给出口。分隔用印刷书的 section break（细线 + 菱形），返回胶囊 hover 时浮起并压出 3px accent 错版影——和左缘书签同一套套色语言。数字等宽，将来接 <code>slot-text</code> 翻牌。</p>
+      <div class="paper attached">
+        <a class="backline refined" href="#">
+          <span class="arrow">←</span><span class="cat-dot"></span>开发<span class="count">· 12 篇</span>
+        </a>
+        <h3 class="article-title">Metro 打包为什么在 Release 才炸</h3>
+        <div class="meta">
+          <span>2 天前</span><span class="dot">·</span>
+          <span><a href="#">开发</a> / react-native, metro</span><span class="dot">·</span>
+          <span>320 阅读</span>
+        </div>
+        <div class="body">
+          <p>Xcode 归档时 <code>expo export:embed</code> 走的是裸 node，不是 pnpm shim，所以 NODE_PATH 里根本没有 workspace 的软链。</p>
+          <p>结论是，凡是只在归档时炸的依赖问题，先怀疑执行环境而不是代码。</p>
+        </div>
+      </div>
+      <div class="exit">
+        <div class="ornament"><span class="rule"></span><span class="mark"></span><span class="rule"></span></div>
+        <a class="exit-link" href="#">
+          <span class="arrow">←</span>回到 开发<span class="num">还有 11 篇</span>
+        </a>
+        <a class="exit-sub" href="#"><u>或者看全部文章</u></a>
+      </div>
+    </section>
+
+  </main>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "symbolNotFound": "銘柄が見つかりません",
+  "quoteUnavailable": "気配値を取得できません",
+  "candlesIntraday": "{interval} ローソク",
+  "sessions": "{count} セッション",
+  "live": "ライブ",
+  "frozen": "停止中",
+  "todayIntraday": "本日 · 日中"
+}

@@ -1,0 +1,60 @@
+@reference "../../../styles/tailwindcss.css";
+
+.gallery-container {
+  scroll-snap-type: x mandatory;
+  display: flex;
+  align-items: flex-start;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.gallery-child {
+  scroll-snap-align: center;
+  flex-shrink: 0;
+  scroll-snap-stop: always;
+
+  text-align: center;
+}
+
+.gallery-child:last-child {
+  margin-right: 0 !important;
+}
+
+.gallery-child figure > span[data-hide-print] {
+  height: var(--gallery-image-h);
+}
+
+.gallery-child figure img {
+  height: var(--gallery-image-h);
+  width: auto;
+  object-fit: contain;
+}
+
+.gallery-child figcaption {
+  display: none;
+}
+
+.gallery-folio {
+  @apply mt-2 flex items-baseline justify-between gap-4 text-copy-13 text-neutral-8;
+
+  padding-inline: calc(60px / 2);
+}
+
+.gallery-folio__caption {
+  @apply min-w-0 truncate;
+}
+
+.gallery-folio__caption::after {
+  content: "\200B";
+}
+
+.gallery-folio__count {
+  @apply shrink-0 gap-1 text-label-12 text-neutral-7 tabular-nums;
+
+  display: inline-flex;
+  align-items: baseline;
+}

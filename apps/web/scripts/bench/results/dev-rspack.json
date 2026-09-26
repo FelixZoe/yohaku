@@ -1,0 +1,89 @@
+{
+  "bundler": "rspack",
+  "timestamp": "2026-05-13T06:21:22.137Z",
+  "readyMs": 232,
+  "readyAtWallMs": 773,
+  "routes": [
+    {
+      "route": "/",
+      "status": 200,
+      "ms": 15830,
+      "bytes": 828365
+    },
+    {
+      "route": "/posts",
+      "status": 200,
+      "ms": 2099,
+      "bytes": 652079
+    },
+    {
+      "route": "/notes",
+      "status": 200,
+      "ms": 2228,
+      "bytes": 190751
+    },
+    {
+      "route": "/timeline",
+      "status": 200,
+      "ms": 1670,
+      "bytes": 132868
+    },
+    {
+      "route": "/search",
+      "status": 200,
+      "ms": 1877,
+      "bytes": 133289
+    },
+    {
+      "route": "/friends",
+      "status": 200,
+      "ms": 1998,
+      "bytes": 133480
+    },
+    {
+      "route": "/categories",
+      "status": 200,
+      "ms": 2242,
+      "bytes": 157565
+    },
+    {
+      "route": "/projects",
+      "status": 200,
+      "ms": 2185,
+      "bytes": 137799
+    },
+    {
+      "route": "/says",
+      "status": 200,
+      "ms": 2332,
+      "bytes": 136296
+    },
+    {
+      "route": "/thinking",
+      "status": 200,
+      "ms": 2623,
+      "bytes": 138734
+    }
+  ],
+  "compileEvents": [],
+  "memory": {
+    "totalKb": 6608512,
+    "totalMb": 6453.6,
+    "pids": [
+      57419,
+      57443
+    ],
+    "breakdown": [
+      {
+        "pid": 57419,
+        "rssKb": 77008,
+        "cmd": "node node_modules/.bin/../next/dist/bin/next dev -p 23230"
+      },
+      {
+        "pid": 57443,
+        "rssKb": 6531504,
+        "cmd": "Yohaku (NextJS)"
+      }
+    ]
+  }
+}

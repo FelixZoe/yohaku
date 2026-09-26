@@ -1,0 +1,32 @@
+{
+  "bundler": "rspack",
+  "timestamp": "2026-05-13T06:59:22.845Z",
+  "runs": [
+    {
+      "wallMs": 40184,
+      "reportedCompileMs": 27300
+    },
+    {
+      "wallMs": 33215,
+      "reportedCompileMs": 19900
+    },
+    {
+      "wallMs": 39631,
+      "reportedCompileMs": 26400
+    }
+  ],
+  "summary": {
+    "wallMsMean": 37676.666666666664,
+    "wallMsMin": 33215,
+    "wallMsMax": 40184,
+    "reportedMsMean": 24533.333333333332
+  },
+  "artifacts": {
+    "nextTotalKb": 1355712,
+    "staticKb": 48056,
+    "serverKb": 39692,
+    "standaloneKb": 410124,
+    "chunkFiles": 1003,
+    "chunkJsFiles": 1003
+  }
+}

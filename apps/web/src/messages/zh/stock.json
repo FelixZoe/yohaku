@@ -1,0 +1,9 @@
+{
+  "symbolNotFound": "未找到代码",
+  "quoteUnavailable": "报价不可用",
+  "candlesIntraday": "{interval} K线",
+  "sessions": "{count} 段",
+  "live": "实时",
+  "frozen": "已收盘",
+  "todayIntraday": "今日 · 分时"
+}

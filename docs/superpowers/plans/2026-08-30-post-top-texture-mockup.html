@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Post 天头 · 四种方向</title>
+<style>
+  :root {
+    --color-neutral-1: #f9f8f5;
+    --color-neutral-2: #f0efeb;
+    --color-neutral-3: #e3e1db;
+    --color-neutral-4: #d0cec6;
+    --color-neutral-5: #a8a69f;
+    --color-neutral-6: #787670;
+    --color-neutral-7: #5c5a55;
+    --color-neutral-8: #403f3a;
+    --color-neutral-9: #24231f;
+    --color-neutral-10: #141312;
+
+    --color-accent: #c56473;
+    --color-info: #3d6896;
+    --color-success: #5e9f7e;
+    --color-warning: #a87a3d;
+    --color-error: #a64953;
+
+    --color-paper: #faf9f5;
+    --color-border: rgba(24, 24, 27, 0.1);
+
+    --font-sans: -apple-system, 'PingFang SC', 'Microsoft YaHei',
+                 'Noto Sans SC', 'Hiragino Sans GB', system-ui, sans-serif;
+    --font-serif: 'Noto Serif CJK SC', 'Source Han Serif SC', SongTi SC,
+                  STSong, Georgia, serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', Consolas, Monaco,
+                 'Hannotate SC', monospace;
+  }
+
+  [data-theme='dark'] {
+    --color-neutral-1: #141414;
+    --color-neutral-2: #242424;
+    --color-neutral-3: #404040;
+    --color-neutral-4: #5c5c5c;
+    --color-neutral-5: #787878;
+    --color-neutral-6: #a8a8a8;
+    --color-neutral-7: #d0d0d0;
+    --color-neutral-8: #e3e3e3;
+    --color-neutral-9: #f0f0f0;
+    --color-neutral-10: #f8f8f8;
+
+    --color-paper: #1a1814;
+    --color-border: rgba(255, 255, 255, 0.1);
+  }
+
+  * { box-sizing: border-box; }
+  html { font-size: 14px; line-height: 1.5; letter-spacing: 0.01em; }
+  body {
+    margin: 0;
+    background: var(--color-neutral-2);
+    color: var(--color-neutral-9);
+    font-family: var(--font-sans);
+  }
+
+  .shell { max-width: 1080px; margin: 0 auto; padding: 40px 24px 96px; }
+
+  .page-head { margin-bottom: 40px; }
+  .page-head h1 { font-size: 28px; line-height: 1.29; font-weight: 500; margin: 0 0 8px; }
+  .page-head p { margin: 0; color: var(--color-neutral-7); font-size: 14px; max-width: 60ch; }
+
+  .toolbar {
+    position: fixed; top: 12px; right: 12px; z-index: 10;
+    background: var(--color-neutral-1);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-neutral-7);
+  }
+  .toolbar button {
+    background: none; border: none; cursor: pointer;
+    color: inherit; font: inherit; padding: 2px 6px; border-radius: 4px;
+  }
+  .toolbar button:hover { background: var(--color-neutral-3); }
+
+  .case { margin-bottom: 56px; }
+  .case-label {
+    display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px;
+  }
+  .case-label .idx {
+    font-family: var(--font-mono); font-size: 12px; color: var(--color-neutral-6);
+  }
+  .case-label h2 { margin: 0; font-size: 20px; line-height: 1.4; font-weight: 500; }
+  .case-note {
+    margin: 0 0 14px; font-size: 13px; line-height: 1.54;
+    color: var(--color-neutral-7); max-width: 68ch;
+  }
+  .case-meta {
+    font-family: var(--font-mono); font-size: 12px; color: var(--color-neutral-6);
+    margin: 10px 0 0; display: flex; gap: 16px; flex-wrap: wrap;
+  }
+
+  /* 模拟一个 post 页面视口 */
+  .frame {
+    position: relative; overflow: hidden;
+    background: var(--color-paper);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    height: 340px;
+  }
+  .frame-inner { position: relative; height: 100%; padding: 0 40px; }
+  .article { max-width: 560px; margin: 0 auto; padding-top: 96px; }
+  .article h3 {
+    margin: 0 0 12px; text-align: center; font-weight: 700;
+    font-size: 36px; line-height: 1.22; color: var(--color-neutral-10);
+    text-wrap: balance;
+  }
+  .article .meta {
+    text-align: center; font-size: 12px; line-height: 1.5;
+    color: var(--color-neutral-7); margin-bottom: 28px;
+  }
+  .article .body {
+    font-size: 15px; line-height: 1.6; color: var(--color-neutral-9);
+  }
+
+  /* ── A · 錾口：裁切标记 + 套准点 ───────────────────────── */
+  .a-marks { position: absolute; inset: 0; pointer-events: none; }
+  .a-marks .corner {
+    position: absolute; width: 14px; height: 14px;
+  }
+  .a-marks .corner::before,
+  .a-marks .corner::after {
+    content: ''; position: absolute; background: var(--color-neutral-4);
+  }
+  .a-marks .corner::before { left: 0; top: 0; width: 14px; height: 1px; }
+  .a-marks .corner::after  { left: 0; top: 0; width: 1px; height: 14px; }
+  .a-marks .tl { top: 18px; left: 18px; }
+  .a-marks .tr { top: 18px; right: 18px; transform: scaleX(-1); }
+  .a-reg {
+    position: absolute; top: 38px; left: 50%; transform: translateX(-50%);
+    width: 13px; height: 13px;
+  }
+  .a-reg::before, .a-reg::after {
+    content: ''; position: absolute; background: var(--color-accent);
+  }
+  .a-reg::before { left: 6px; top: 0; width: 1px; height: 13px; }
+  .a-reg::after  { top: 6px; left: 0; height: 1px; width: 13px; }
+  .a-reg span {
+    position: absolute; inset: 2.5px; border: 1px solid var(--color-accent);
+    border-radius: 50%; opacity: 0.75;
+  }
+  .a-folio {
+    position: absolute; top: 34px; right: 18px;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em;
+    color: var(--color-neutral-5); text-transform: uppercase;
+  }
+
+  /* ── B · 界行：天头横线 + 版心起点 ────────────────────── */
+  .b-rule { position: absolute; left: 0; right: 0; top: 0; height: 140px; pointer-events: none; }
+  .b-rule .full {
+    position: absolute; top: 30px; left: 0; right: 0;
+    height: 1px; background: var(--color-neutral-4);
+  }
+  .b-rule .seg {
+    position: absolute; top: 29px; height: 3px;
+    left: calc(50% - 280px); width: 108px;
+    background: var(--color-accent);
+  }
+  .b-rule .tick {
+    position: absolute; top: 30px; width: 1px; height: 9px;
+    background: var(--color-neutral-4);
+  }
+  .b-rule .tick.t1 { left: calc(50% - 280px); }
+  .b-rule .tick.t2 { left: calc(50% + 280px); }
+  .b-rule .cap {
+    position: absolute; top: 12px; left: calc(50% - 280px);
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em;
+    color: var(--color-neutral-6); text-transform: uppercase;
+  }
+
+  /* ── C · 簾目：和纸帘纹 ──────────────────────────────── */
+  .c-laid {
+    position: absolute; inset: 0 0 auto 0; height: 200px; pointer-events: none;
+    background-image:
+      repeating-linear-gradient(90deg,
+        transparent 0 6px,
+        color-mix(in oklab, var(--color-neutral-5) 26%, transparent) 6px 6.6px),
+      repeating-linear-gradient(0deg,
+        transparent 0 26px,
+        color-mix(in oklab, var(--color-neutral-5) 16%, transparent) 26px 27.5px);
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 26%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 0%, #000 26%, transparent 100%);
+    opacity: 0.85;
+  }
+  .c-thread {
+    position: absolute; top: 0; height: 200px; width: 0.6px;
+    left: calc(50% - 172px);
+    background: color-mix(in oklab, var(--color-accent) 55%, transparent);
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 88%);
+    mask-image: linear-gradient(180deg, #000 0%, transparent 88%);
+    pointer-events: none;
+  }
+
+  /* ── D · 刊头：活字天头 ─────────────────────────────── */
+  .d-masthead {
+    position: absolute; left: 40px; right: 40px; top: 34px; pointer-events: none;
+  }
+  .d-masthead .row {
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--color-neutral-6);
+  }
+  .d-masthead .row .left { display: flex; align-items: center; gap: 8px; }
+  .d-masthead .dot {
+    width: 5px; height: 5px; border-radius: 50%; background: var(--color-accent);
+  }
+  .d-masthead .rules { margin-top: 9px; }
+  .d-masthead .rules .thick { height: 2px; background: var(--color-neutral-4); }
+  .d-masthead .rules .thin  { height: 1px; background: var(--color-neutral-4); margin-top: 2px; opacity: 0.6; }
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <button onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">
+    light · dark
+  </button>
+</div>
+
+<div class="shell">
+  <div class="page-head">
+    <h1>Post 天头 · 四种方向</h1>
+    <p>替换现有 PageBleed（feTurbulence 毛边色带 + 0.16 grain）。四个方向全部去掉随机位移与噪点层，改用可确定、可复算的印刷 / 纸张语言。accent 面积均远低于 5% 上限。</p>
+  </div>
+
+  <section class="case">
+    <div class="case-label"><span class="idx">A</span><h2>錾口 · 裁切标记与套准点</h2></div>
+    <p class="case-note">天头彻底留白。只留印刷制版留下的痕迹：两个角上的裁切 L 标、正中一个 accent 套准十字。信息量为零，全部是"这页纸曾被压过版"的暗示。最极端的余白解法。</p>
+    <div class="frame">
+      <div class="a-marks">
+        <span class="corner tl"></span>
+        <span class="corner tr"></span>
+        <span class="a-reg"><span></span></span>
+        <span class="a-folio">No. 142</span>
+      </div>
+      <div class="frame-inner">
+        <div class="article">
+          <h3>在 WKWebView 里重新学会排版</h3>
+          <div class="meta">2026-08-30 · 随笔 · 12 min</div>
+          <div class="body">把一段正文放进 WebView 之前，我一直以为排版是 CSS 的事。后来发现，真正决定它好不好读的，是它上面那块什么都没有的地方。</div>
+        </div>
+      </div>
+    </div>
+    <p class="case-meta"><span>随机性 0</span><span>噪点 0</span><span>accent ≈ 0.03%</span><span>可编码：期号</span></p>
+  </section>
+
+  <section class="case">
+    <div class="case-label"><span class="idx">B</span><h2>界行 · 天头横线与版心起点</h2></div>
+    <p class="case-note">一条通栏 n-4 细线划出天头，版心两端各一个 tick 界定栏宽，起点压一段 accent 粗线——长度可由阅读时长 / 分类决定，于是这条线是有信息的，不只是装饰。中式竖排书的界行、西式书的 head rule 都是这个东西。</p>
+    <div class="frame">
+      <div class="b-rule">
+        <span class="cap">随笔 / Essay</span>
+        <span class="full"></span>
+        <span class="seg"></span>
+        <span class="tick t1"></span>
+        <span class="tick t2"></span>
+      </div>
+      <div class="frame-inner">
+        <div class="article">
+          <h3>在 WKWebView 里重新学会排版</h3>
+          <div class="meta">2026-08-30 · 随笔 · 12 min</div>
+          <div class="body">把一段正文放进 WebView 之前，我一直以为排版是 CSS 的事。后来发现，真正决定它好不好读的，是它上面那块什么都没有的地方。</div>
+        </div>
+      </div>
+    </div>
+    <p class="case-meta"><span>随机性 0</span><span>噪点 0</span><span>accent ≈ 0.15%</span><span>可编码：分类 / 时长</span></p>
+  </section>
+
+  <section class="case">
+    <div class="case-label"><span class="idx">C</span><h2>簾目 · 和纸帘纹</h2></div>
+    <p class="case-note">唯一保留"纹理"的方向，但纹理来自纸本身而非印上去的东西：手漉和纸的帘纹是等距竖线加疏落的横纸筋，规律、可复算、无一处随机。向下线性淡出。一根 accent 帘丝的位置由 seed 决定，是全页唯一的彩色。</p>
+    <div class="frame">
+      <div class="c-laid"></div>
+      <div class="c-thread"></div>
+      <div class="frame-inner">
+        <div class="article">
+          <h3>在 WKWebView 里重新学会排版</h3>
+          <div class="meta">2026-08-30 · 随笔 · 12 min</div>
+          <div class="body">把一段正文放进 WebView 之前，我一直以为排版是 CSS 的事。后来发现，真正决定它好不好读的，是它上面那块什么都没有的地方。</div>
+        </div>
+      </div>
+    </div>
+    <p class="case-meta"><span>随机性 0（周期性）</span><span>噪点 0</span><span>accent ≈ 0.05%</span><span>可编码：帘丝位置</span></p>
+  </section>
+
+  <section class="case">
+    <div class="case-label"><span class="idx">D</span><h2>刊头 · 活字天头</h2></div>
+    <p class="case-note">用信息代替装饰。天头是一行 mono 小字刊头（分类 / 日期 / 期号）压一道 thick+thin 双线，报纸和期刊的 masthead rule。accent 只剩行首一个点。留白仍在，但天头有了功能。</p>
+    <div class="frame">
+      <div class="d-masthead">
+        <div class="row">
+          <span class="left"><span class="dot"></span><span>随笔</span></span>
+          <span>2026.08.30 — No.142</span>
+        </div>
+        <div class="rules"><div class="thick"></div><div class="thin"></div></div>
+      </div>
+      <div class="frame-inner">
+        <div class="article">
+          <h3>在 WKWebView 里重新学会排版</h3>
+          <div class="meta">2026-08-30 · 随笔 · 12 min</div>
+          <div class="body">把一段正文放进 WebView 之前，我一直以为排版是 CSS 的事。后来发现，真正决定它好不好读的，是它上面那块什么都没有的地方。</div>
+        </div>
+      </div>
+    </div>
+    <p class="case-meta"><span>随机性 0</span><span>噪点 0</span><span>accent ≈ 0.02%</span><span>可编码：分类 / 日期 / 期号</span></p>
+  </section>
+</div>
+</body>
+</html>

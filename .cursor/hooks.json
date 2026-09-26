@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "stop": [
+      {
+        "command": ".cursor/hooks/yohaku-oss-pin.py",
+        "loop_limit": 1
+      }
+    ]
+  }
+}

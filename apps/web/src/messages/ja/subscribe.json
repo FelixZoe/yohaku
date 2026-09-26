@@ -1,0 +1,15 @@
+{
+  "not_enabled": "購読の戸、未だ開かず",
+  "type_post": "記事",
+  "type_note": "手記",
+  "type_say": "ひとこと",
+  "type_recently": "メモ",
+  "success": "購読、成りぬ",
+  "welcome": "「{title}」を購読いただき、厚志に堪へず。時々、新き文を届けむ",
+  "rss_hint": "また、",
+  "rss_suffix": "から「{title}」のRSSフィードを購読できます。",
+  "telegram_hint": "Telegram チャンネルも購読できます",
+  "submit": "購読",
+  "form_email": "メールアドレス *",
+  "bell_intro": "メール購読、開きたり。鐘を押して、新しき便を"
+}

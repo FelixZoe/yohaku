@@ -1,0 +1,9 @@
+{
+  "current_readers": "Right now, ",
+  "reading_now": " readers turn these pages.",
+  "reading_now_short": "{count} now",
+  "realtime_tooltip": "Readers, in real time. The left-hand timeline shows where others have paused (not available on mobile).",
+  "presence_you": "You",
+  "presence_anonymous_readers": "{count, plural, one {# reader} other {# readers}}",
+  "presence_and_others_after_one": " and {count, plural, =1 {1 other} other {# others}}"
+}

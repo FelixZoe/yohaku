@@ -1,0 +1,9 @@
+{
+  "current_readers": "現在",
+  "reading_now": " 人、披閲中",
+  "reading_now_short": "{count} 閲中",
+  "realtime_tooltip": "今、読む人の数。左の時流に、他の人の跡あり（携帯に非対応）",
+  "presence_you": "あなた",
+  "presence_anonymous_readers": "{count} 人の読者",
+  "presence_and_others_after_one": "ほか{count}人"
+}

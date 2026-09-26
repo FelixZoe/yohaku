@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="zh-Hans" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Note Font · Cycle Button Variants — Yohaku Mockup</title>
+    <style>
+      :root {
+        --color-neutral-1: #f9f8f5;
+        --color-neutral-2: #f0efeb;
+        --color-neutral-3: #e3e1db;
+        --color-neutral-4: #d0cec6;
+        --color-neutral-5: #a8a69f;
+        --color-neutral-6: #787670;
+        --color-neutral-7: #5c5a55;
+        --color-neutral-8: #403f3a;
+        --color-neutral-9: #24231f;
+        --color-neutral-10: #141312;
+
+        --color-accent: #c56473;
+        --color-paper: #faf9f5;
+        --color-border: rgba(24, 24, 27, 0.1);
+
+        --font-sans: -apple-system, "PingFang SC", "Microsoft YaHei",
+          "Noto Sans SC", "Hiragino Sans GB", system-ui, sans-serif;
+        --font-serif: "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC",
+          STSong, Georgia, serif;
+        --font-kai: "STKaiti", "Kaiti SC", "KaiTi", "BiauKai", serif;
+      }
+
+      [data-theme="dark"] {
+        --color-neutral-1: #141414;
+        --color-neutral-2: #242424;
+        --color-neutral-3: #404040;
+        --color-neutral-4: #5c5c5c;
+        --color-neutral-5: #787878;
+        --color-neutral-6: #a8a8a8;
+        --color-neutral-7: #d0d0d0;
+        --color-neutral-8: #e3e3e3;
+        --color-neutral-9: #f0f0f0;
+        --color-neutral-10: #f8f8f8;
+
+        --color-paper: #1a1814;
+        --color-border: rgba(255, 255, 255, 0.1);
+      }
+
+      * { box-sizing: border-box; }
+      html { font-size: 14px; line-height: 1.5; letter-spacing: 0.01em; }
+      body {
+        margin: 0; padding: 0;
+        background: var(--color-paper);
+        color: var(--color-neutral-9);
+        font-family: var(--font-sans);
+        min-height: 100vh;
+      }
+
+      .toolbar {
+        position: fixed; top: 12px; right: 12px; z-index: 10;
+        background: var(--color-neutral-2);
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        padding: 4px 6px;
+        font-size: 12px;
+        color: var(--color-neutral-7);
+      }
+      .toolbar button {
+        background: none; border: none; cursor: pointer;
+        color: inherit; font: inherit; padding: 2px 6px;
+        border-radius: 4px;
+      }
+      .toolbar button:hover { background: var(--color-neutral-3); }
+
+      .shell { max-width: 1120px; margin: 0 auto; padding: 48px 24px 96px; }
+      .shell-head { margin-bottom: 32px; }
+      .shell-head .eyebrow {
+        font-size: 10px; letter-spacing: 0.18em;
+        text-transform: uppercase; color: var(--color-neutral-7);
+      }
+      .shell-head h1 {
+        font-size: 28px; font-weight: 500;
+        margin: 8px 0 12px; color: var(--color-neutral-10);
+      }
+      .shell-head p {
+        margin: 0; color: var(--color-neutral-7);
+        font-size: 13px; line-height: 1.6;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+      }
+      @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+      .case {
+        background: var(--color-neutral-2);
+        border: 1px solid var(--color-border);
+        border-radius: 12px;
+        padding: 20px;
+      }
+      .case-head {
+        display: flex; align-items: baseline; gap: 8px;
+        margin-bottom: 4px;
+      }
+      .case-head .num {
+        font-size: 10px; letter-spacing: 0.18em;
+        text-transform: uppercase; color: var(--color-neutral-6);
+        font-variant-numeric: tabular-nums;
+      }
+      .case-head h2 {
+        font-size: 16px; font-weight: 500;
+        margin: 0; color: var(--color-neutral-9);
+      }
+      .case-desc {
+        margin: 0 0 16px; font-size: 12px;
+        line-height: 1.55; color: var(--color-neutral-7);
+      }
+      .case-pros {
+        margin: 12px 0 0; padding-left: 16px;
+        font-size: 11px; color: var(--color-neutral-7);
+        line-height: 1.65;
+      }
+      .case-pros li b { color: var(--color-neutral-9); }
+
+      .stage {
+        background: var(--color-paper);
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        padding: 20px 16px 20px;
+        min-height: 180px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* ── TOC mock ── */
+      .toc-mock {
+        max-width: 240px;
+        display: grid;
+        gap: 2px;
+        font-size: 13px;
+      }
+      .toc-entry {
+        display: flex; align-items: center;
+        padding: 4px 8px 4px 16px;
+        color: var(--color-neutral-6);
+        position: relative;
+        border-radius: 4px;
+      }
+      .toc-entry.active { color: var(--color-neutral-9); }
+      .toc-entry.active::before {
+        content: ""; position: absolute;
+        left: 0; top: 50%;
+        width: 3px; height: 14px;
+        background: var(--color-accent);
+        border-radius: 2px;
+        transform: translateY(-50%);
+      }
+      .toc-divider {
+        height: 1px; background: var(--color-border);
+        margin: 8px 0;
+      }
+      .toc-row {
+        display: flex; align-items: center;
+        padding: 4px 8px 4px 16px;
+        color: var(--color-neutral-7);
+        font-size: 13px;
+        position: relative;
+        min-height: 28px;
+        gap: 10px;
+      }
+      .toc-row .icon {
+        position: absolute;
+        left: -2px; top: 50%;
+        transform: translateY(-50%);
+        width: 16px; height: 16px;
+        display: inline-flex;
+        align-items: center; justify-content: center;
+        opacity: 0.6;
+        color: var(--color-neutral-6);
+      }
+
+      /* clickable variants — whole row */
+      .toc-row.clickable {
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease;
+        border-radius: 4px;
+      }
+      .toc-row.clickable:hover {
+        background: var(--color-neutral-2);
+        color: var(--color-neutral-9);
+      }
+
+      /* ── A · 字形 + 当下名（在当下字体下渲） ── */
+      .va .toc-row .current-name {
+        margin-left: auto;
+        color: var(--color-neutral-9);
+        font-family: var(--font-kai);
+        font-size: 15px;
+        line-height: 1;
+        letter-spacing: 0.04em;
+      }
+      .va .toc-row .cycle-icon {
+        opacity: 0;
+        transition: opacity 0.15s ease;
+        font-size: 11px;
+        color: var(--color-neutral-6);
+        margin-left: 6px;
+      }
+      .va .toc-row:hover .cycle-icon { opacity: 0.6; }
+
+      /* ── B · 仅当下字体名（标皆去），名以己体渲 ── */
+      .vb .toc-row {
+        gap: 8px;
+      }
+      .vb .toc-row .name-only {
+        font-family: var(--font-kai);
+        color: var(--color-neutral-9);
+        font-size: 14px;
+        letter-spacing: 0.04em;
+      }
+      .vb .toc-row .arrow-hint {
+        margin-left: auto;
+        opacity: 0;
+        font-size: 11px;
+        color: var(--color-neutral-6);
+        font-family: var(--font-sans);
+        transition: opacity 0.15s ease;
+      }
+      .vb .toc-row:hover .arrow-hint { opacity: 0.55; }
+      .vb .toc-row:hover .arrow-hint .next {
+        font-family: var(--font-serif);
+        color: var(--color-neutral-7);
+      }
+
+      /* ── C · 双字预览 (active/dim) ── */
+      .vc .toc-row .twin {
+        margin-left: auto;
+        display: inline-flex;
+        align-items: baseline;
+        gap: 8px;
+        font-size: 15px;
+        line-height: 1;
+      }
+      .vc .twin .g {
+        font-size: 16px;
+        color: var(--color-neutral-5);
+        transition: color 0.15s ease, transform 0.15s ease;
+      }
+      .vc .twin .g.serif { font-family: var(--font-serif); }
+      .vc .twin .g.kai { font-family: var(--font-kai); }
+      .vc .twin .g.active {
+        color: var(--color-neutral-10);
+        position: relative;
+      }
+      .vc .twin .g.active::after {
+        content: "";
+        position: absolute;
+        left: 0; right: 0;
+        bottom: -3px;
+        height: 1.5px;
+        background: var(--color-accent);
+        border-radius: 1px;
+      }
+      .vc .toc-row:hover .twin .g:not(.active) { color: var(--color-neutral-7); }
+
+      /* ── D · 字体名 chip 居右 ── */
+      .vd .toc-row .chip {
+        margin-left: auto;
+        background: var(--color-neutral-2);
+        color: var(--color-neutral-9);
+        padding: 2px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-family: var(--font-kai);
+        letter-spacing: 0.04em;
+        line-height: 1.5;
+        border: 1px solid var(--color-border);
+        transition: background 0.15s ease;
+      }
+      .vd .toc-row:hover .chip {
+        background: var(--color-neutral-3);
+      }
+
+      /* ── E · 字形 + 「正」体示当下，渐变切 ── */
+      .ve .toc-row .glyph-button {
+        margin-left: auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px; height: 22px;
+        background: var(--color-neutral-2);
+        border-radius: 6px;
+        font-size: 17px;
+        font-family: var(--font-kai);
+        color: var(--color-neutral-10);
+        line-height: 1;
+        border: 1px solid transparent;
+        transition: border-color 0.15s ease, background 0.15s ease;
+      }
+      .ve .toc-row:hover .glyph-button {
+        border-color: var(--color-accent);
+      }
+
+      /* ── F · 全名 + 微 caret ── */
+      .vf .toc-row .compound {
+        margin-left: auto;
+        display: inline-flex;
+        align-items: baseline;
+        gap: 4px;
+      }
+      .vf .compound .name {
+        font-family: var(--font-kai);
+        color: var(--color-neutral-10);
+        font-size: 13px;
+      }
+      .vf .compound .caret {
+        font-size: 9px;
+        color: var(--color-neutral-6);
+        opacity: 0.6;
+      }
+      .vf .toc-row:hover .compound .caret { opacity: 1; }
+
+      /* notes */
+      .notes {
+        margin-top: 40px;
+        padding: 16px 20px;
+        background: var(--color-neutral-2);
+        border: 1px solid var(--color-border);
+        border-left: 3px solid var(--color-accent);
+        border-radius: 6px;
+        font-size: 12px;
+        color: var(--color-neutral-7);
+        line-height: 1.7;
+      }
+      .notes b { color: var(--color-neutral-9); font-weight: 500; }
+      .notes ul { margin: 8px 0 0 0; padding-left: 20px; }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar">
+      <button onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">light · dark</button>
+    </div>
+
+    <main class="shell">
+      <header class="shell-head">
+        <div class="eyebrow">DEV · MOCKUP · 丙之精修</div>
+        <h1>循环按钮 — 形态六变</h1>
+        <p>
+          皆采单点循环（点行内任处即换至次字体），所变唯当下态之示法。
+          二要点：① 当下用何字一目即明 ② 点之为切换之能须暗示。<br />
+          hover 卡片以见次态。
+        </p>
+      </header>
+
+      <div class="grid">
+
+        <!-- A · 标签 + 当下名 (以己体) -->
+        <article class="case va">
+          <header class="case-head">
+            <span class="num">A</span>
+            <h2>标 + 当下名（以己体渲）</h2>
+          </header>
+          <p class="case-desc">
+            「字形」标存，右侧示当下字体名 — 以己体写，本身即预览。
+            hover 现 ↻ 之微提示。
+          </p>
+          <div class="stage">
+            <div class="toc-mock">
+              <div class="toc-entry">入题</div>
+              <div class="toc-entry active">现况</div>
+              <div class="toc-divider"></div>
+              <div class="toc-row clickable">
+                <span class="icon">Ａ</span>
+                <span>字形</span>
+                <span class="current-name">楷</span>
+                <span class="cycle-icon">↻</span>
+              </div>
+            </div>
+          </div>
+          <ul class="case-pros">
+            <li><b>+</b> 直觉：字本身即所选字体之样</li>
+            <li><b>−</b> 多一标「字形」似冗</li>
+          </ul>
+        </article>
+
+        <!-- B · 仅名，无标 -->
+        <article class="case vb">
+          <header class="case-head">
+            <span class="num">B</span>
+            <h2>仅名 · 弃标签</h2>
+          </header>
+          <p class="case-desc">
+            「字形」标去之，icon 已足表义。仅显当下字体名（以己体），
+            hover 现「→ 宋」次态提示（以次态字体渲）。
+          </p>
+          <div class="stage">
+            <div class="toc-mock">
+              <div class="toc-entry">入题</div>
+              <div class="toc-entry active">现况</div>
+              <div class="toc-divider"></div>
+              <div class="toc-row clickable">
+                <span class="icon">Ａ</span>
+                <span class="name-only">楷书 · 霞鹜文楷</span>
+                <span class="arrow-hint">→ <span class="next">宋</span></span>
+              </div>
+            </div>
+          </div>
+          <ul class="case-pros">
+            <li><b>+</b> 最简，无冗字</li>
+            <li><b>+</b> 名以己体渲 + hover 现次态以次体渲 = 二态皆见</li>
+            <li><b>−</b> 占行宽较多（含「霞鹜文楷」全名）</li>
+          </ul>
+        </article>
+
+        <!-- C · 双字小预览 -->
+        <article class="case vc">
+          <header class="case-head">
+            <span class="num">C</span>
+            <h2>双字预览 · active 下划线</h2>
+          </header>
+          <p class="case-desc">
+            右侧并列「字字」二样，各以己体；active 者以 accent 下划线、深色；
+            inactive 者灰。点行即切。
+          </p>
+          <div class="stage">
+            <div class="toc-mock">
+              <div class="toc-entry">入题</div>
+              <div class="toc-entry active">现况</div>
+              <div class="toc-divider"></div>
+              <div class="toc-row clickable">
+                <span class="icon">Ａ</span>
+                <span>字形</span>
+                <span class="twin">
+                  <span class="g serif">字</span>
+                  <span class="g kai active">字</span>
+                </span>
+              </div>
+            </div>
+          </div>
+          <ul class="case-pros">
+            <li><b>+</b> 二态皆见，比较直观</li>
+            <li><b>−</b> 视觉近 segmented（即甲案），仅省 chip 边框</li>
+          </ul>
+        </article>
+
+        <!-- D · chip -->
+        <article class="case vd">
+          <header class="case-head">
+            <span class="num">D</span>
+            <h2>Chip 居右 · 以己体</h2>
+          </header>
+          <p class="case-desc">
+            初版之改良：chip 内字以己体渲（非默 sans）。
+            chip 形已暗示「可点」。
+          </p>
+          <div class="stage">
+            <div class="toc-mock">
+              <div class="toc-entry">入题</div>
+              <div class="toc-entry active">现况</div>
+              <div class="toc-divider"></div>
+              <div class="toc-row clickable">
+                <span class="icon">Ａ</span>
+                <span>字形</span>
+                <span class="chip">楷</span>
+              </div>
+            </div>
+          </div>
+          <ul class="case-pros">
+            <li><b>+</b> chip 形天然示可点</li>
+            <li><b>−</b> chip 边框 + 行 hover 双重视觉</li>
+          </ul>
+        </article>
+
+        <!-- E · 微 glyph button -->
+        <article class="case ve">
+          <header class="case-head">
+            <span class="num">E</span>
+            <h2>方钮 · 单字</h2>
+          </header>
+          <p class="case-desc">
+            右侧立方钮（28×22），内嵌单字之当下体；hover 现 accent 边。
+            chip 之方化，更克制。
+          </p>
+          <div class="stage">
+            <div class="toc-mock">
+              <div class="toc-entry">入题</div>
+              <div class="toc-entry active">现况</div>
+              <div class="toc-divider"></div>
+              <div class="toc-row clickable">
+                <span class="icon">Ａ</span>
+                <span>字形</span>
+                <span class="glyph-button">楷</span>
+              </div>
+            </div>
+          </div>
+          <ul class="case-pros">
+            <li><b>+</b> 方钮形似 control，可点意明</li>
+            <li><b>+</b> hover 边框为 accent，状态语义清</li>
+            <li><b>−</b> 与 TOC 行内其余无背景之文字差异较显</li>
+          </ul>
+        </article>
+
+        <!-- F · 名 + caret -->
+        <article class="case vf">
+          <header class="case-head">
+            <span class="num">F</span>
+            <h2>名 + 微 caret</h2>
+          </header>
+          <p class="case-desc">
+            右侧示「楷 ⌄」之样，无 chip 无背景；caret 暗示可换。
+            最轻量，与 TOC 文本行无视觉冲突。
+          </p>
+          <div class="stage">
+            <div class="toc-mock">
+              <div class="toc-entry">入题</div>
+              <div class="toc-entry active">现况</div>
+              <div class="toc-divider"></div>
+              <div class="toc-row clickable">
+                <span class="icon">Ａ</span>
+                <span>字形</span>
+                <span class="compound">
+                  <span class="name">楷</span>
+                  <span class="caret">▾</span>
+                </span>
+              </div>
+            </div>
+          </div>
+          <ul class="case-pros">
+            <li><b>+</b> 最轻，与 TOC 行 weight 一致</li>
+            <li><b>−</b> caret 通常暗示「展开下拉」，循环切语义略有歧义</li>
+          </ul>
+        </article>
+
+      </div>
+
+      <aside class="notes">
+        <b>选断指引：</b>
+        <ul>
+          <li><b>要直观</b> → <b>A</b> 或 <b>B</b>（字本身即字体之样）</li>
+          <li><b>要二态俱见</b> → <b>C</b>（接近 segmented 但更轻）</li>
+          <li><b>要 control 之感</b> → <b>D</b> chip 或 <b>E</b> 方钮</li>
+          <li><b>要最轻</b> → <b>F</b> 名 + caret，但 caret 语义须斟酌</li>
+        </ul>
+        我倾 <b>A</b>：当下名以己体渲是最直观之预览；hover ↻ 之微示足明可循环；标「字形」与其他 TOC accessory（阅读进度）形式齐。
+      </aside>
+    </main>
+  </body>
+</html>

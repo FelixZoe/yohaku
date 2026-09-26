@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="zh-Hans" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Note Font Setting — Yohaku Mockup</title>
+    <style>
+      :root {
+        --color-neutral-1: #f9f8f5;
+        --color-neutral-2: #f0efeb;
+        --color-neutral-3: #e3e1db;
+        --color-neutral-4: #d0cec6;
+        --color-neutral-5: #a8a69f;
+        --color-neutral-6: #787670;
+        --color-neutral-7: #5c5a55;
+        --color-neutral-8: #403f3a;
+        --color-neutral-9: #24231f;
+        --color-neutral-10: #141312;
+
+        --color-accent: #c56473;
+        --color-paper: #faf9f5;
+        --color-border: rgba(24, 24, 27, 0.1);
+
+        --font-sans: -apple-system, "PingFang SC", "Microsoft YaHei",
+          "Noto Sans SC", "Hiragino Sans GB", system-ui, sans-serif;
+        --font-serif: "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC",
+          STSong, Georgia, serif;
+        --font-kai: "STKaiti", "Kaiti SC", "KaiTi", "BiauKai", serif;
+      }
+
+      [data-theme="dark"] {
+        --color-neutral-1: #141414;
+        --color-neutral-2: #242424;
+        --color-neutral-3: #404040;
+        --color-neutral-4: #5c5c5c;
+        --color-neutral-5: #787878;
+        --color-neutral-6: #a8a8a8;
+        --color-neutral-7: #d0d0d0;
+        --color-neutral-8: #e3e3e3;
+        --color-neutral-9: #f0f0f0;
+        --color-neutral-10: #f8f8f8;
+
+        --color-paper: #1a1814;
+        --color-border: rgba(255, 255, 255, 0.1);
+      }
+
+      * { box-sizing: border-box; }
+      html {
+        font-size: 14px;
+        line-height: 1.5;
+        letter-spacing: 0.01em;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--color-paper);
+        color: var(--color-neutral-9);
+        font-family: var(--font-sans);
+        min-height: 100vh;
+      }
+
+      .toolbar {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 10;
+        background: var(--color-neutral-2);
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        padding: 4px 6px;
+        font-size: 12px;
+        color: var(--color-neutral-7);
+      }
+      .toolbar button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: inherit;
+        font: inherit;
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+      .toolbar button:hover { background: var(--color-neutral-3); }
+
+      .shell { max-width: 1080px; margin: 0 auto; padding: 48px 24px 96px; }
+      .shell-head { margin-bottom: 32px; }
+      .shell-head .eyebrow {
+        font-size: 10px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--color-neutral-7);
+      }
+      .shell-head h1 {
+        font-size: 28px;
+        font-weight: 500;
+        margin: 8px 0 12px;
+        color: var(--color-neutral-10);
+      }
+      .shell-head p {
+        margin: 0;
+        color: var(--color-neutral-7);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+      }
+      @media (max-width: 800px) {
+        .grid { grid-template-columns: 1fr; }
+      }
+
+      .case {
+        background: var(--color-neutral-2);
+        border: 1px solid var(--color-border);
+        border-radius: 12px;
+        padding: 20px;
+      }
+      .case-head {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+      .case-head .num {
+        font-size: 10px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--color-neutral-6);
+        font-variant-numeric: tabular-nums;
+      }
+      .case-head h2 {
+        font-size: 16px;
+        font-weight: 500;
+        margin: 0;
+        color: var(--color-neutral-9);
+      }
+      .case-desc {
+        margin: 0 0 16px;
+        font-size: 12px;
+        line-height: 1.55;
+        color: var(--color-neutral-7);
+      }
+      .stage {
+        background: var(--color-paper);
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        padding: 20px 16px 16px;
+        min-height: 240px;
+        position: relative;
+      }
+      .stage-label {
+        position: absolute;
+        top: 6px;
+        right: 8px;
+        font-size: 9px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--color-neutral-5);
+      }
+
+      /* ── shared TOC mock ── */
+      .toc-mock {
+        max-width: 240px;
+        display: grid;
+        gap: 2px;
+        font-size: 13px;
+      }
+      .toc-entry {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 8px 4px 16px;
+        color: var(--color-neutral-6);
+        position: relative;
+        border-radius: 4px;
+      }
+      .toc-entry.active {
+        color: var(--color-neutral-9);
+      }
+      .toc-entry.active::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        width: 3px;
+        height: 14px;
+        background: var(--color-accent);
+        border-radius: 2px;
+        transform: translateY(-50%);
+      }
+      .toc-divider {
+        height: 1px;
+        background: var(--color-border);
+        margin: 8px 0;
+      }
+      .toc-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 8px 4px 16px;
+        color: var(--color-neutral-7);
+        font-size: 13px;
+        position: relative;
+        min-height: 28px;
+      }
+      .toc-row .icon {
+        position: absolute;
+        left: -2px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 16px;
+        height: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.6;
+        color: var(--color-neutral-6);
+      }
+
+      /* ── CASE 0 · current ── */
+      .floatpanel {
+        position: absolute;
+        left: 168px;
+        top: 84px;
+        width: 224px;
+        background: var(--color-neutral-1);
+        border: 1px solid var(--color-border);
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      }
+      .floatpanel-title {
+        font-size: 15px;
+        font-weight: 500;
+        margin-bottom: 14px;
+      }
+      .tile-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+      .tile {
+        aspect-ratio: 1;
+        background: var(--color-neutral-1);
+        border-radius: 8px;
+        box-shadow: inset 0 0 0 1px var(--color-neutral-3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 36px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .tile.selected {
+        box-shadow: inset 0 0 0 2px var(--color-accent);
+      }
+      .tile.serif { font-family: var(--font-serif); color: var(--color-neutral-9); }
+      .tile.kai { font-family: var(--font-kai); color: var(--color-neutral-9); }
+      .arrow-hint {
+        position: absolute;
+        top: 38px;
+        left: 96px;
+        font-size: 11px;
+        color: var(--color-neutral-6);
+        font-style: italic;
+      }
+      .arrow-hint::after {
+        content: "";
+        display: block;
+        width: 56px;
+        height: 1px;
+        background: var(--color-neutral-5);
+        margin-top: 6px;
+        margin-left: 24px;
+        transform: rotate(28deg);
+        transform-origin: left;
+      }
+
+      /* ── CASE 1 · segmented ── */
+      .seg {
+        display: inline-flex;
+        background: var(--color-neutral-2);
+        border-radius: 8px;
+        padding: 2px;
+        gap: 0;
+        font-size: 13px;
+      }
+      .seg button {
+        background: transparent;
+        border: none;
+        color: var(--color-neutral-7);
+        padding: 4px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        font: inherit;
+        line-height: 1.4;
+        transition: all 0.15s ease;
+      }
+      .seg button.active {
+        background: var(--color-paper);
+        color: var(--color-neutral-10);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      }
+      .seg button.serif { font-family: var(--font-serif); }
+      .seg button.kai { font-family: var(--font-kai); }
+
+      .case-1 .toc-row {
+        align-items: center;
+        gap: 12px;
+      }
+      .case-1 .toc-row .label {
+        flex: 0 0 auto;
+      }
+      .case-1 .toc-row .seg {
+        margin-left: auto;
+      }
+
+      /* ── CASE 2 · switch ── */
+      .switch {
+        position: relative;
+        width: 36px;
+        height: 20px;
+        background: var(--color-neutral-3);
+        border-radius: 999px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+        flex: 0 0 auto;
+      }
+      .switch::after {
+        content: "";
+        position: absolute;
+        left: 2px;
+        top: 2px;
+        width: 16px;
+        height: 16px;
+        background: var(--color-paper);
+        border-radius: 999px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+        transition: transform 0.15s ease;
+      }
+      .switch.on {
+        background: var(--color-accent);
+      }
+      .switch.on::after {
+        transform: translateX(16px);
+      }
+      .case-2 .toc-row {
+        gap: 12px;
+      }
+      .case-2 .switch-meta {
+        margin-left: auto;
+        font-size: 11px;
+        color: var(--color-neutral-6);
+        font-family: var(--font-kai);
+      }
+      .case-2 .switch {
+        margin-left: 8px;
+      }
+
+      /* ── CASE 3 · cycle button ── */
+      .case-3 .toc-row {
+        cursor: pointer;
+        border-radius: 4px;
+      }
+      .case-3 .toc-row:hover { background: var(--color-neutral-2); }
+      .case-3 .toc-row .current {
+        margin-left: auto;
+        font-size: 11px;
+        color: var(--color-neutral-7);
+        background: var(--color-neutral-2);
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-family: var(--font-kai);
+      }
+      .case-3 .cycle-hint {
+        margin-left: 6px;
+        opacity: 0.4;
+        font-size: 9px;
+        color: var(--color-neutral-6);
+      }
+
+      /* ── footer notes ── */
+      .notes {
+        margin-top: 40px;
+        padding: 16px 20px;
+        background: var(--color-neutral-2);
+        border: 1px solid var(--color-border);
+        border-left: 3px solid var(--color-accent);
+        border-radius: 6px;
+        font-size: 12px;
+        color: var(--color-neutral-7);
+        line-height: 1.7;
+      }
+      .notes b { color: var(--color-neutral-9); font-weight: 500; }
+      .notes ul { margin: 8px 0 0 0; padding-left: 20px; }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar">
+      <button
+        onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'"
+      >
+        light · dark
+      </button>
+    </div>
+
+    <main class="shell">
+      <header class="shell-head">
+        <div class="eyebrow">DEV · MOCKUP</div>
+        <h1>Note 字体切换 — 设计比较</h1>
+        <p>
+          二态切换（宋 / 楷）之四案。卡内为 TOC 侧栏片段，字体行嵌于其上下文。
+          点开 / 切之 / 一目了然 — 信息密度与发现性 trade-off。
+        </p>
+      </header>
+
+      <div class="grid">
+
+        <!-- CASE 0 · current -->
+        <article class="case">
+          <header class="case-head">
+            <span class="num">0 · 现</span>
+            <h2>FloatPanel + 二宫</h2>
+          </header>
+          <p class="case-desc">
+            TOC 内一行触发器 → 弹板 → 二宫格选格。共三层交互。
+            状不显于触发行，需开板方知当下用何字。
+          </p>
+          <div class="stage">
+            <span class="stage-label">EXISTING</span>
+            <div class="toc-mock">
+              <div class="toc-entry">入题</div>
+              <div class="toc-entry active">现况</div>
+              <div class="toc-entry">所议</div>
+              <div class="toc-divider"></div>
+              <div class="toc-row">
+                <span class="icon">📖</span>
+                <span>阅 64 %</span>
+              </div>
+              <div class="toc-row" style="background: var(--color-neutral-2); border-radius: 4px;">
+                <span class="icon">Ａ</span>
+                <span>字形选择</span>
+                <span style="margin-left: auto; opacity: 0.5; font-size: 11px;">▸</span>
+              </div>
+            </div>
+            <div class="floatpanel">
+              <div class="floatpanel-title">字形选择</div>
+              <div class="tile-grid">
+                <div class="tile serif selected">字</div>
+                <div class="tile kai">霞</div>
+              </div>
+            </div>
+            <div class="arrow-hint">弹板二宫</div>
+          </div>
+        </article>
+
+        <!-- CASE 1 · segmented inline -->
+        <article class="case case-1">
+          <header class="case-head">
+            <span class="num">甲</span>
+            <h2>行内 Segmented</h2>
+          </header>
+          <p class="case-desc">
+            字体行内直渲二段开关，去 FloatPanel。一点即换；当下态以背景填充示之。
+            <b>议</b> — 二态最简，状自显，发现性高。
+          </p>
+          <div class="stage">
+            <span class="stage-label">PROPOSED</span>
+            <div class="toc-mock">
+              <div class="toc-entry">入题</div>
+              <div class="toc-entry active">现况</div>
+              <div class="toc-entry">所议</div>
+              <div class="toc-divider"></div>
+              <div class="toc-row">
+                <span class="icon">📖</span>
+                <span>阅 64 %</span>
+              </div>
+              <div class="toc-row">
+                <span class="icon">Ａ</span>
+                <span class="label">字形</span>
+                <div class="seg">
+                  <button class="serif active">宋</button>
+                  <button class="kai">楷</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- CASE 2 · switch -->
+        <article class="case case-2">
+          <header class="case-head">
+            <span class="num">乙</span>
+            <h2>Toggle 开关</h2>
+          </header>
+          <p class="case-desc">
+            字体行内：标签 + 右侧 toggle switch，关 = 宋，开 = 楷。极简，与
+            「暗模式」开关 idiom 同。<b>缺</b> — 开关本身无字面意涵，
+            右侧附标补之又冗。
+          </p>
+          <div class="stage">
+            <span class="stage-label">ALT</span>
+            <div class="toc-mock">
+              <div class="toc-entry">入题</div>
+              <div class="toc-entry active">现况</div>
+              <div class="toc-entry">所议</div>
+              <div class="toc-divider"></div>
+              <div class="toc-row">
+                <span class="icon">📖</span>
+                <span>阅 64 %</span>
+              </div>
+              <div class="toc-row">
+                <span class="icon">Ａ</span>
+                <span>字形</span>
+                <span class="switch-meta">楷</span>
+                <div class="switch on"></div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- CASE 3 · cycle -->
+        <article class="case case-3">
+          <header class="case-head">
+            <span class="num">丙</span>
+            <h2>循环按钮</h2>
+          </header>
+          <p class="case-desc">
+            字体行整体可点；点之即在二者循环。右侧 chip 示当下。
+            <b>缺</b> — 状不直见为选项（chip 类显示），二态以上扩展性差，
+            点错难即纠。
+          </p>
+          <div class="stage">
+            <span class="stage-label">ALT</span>
+            <div class="toc-mock">
+              <div class="toc-entry">入题</div>
+              <div class="toc-entry active">现况</div>
+              <div class="toc-entry">所议</div>
+              <div class="toc-divider"></div>
+              <div class="toc-row">
+                <span class="icon">📖</span>
+                <span>阅 64 %</span>
+              </div>
+              <div class="toc-row">
+                <span class="icon">Ａ</span>
+                <span>字形</span>
+                <span class="current">楷</span>
+                <span class="cycle-hint">⇆</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+      </div>
+
+      <aside class="notes">
+        <b>取舍要点：</b>
+        <ul>
+          <li><b>发现性</b>：甲 / 乙 / 丙 三者皆于 TOC 直见状，胜现况之埋于弹板</li>
+          <li><b>语义</b>：甲（segmented）字面直示 — 即「宋」即「楷」；乙之 toggle 需另附文；丙之 chip 隐含切之 affordance</li>
+          <li><b>扩展性</b>：甲可加第三段（如「黑」「圆」）；乙限于二态；丙循环 N>2 时点错代价大</li>
+          <li><b>视觉占位</b>：甲约 80px 宽（二段），乙约 56px（标 + 开关），丙约 40px（chip）；TOC 侧栏宽 256px 内皆容</li>
+          <li><b>对齐既有 idiom</b>：dev/lexical demo 已用 Segmented，复用之</li>
+        </ul>
+      </aside>
+    </main>
+  </body>
+</html>

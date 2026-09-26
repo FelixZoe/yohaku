@@ -1,0 +1,451 @@
+{
+  "mode": "dev",
+  "timestamp": "2026-05-13T07:06:13.819Z",
+  "totalRoutes": 32,
+  "ok": 32,
+  "fail": 0,
+  "results": [
+    {
+      "route": "/",
+      "status": 200,
+      "ms": 11864,
+      "bytes": 727807,
+      "bodyErrors": []
+    },
+    {
+      "route": "/notes",
+      "status": 200,
+      "ms": 2051,
+      "bytes": 175298,
+      "bodyErrors": []
+    },
+    {
+      "route": "/notes/series",
+      "status": 200,
+      "ms": 1541,
+      "bytes": 140912,
+      "bodyErrors": []
+    },
+    {
+      "route": "/posts",
+      "status": 200,
+      "ms": 1760,
+      "bytes": 613731,
+      "bodyErrors": []
+    },
+    {
+      "route": "/timeline",
+      "status": 200,
+      "ms": 1693,
+      "bytes": 125329,
+      "bodyErrors": []
+    },
+    {
+      "route": "/search",
+      "status": 200,
+      "ms": 1735,
+      "bytes": 125724,
+      "bodyErrors": []
+    },
+    {
+      "route": "/friends",
+      "status": 200,
+      "ms": 1815,
+      "bytes": 125939,
+      "bodyErrors": []
+    },
+    {
+      "route": "/categories",
+      "status": 200,
+      "ms": 2038,
+      "bytes": 149984,
+      "bodyErrors": []
+    },
+    {
+      "route": "/projects",
+      "status": 200,
+      "ms": 1959,
+      "bytes": 130206,
+      "bodyErrors": []
+    },
+    {
+      "route": "/says",
+      "status": 200,
+      "ms": 2124,
+      "bytes": 128699,
+      "bodyErrors": []
+    },
+    {
+      "route": "/thinking",
+      "status": 200,
+      "ms": 2362,
+      "bytes": 131145,
+      "bodyErrors": []
+    },
+    {
+      "route": "/preview",
+      "status": 200,
+      "ms": 2424,
+      "bytes": 124704,
+      "bodyErrors": []
+    },
+    {
+      "route": "/posts/tinkering/migrating-nextjs-to-react-router-framework-mode-ai-agent-perspective",
+      "status": 200,
+      "ms": 2725,
+      "bytes": 184272,
+      "bodyErrors": []
+    },
+    {
+      "route": "/posts/experience/ai-is-eating-our-patience",
+      "status": 200,
+      "ms": 78,
+      "bytes": 191906,
+      "bodyErrors": []
+    },
+    {
+      "route": "/posts/experience/ai-era-tech-blogging-document-driven-development-and-brainstorming",
+      "status": 200,
+      "ms": 83,
+      "bytes": 222391,
+      "bodyErrors": []
+    },
+    {
+      "route": "/posts/experience/ai-era-efficiency-paradox-productivity-gains-cause-fatigue",
+      "status": 200,
+      "ms": 89,
+      "bytes": 193772,
+      "bodyErrors": []
+    },
+    {
+      "route": "/posts/experience/ai-era-refactoring-from-rfc-to-five-plans",
+      "status": 200,
+      "ms": 85,
+      "bytes": 552531,
+      "bodyErrors": []
+    },
+    {
+      "route": "/notes/214",
+      "status": 200,
+      "ms": 2995,
+      "bytes": 160933,
+      "bodyErrors": []
+    },
+    {
+      "route": "/notes/213",
+      "status": 200,
+      "ms": 91,
+      "bytes": 162392,
+      "bodyErrors": []
+    },
+    {
+      "route": "/notes/212",
+      "status": 200,
+      "ms": 80,
+      "bytes": 161727,
+      "bodyErrors": []
+    },
+    {
+      "route": "/notes/211",
+      "status": 200,
+      "ms": 83,
+      "bytes": 162048,
+      "bodyErrors": []
+    },
+    {
+      "route": "/notes/210",
+      "status": 200,
+      "ms": 72,
+      "bytes": 161653,
+      "bodyErrors": []
+    },
+    {
+      "route": "/settei",
+      "status": 200,
+      "ms": 227,
+      "bytes": 211237,
+      "bodyErrors": []
+    },
+    {
+      "route": "/about",
+      "status": 200,
+      "ms": 81,
+      "bytes": 253305,
+      "bodyErrors": []
+    },
+    {
+      "route": "/soul",
+      "status": 200,
+      "ms": 70,
+      "bytes": 210137,
+      "bodyErrors": []
+    },
+    {
+      "route": "/about-site",
+      "status": 200,
+      "ms": 75,
+      "bytes": 156660,
+      "bodyErrors": []
+    },
+    {
+      "route": "/sponsor",
+      "status": 200,
+      "ms": 68,
+      "bytes": 160841,
+      "bodyErrors": []
+    },
+    {
+      "route": "/message",
+      "status": 200,
+      "ms": 71,
+      "bytes": 153405,
+      "bodyErrors": []
+    },
+    {
+      "route": "/ama",
+      "status": 200,
+      "ms": 64,
+      "bytes": 155848,
+      "bodyErrors": []
+    },
+    {
+      "route": "/history",
+      "status": 200,
+      "ms": 70,
+      "bytes": 156704,
+      "bodyErrors": []
+    },
+    {
+      "route": "/link",
+      "status": 200,
+      "ms": 65,
+      "bytes": 155482,
+      "bodyErrors": []
+    },
+    {
+      "route": "/sprint",
+      "status": 200,
+      "ms": 72,
+      "bytes": 160948,
+      "bodyErrors": []
+    }
+  ],
+  "serverErrorLines": [
+    {
+      "at": 1778655940414,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655940414,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655941616,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655941616,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655942452,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655942452,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655943626,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655943626,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655944499,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655944499,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655945168,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655945168,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655946159,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655946159,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655946928,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655946928,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655947942,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655947942,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655948620,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655948620,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655949739,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655949739,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655950356,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655950356,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655951530,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655951530,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655952171,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655952171,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655953483,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655953483,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655954210,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655954210,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655955551,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655955551,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655956169,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655956169,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655957666,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655957666,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655958294,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655958294,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655959789,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655959789,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655960663,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655960663,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655962337,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655962337,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655963082,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655963082,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655964896,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655964896,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655966158,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655966158,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655968273,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    },
+    {
+      "at": 1778655968273,
+      "line": "  ⚠ Module not found: Can't resolve 'canvas' in '/Users/innei/git/innei-repo/Yohaku/node_modules/.pnpm/linkedom@0.18.12/node_modules/linkedom/commonjs'"
+    }
+  ]
+}

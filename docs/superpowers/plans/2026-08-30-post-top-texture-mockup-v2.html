@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Post 天头 · v2（含悬浮 header）</title>
+<style>
+  :root {
+    --color-neutral-1: #f9f8f5;
+    --color-neutral-2: #f0efeb;
+    --color-neutral-3: #e3e1db;
+    --color-neutral-4: #d0cec6;
+    --color-neutral-5: #a8a69f;
+    --color-neutral-6: #787670;
+    --color-neutral-7: #5c5a55;
+    --color-neutral-8: #403f3a;
+    --color-neutral-9: #24231f;
+    --color-neutral-10: #141312;
+
+    --color-accent: #c56473;
+    --color-info: #3d6896;
+    --color-success: #5e9f7e;
+    --color-warning: #a87a3d;
+    --color-error: #a64953;
+
+    --color-paper: #faf9f5;
+    --color-border: rgba(24, 24, 27, 0.1);
+
+    --font-sans: -apple-system, 'PingFang SC', 'Microsoft YaHei',
+                 'Noto Sans SC', 'Hiragino Sans GB', system-ui, sans-serif;
+    --font-serif: 'Noto Serif CJK SC', 'Source Han Serif SC', SongTi SC,
+                  STSong, Georgia, serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', Consolas, Monaco,
+                 'Hannotate SC', monospace;
+
+    --header-glass: rgba(255, 255, 255, 0.38);
+    --header-solid: #fff;
+  }
+
+  [data-theme='dark'] {
+    --color-neutral-1: #141414;
+    --color-neutral-2: #242424;
+    --color-neutral-3: #404040;
+    --color-neutral-4: #5c5c5c;
+    --color-neutral-5: #787878;
+    --color-neutral-6: #a8a8a8;
+    --color-neutral-7: #d0d0d0;
+    --color-neutral-8: #e3e3e3;
+    --color-neutral-9: #f0f0f0;
+    --color-neutral-10: #f8f8f8;
+
+    --color-paper: #1a1814;
+    --color-border: rgba(255, 255, 255, 0.1);
+
+    --header-glass: rgba(24, 24, 24, 0.38);
+    --header-solid: #191919;
+  }
+
+  * { box-sizing: border-box; }
+  html { font-size: 14px; line-height: 1.5; letter-spacing: 0.01em; }
+  body {
+    margin: 0;
+    background: var(--color-neutral-2);
+    color: var(--color-neutral-9);
+    font-family: var(--font-sans);
+  }
+
+  .shell { max-width: 1120px; margin: 0 auto; padding: 40px 20px 96px; }
+  .page-head { margin-bottom: 36px; }
+  .page-head h1 { font-size: 28px; line-height: 1.29; font-weight: 500; margin: 0 0 8px; }
+  .page-head p { margin: 0; color: var(--color-neutral-7); font-size: 14px; max-width: 66ch; }
+
+  .toolbar {
+    position: fixed; top: 12px; right: 12px; z-index: 20;
+    background: var(--color-neutral-1);
+    border: 1px solid var(--color-border);
+    border-radius: 6px; padding: 4px 6px;
+    font-family: var(--font-mono); font-size: 12px; color: var(--color-neutral-7);
+  }
+  .toolbar button {
+    background: none; border: none; cursor: pointer;
+    color: inherit; font: inherit; padding: 2px 6px; border-radius: 4px;
+  }
+  .toolbar button:hover { background: var(--color-neutral-3); }
+  .toolbar button[data-on='1'] { background: var(--color-neutral-3); color: var(--color-neutral-9); }
+
+  .case { margin-bottom: 52px; }
+  .case-label { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+  .case-label .idx { font-family: var(--font-mono); font-size: 12px; color: var(--color-neutral-6); }
+  .case-label h2 { margin: 0; font-size: 20px; line-height: 1.4; font-weight: 500; }
+  .case-label .tag {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--color-neutral-6);
+    border: 1px solid var(--color-border); border-radius: 3px; padding: 1px 5px;
+  }
+  .case-note { margin: 0 0 14px; font-size: 13px; line-height: 1.6; color: var(--color-neutral-7); max-width: 72ch; }
+  .case-meta {
+    font-family: var(--font-mono); font-size: 12px; color: var(--color-neutral-6);
+    margin: 10px 0 0; display: flex; gap: 16px; flex-wrap: wrap;
+  }
+
+  /* ─── 视口模拟 ─────────────────────────────────────── */
+  .frame {
+    position: relative; overflow: hidden;
+    background: var(--color-paper);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    height: 400px;
+  }
+  .article {
+    position: relative; z-index: 2;
+    max-width: 560px; margin: 0 auto; padding-top: 118px;
+  }
+  .article h3 {
+    margin: 0 0 12px; text-align: center; font-weight: 700;
+    font-size: 36px; line-height: 1.22; color: var(--color-neutral-10); text-wrap: balance;
+  }
+  .article .meta { text-align: center; font-size: 12px; color: var(--color-neutral-7); margin-bottom: 26px; }
+  .article .body { font-size: 15px; line-height: 1.6; color: var(--color-neutral-9); }
+
+  /* ─── 悬浮 header（按真实几何：pill top:16 h:40，logo 左，auth 右） ─── */
+  .hdr { position: absolute; inset: 0 0 auto 0; height: 72px; z-index: 9; pointer-events: none; }
+  .hdr .logo {
+    position: absolute; top: 24px; left: 26px;
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 1.5px solid var(--color-neutral-8);
+  }
+  .hdr .auth {
+    position: absolute; top: 24px; right: 26px;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--color-neutral-4);
+  }
+  .hdr .pill {
+    position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+    height: 40px; border-radius: 2px;
+    display: flex; align-items: center; padding: 0 6px;
+    background: var(--header-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  .frame[data-solid='1'] .hdr .pill {
+    background: var(--header-solid);
+    backdrop-filter: none; -webkit-backdrop-filter: none;
+    box-shadow: 0 6px 20px -10px rgba(0,0,0,0.12), 0 2px 6px -3px rgba(0,0,0,0.06);
+  }
+  .hdr .pill i {
+    font-style: normal; font-size: 13px; color: var(--color-neutral-8);
+    padding: 6px 12px; border-radius: 2px; white-space: nowrap;
+  }
+  .hdr .pill i.on { background: rgba(255,255,255,0.9); box-shadow: 0 1px 4px rgba(0,0,0,0.10); }
+  [data-theme='dark'] .hdr .pill i.on { background: rgba(255,255,255,0.12); box-shadow: none; }
+  .hdr .sep { width: 1px; height: 14px; background: var(--color-border); flex: none; }
+
+  /* header 占位提示层 */
+  .frame[data-guides='1'] .hdr::after {
+    content: 'header 领地 0–72px';
+    position: absolute; inset: 0; z-index: 1;
+    border-bottom: 1px dashed var(--color-error);
+    background: color-mix(in oklab, var(--color-error) 6%, transparent);
+    font-family: var(--font-mono); font-size: 10px; color: var(--color-error);
+    display: flex; align-items: flex-end; justify-content: flex-start; padding: 0 0 2px 6px;
+  }
+
+  /* ══ 0 · 现状：feTurbulence 色带 + grain ══════════════ */
+  .now-band {
+    position: absolute; inset: 0 0 auto 0; height: 160px; overflow: hidden;
+  }
+  .now-band svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .now-grain {
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23g)'/%3E%3C/svg%3E");
+    opacity: 0.16; mix-blend-mode: overlay;
+    -webkit-mask-image: linear-gradient(180deg, #000 0 44%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 0 44%, transparent 100%);
+  }
+
+  /* ══ C · 簾目（保留项，验证 header 叠加） ═════════════ */
+  .c-laid {
+    position: absolute; inset: 0 0 auto 0; height: 220px; pointer-events: none;
+    background-image:
+      repeating-linear-gradient(90deg, transparent 0 6px,
+        color-mix(in oklab, var(--color-neutral-5) 26%, transparent) 6px 6.6px),
+      repeating-linear-gradient(0deg, transparent 0 26px,
+        color-mix(in oklab, var(--color-neutral-5) 16%, transparent) 26px 27.5px);
+    -webkit-mask-image: linear-gradient(180deg, #000 0 26%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 0 26%, transparent 100%);
+  }
+  .c-thread {
+    position: absolute; top: 0; height: 220px; width: 0.6px; left: calc(50% - 172px);
+    background: color-mix(in oklab, var(--color-accent) 55%, transparent);
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 88%);
+    mask-image: linear-gradient(180deg, #000 0%, transparent 88%);
+  }
+
+  /* ══ E · 一张纸：复用 Paper / deckle ═══════════════════ */
+  .e-sheet {
+    position: absolute; top: 88px; left: 50%; transform: translateX(-50%);
+    width: 680px; height: 420px; z-index: 1;
+    background: #fff;
+    filter: url(#deckle-edge);
+    box-shadow: 0 1px 2px rgba(24,24,27,0.05), 0 8px 28px -18px rgba(24,24,27,0.28);
+  }
+  [data-theme='dark'] .e-sheet {
+    background: #211f1b;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.5), 0 8px 28px -18px rgba(0,0,0,0.8);
+  }
+  .e-back {
+    position: absolute; top: 92px; left: 50%; z-index: 0;
+    width: 680px; height: 420px;
+    background: color-mix(in oklab, var(--color-neutral-3) 70%, var(--color-paper));
+    filter: url(#deckle-edge);
+    transform: translateX(-50%) translateX(9px) rotate(0.9deg);
+  }
+  .case-e .frame { background: var(--color-neutral-2); }
+  .case-e .article { padding-top: 132px; }
+
+  /* ══ F · 承托：header 的落地面 ═════════════════════════ */
+  .f-rest {
+    position: absolute; inset: 0 0 auto 0; height: 132px; pointer-events: none;
+    background: linear-gradient(180deg,
+      color-mix(in oklab, var(--color-accent) 7%, transparent) 0%,
+      color-mix(in oklab, var(--color-accent) 3.5%, transparent) 42%,
+      transparent 100%);
+  }
+  .f-hair {
+    position: absolute; top: 72px; left: 0; right: 0; height: 1px; pointer-events: none;
+    background: linear-gradient(90deg, transparent,
+      color-mix(in oklab, var(--color-neutral-5) 45%, transparent) 22%,
+      color-mix(in oklab, var(--color-neutral-5) 45%, transparent) 78%, transparent);
+  }
+
+  /* ══ G · 装订边：簾纹只在栏外 ═══════════════════════════ */
+  .g-gutter {
+    position: absolute; top: 0; bottom: 0; width: 132px; pointer-events: none;
+    background-image: repeating-linear-gradient(90deg, transparent 0 7px,
+      color-mix(in oklab, var(--color-neutral-5) 30%, transparent) 7px 7.7px);
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 90px, #000 55%, transparent 100%);
+    mask-image: linear-gradient(180deg, transparent 0, #000 90px, #000 55%, transparent 100%);
+  }
+  .g-gutter.l { left: 0; }
+  .g-gutter.r { right: 0; transform: scaleX(-1); }
+  .g-stitch {
+    position: absolute; top: 96px; width: 1px; height: 190px; pointer-events: none;
+    background: repeating-linear-gradient(180deg,
+      color-mix(in oklab, var(--color-accent) 60%, transparent) 0 10px,
+      transparent 10px 18px);
+    -webkit-mask-image: linear-gradient(180deg, #000 0 62%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 0 62%, transparent 100%);
+  }
+  .g-stitch.l { left: 96px; }
+  .g-stitch.r { right: 96px; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="deckle-edge" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.012 0.09" numOctaves="4" seed="7" result="n" />
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G" />
+  </filter>
+</svg>
+
+<div class="toolbar">
+  <button onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">light · dark</button>
+  <button id="btn-solid" data-on="0" onclick="toggle('solid', this)">header solid</button>
+  <button id="btn-guides" data-on="0" onclick="toggle('guides', this)">领地辅助线</button>
+</div>
+
+<div class="shell">
+  <div class="page-head">
+    <h1>Post 天头 · v2（把悬浮 header 画进去）</h1>
+    <p>header 的实际几何：居中玻璃条 <code>top:16 h:40 bg-white/38 backdrop-blur-lg</code>，左 logo、右 UserAuth，整条 0–72px 都被占。任何天头处理必须满足其一：① 是一整片连续场，玻璃条压上去只会更好看；② 完全退到 80px 以下；③ 干脆不在天头做。下面每一格都可切 header solid 态验证。</p>
+  </div>
+
+  <section class="case">
+    <div class="case-label"><span class="idx">0</span><h2>现状</h2><span class="tag">control</span></div>
+    <p class="case-note">feTurbulence 揉出的毛边色带 + 0.16 grain。问题在这一格最明显：玻璃条 backdrop-blur 把随机毛边糊成一坨脏色，而且每篇 seed 不同、脏得还不一样。</p>
+    <div class="frame" data-solid="0">
+      <div class="now-band">
+        <svg aria-hidden>
+          <defs>
+            <linearGradient id="ramp" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0" stop-color="hsl(348 42% 42%)" stop-opacity="0.32" />
+              <stop offset="0.5" stop-color="hsl(348 42% 48%)" stop-opacity="0.14" />
+              <stop offset="1" stop-color="hsl(348 42% 55%)" stop-opacity="0" />
+            </linearGradient>
+            <filter id="fiber" x="-2%" y="-45%" width="104%" height="190%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.003 0.055" numOctaves="3" seed="211" result="f" />
+              <feDisplacementMap in="SourceGraphic" in2="f" scale="38" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+          </defs>
+          <rect x="-5%" y="-40" width="110%" height="132" fill="url(#ramp)" filter="url(#fiber)" />
+        </svg>
+        <div class="now-grain"></div>
+      </div>
+      <div class="hdr">
+        <span class="logo"></span><span class="auth"></span>
+        <div class="pill"><i class="on">文稿</i><span class="sep"></span><i>思考</i><span class="sep"></span><i>时间线</i><span class="sep"></span><i>友链</i></div>
+      </div>
+      <div class="article">
+        <h3>在 WKWebView 里重新学会排版</h3>
+        <div class="meta">2026-08-30 · 随笔 · 12 min</div>
+        <div class="body">把一段正文放进 WebView 之前，我一直以为排版是 CSS 的事。后来发现，真正决定它好不好读的，是它上面那块什么都没有的地方。</div>
+      </div>
+    </div>
+    <p class="case-meta"><span>随机</span><span>噪点 0.16</span><span>与 header 冲突</span></p>
+  </section>
+
+  <section class="case">
+    <div class="case-label"><span class="idx">C</span><h2>簾目 · 和纸帘纹</h2><span class="tag">连续场</span></div>
+    <p class="case-note">上一版唯一活下来的方向，正因为它是连续场：玻璃条压在等距竖线上，blur 出来的是规则的糊，不是随机的脏。帘纹是纸本身的结构，周期性、可复算、无噪点。accent 只剩一根帘丝，位置由 seed 决定。</p>
+    <div class="frame" data-solid="0">
+      <div class="c-laid"></div><div class="c-thread"></div>
+      <div class="hdr">
+        <span class="logo"></span><span class="auth"></span>
+        <div class="pill"><i class="on">文稿</i><span class="sep"></span><i>思考</i><span class="sep"></span><i>时间线</i><span class="sep"></span><i>友链</i></div>
+      </div>
+      <div class="article">
+        <h3>在 WKWebView 里重新学会排版</h3>
+        <div class="meta">2026-08-30 · 随笔 · 12 min</div>
+        <div class="body">把一段正文放进 WebView 之前，我一直以为排版是 CSS 的事。后来发现，真正决定它好不好读的，是它上面那块什么都没有的地方。</div>
+      </div>
+    </div>
+    <p class="case-meta"><span>随机性 0（周期）</span><span>噪点 0</span><span>accent ≈ 0.05%</span><span>玻璃条兼容 ✓</span></p>
+  </section>
+
+  <section class="case case-e">
+    <div class="case-label"><span class="idx">E</span><h2>一张纸 · 复用 Paper deckle</h2><span class="tag">退到 88px 以下</span></div>
+    <p class="case-note">天头不做任何东西，改成文章本体是一张浮在页面上的纸——毛边（deckle）和接触阴影就是纹理。这套物件仓库里已有（<code>container/Paper.tsx</code>、<code>PaperSheet</code>、<code>DeckleFilter</code>），零新概念。纸的上缘从 88px 起，玻璃条浮在纸之上而不是糊在纸里，层级关系一下就清楚了。背后再垫一张微旋的底纸，帖子有厚度。</p>
+    <div class="frame" data-solid="0">
+      <div class="e-back"></div><div class="e-sheet"></div>
+      <div class="hdr">
+        <span class="logo"></span><span class="auth"></span>
+        <div class="pill"><i class="on">文稿</i><span class="sep"></span><i>思考</i><span class="sep"></span><i>时间线</i><span class="sep"></span><i>友链</i></div>
+      </div>
+      <div class="article">
+        <h3>在 WKWebView 里重新学会排版</h3>
+        <div class="meta">2026-08-30 · 随笔 · 12 min</div>
+        <div class="body">把一段正文放进 WebView 之前，我一直以为排版是 CSS 的事。后来发现，真正决定它好不好读的，是它上面那块什么都没有的地方。</div>
+      </div>
+    </div>
+    <p class="case-meta"><span>复用已有组件</span><span>噪点 0</span><span>accent 0%</span><span>玻璃条兼容 ✓</span></p>
+  </section>
+
+  <section class="case">
+    <div class="case-label"><span class="idx">F</span><h2>承托 · header 的落地面</h2><span class="tag">连续场</span></div>
+    <p class="case-note">反过来想：这块颜色不是文章的帽子，是给玻璃条的一个落地面。所以它必须是最平的东西——纯线性 wash，accent 混入 7%→0，无边缘、无形状、无噪点，加一条 72px 处的 hairline 收口（正好是 header 的底边）。玻璃条 blur 它只会得到干净的柔和色。header 转 solid 时 wash 同步淡出。</p>
+    <div class="frame" data-solid="0">
+      <div class="f-rest"></div><div class="f-hair"></div>
+      <div class="hdr">
+        <span class="logo"></span><span class="auth"></span>
+        <div class="pill"><i class="on">文稿</i><span class="sep"></span><i>思考</i><span class="sep"></span><i>时间线</i><span class="sep"></span><i>友链</i></div>
+      </div>
+      <div class="article">
+        <h3>在 WKWebView 里重新学会排版</h3>
+        <div class="meta">2026-08-30 · 随笔 · 12 min</div>
+        <div class="body">把一段正文放进 WebView 之前，我一直以为排版是 CSS 的事。后来发现，真正决定它好不好读的，是它上面那块什么都没有的地方。</div>
+      </div>
+    </div>
+    <p class="case-meta"><span>随机性 0</span><span>噪点 0</span><span>accent ≈ 7% 混色 / 面积大</span><span>与 header 联动</span></p>
+  </section>
+
+  <section class="case">
+    <div class="case-label"><span class="idx">G</span><h2>装订边 · 纹理让出中轴</h2><span class="tag">避开天头</span></div>
+    <p class="case-note">天头这块地已经归 header 了，那就别抢——把纹理挪到内容栏外的左右余白，像线装书的装订边：竖向帘纹从 90px 才开始，中轴一片干净；一列 accent 虚线是"针脚"。玻璃条永远飘在空白上，两边的纸纹提供质感。这是唯一让 header 完全不参与的方案。</p>
+    <div class="frame" data-solid="0">
+      <div class="g-gutter l"></div><div class="g-gutter r"></div>
+      <div class="g-stitch l"></div><div class="g-stitch r"></div>
+      <div class="hdr">
+        <span class="logo"></span><span class="auth"></span>
+        <div class="pill"><i class="on">文稿</i><span class="sep"></span><i>思考</i><span class="sep"></span><i>时间线</i><span class="sep"></span><i>友链</i></div>
+      </div>
+      <div class="article">
+        <h3>在 WKWebView 里重新学会排版</h3>
+        <div class="meta">2026-08-30 · 随笔 · 12 min</div>
+        <div class="body">把一段正文放进 WebView 之前，我一直以为排版是 CSS 的事。后来发现，真正决定它好不好读的，是它上面那块什么都没有的地方。</div>
+      </div>
+    </div>
+    <p class="case-meta"><span>随机性 0（周期）</span><span>噪点 0</span><span>accent ≈ 0.1%</span><span>与 header 零交集</span></p>
+  </section>
+</div>
+
+<script>
+  function toggle(key, btn) {
+    const on = btn.dataset.on === '1' ? '0' : '1'
+    btn.dataset.on = on
+    document.querySelectorAll('.frame').forEach((f) => { f.dataset[key] = on })
+  }
+</script>
+</body>
+</html>

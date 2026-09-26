@@ -1,0 +1,234 @@
+{
+  "mode": "prod",
+  "timestamp": "2026-05-13T07:07:13.077Z",
+  "totalRoutes": 32,
+  "ok": 32,
+  "fail": 0,
+  "results": [
+    {
+      "route": "/",
+      "status": 200,
+      "ms": 128,
+      "bytes": 837500,
+      "bodyErrors": []
+    },
+    {
+      "route": "/notes",
+      "status": 200,
+      "ms": 84,
+      "bytes": 291057,
+      "bodyErrors": []
+    },
+    {
+      "route": "/notes/series",
+      "status": 200,
+      "ms": 33,
+      "bytes": 245367,
+      "bodyErrors": []
+    },
+    {
+      "route": "/posts",
+      "status": 200,
+      "ms": 38,
+      "bytes": 719896,
+      "bodyErrors": []
+    },
+    {
+      "route": "/timeline",
+      "status": 200,
+      "ms": 24,
+      "bytes": 231463,
+      "bodyErrors": []
+    },
+    {
+      "route": "/search",
+      "status": 200,
+      "ms": 24,
+      "bytes": 228683,
+      "bodyErrors": []
+    },
+    {
+      "route": "/friends",
+      "status": 200,
+      "ms": 21,
+      "bytes": 231034,
+      "bodyErrors": []
+    },
+    {
+      "route": "/categories",
+      "status": 200,
+      "ms": 20,
+      "bytes": 229116,
+      "bodyErrors": []
+    },
+    {
+      "route": "/projects",
+      "status": 200,
+      "ms": 22,
+      "bytes": 234506,
+      "bodyErrors": []
+    },
+    {
+      "route": "/says",
+      "status": 200,
+      "ms": 21,
+      "bytes": 233715,
+      "bodyErrors": []
+    },
+    {
+      "route": "/thinking",
+      "status": 200,
+      "ms": 24,
+      "bytes": 239566,
+      "bodyErrors": []
+    },
+    {
+      "route": "/preview",
+      "status": 200,
+      "ms": 22,
+      "bytes": 235048,
+      "bodyErrors": []
+    },
+    {
+      "route": "/posts/tinkering/migrating-nextjs-to-react-router-framework-mode-ai-agent-perspective",
+      "status": 200,
+      "ms": 34,
+      "bytes": 416064,
+      "bodyErrors": []
+    },
+    {
+      "route": "/posts/experience/ai-is-eating-our-patience",
+      "status": 200,
+      "ms": 24,
+      "bytes": 423709,
+      "bodyErrors": []
+    },
+    {
+      "route": "/posts/experience/ai-era-tech-blogging-document-driven-development-and-brainstorming",
+      "status": 200,
+      "ms": 34,
+      "bytes": 454143,
+      "bodyErrors": []
+    },
+    {
+      "route": "/posts/experience/ai-era-efficiency-paradox-productivity-gains-cause-fatigue",
+      "status": 200,
+      "ms": 25,
+      "bytes": 425505,
+      "bodyErrors": []
+    },
+    {
+      "route": "/posts/experience/ai-era-refactoring-from-rfc-to-five-plans",
+      "status": 200,
+      "ms": 44,
+      "bytes": 784324,
+      "bodyErrors": []
+    },
+    {
+      "route": "/notes/214",
+      "status": 200,
+      "ms": 29,
+      "bytes": 244218,
+      "bodyErrors": []
+    },
+    {
+      "route": "/notes/213",
+      "status": 200,
+      "ms": 22,
+      "bytes": 245667,
+      "bodyErrors": []
+    },
+    {
+      "route": "/notes/212",
+      "status": 200,
+      "ms": 19,
+      "bytes": 245025,
+      "bodyErrors": []
+    },
+    {
+      "route": "/notes/211",
+      "status": 200,
+      "ms": 17,
+      "bytes": 245340,
+      "bodyErrors": []
+    },
+    {
+      "route": "/notes/210",
+      "status": 200,
+      "ms": 17,
+      "bytes": 244947,
+      "bodyErrors": []
+    },
+    {
+      "route": "/settei",
+      "status": 200,
+      "ms": 21,
+      "bytes": 399685,
+      "bodyErrors": []
+    },
+    {
+      "route": "/about",
+      "status": 200,
+      "ms": 24,
+      "bytes": 441747,
+      "bodyErrors": []
+    },
+    {
+      "route": "/soul",
+      "status": 200,
+      "ms": 21,
+      "bytes": 398581,
+      "bodyErrors": []
+    },
+    {
+      "route": "/about-site",
+      "status": 200,
+      "ms": 21,
+      "bytes": 345037,
+      "bodyErrors": []
+    },
+    {
+      "route": "/sponsor",
+      "status": 200,
+      "ms": 20,
+      "bytes": 349221,
+      "bodyErrors": []
+    },
+    {
+      "route": "/message",
+      "status": 200,
+      "ms": 17,
+      "bytes": 341829,
+      "bodyErrors": []
+    },
+    {
+      "route": "/ama",
+      "status": 200,
+      "ms": 17,
+      "bytes": 344270,
+      "bodyErrors": []
+    },
+    {
+      "route": "/history",
+      "status": 200,
+      "ms": 19,
+      "bytes": 345120,
+      "bodyErrors": []
+    },
+    {
+      "route": "/link",
+      "status": 200,
+      "ms": 17,
+      "bytes": 343902,
+      "bodyErrors": []
+    },
+    {
+      "route": "/sprint",
+      "status": 200,
+      "ms": 17,
+      "bytes": 349370,
+      "bodyErrors": []
+    }
+  ],
+  "serverErrorLines": []
+}

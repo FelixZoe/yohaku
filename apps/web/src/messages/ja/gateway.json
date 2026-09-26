@@ -1,0 +1,8 @@
+{
+  "connected": "繋がりぬ",
+  "disconnected": "途絶えたり",
+  "reading_now": "人が読んでいます",
+  "websocket_intro": "このページを開くと、WebSocket接続が自動的に確立されます。接続後、サーバーは現在の閲覧者数をプッシュします。",
+  "no_readers": "未だ、読み手なし",
+  "popular_content": "今、読まれる頁："
+}

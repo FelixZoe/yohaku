@@ -1,0 +1,16 @@
+{
+  "page_title": "思考",
+  "page_subtitle": "聞き耳、ありがとう",
+  "post_placeholder": "今何を考えていますか？",
+  "send": "送信",
+  "detected_link": "リンクを検出",
+  "resolving": "解析中",
+  "emoji_label": "絵文字",
+  "feed_reference": "引用：{title}",
+  "feed_comment_cta": "読み終ひて、一声を",
+  "moment_application": "アプリケーション",
+  "moment_window": "ウインドウ",
+  "moment_media": "メディア",
+  "moment_playback_at": "{position} まで再生",
+  "moment_playback_progress": "{position} / {duration} まで再生"
+}

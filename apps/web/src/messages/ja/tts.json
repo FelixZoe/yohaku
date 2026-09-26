@@ -1,0 +1,12 @@
+{
+  "error": "朗読の読み込みに失敗しました",
+  "narrate": "この記事を読み上げ",
+  "narration": "AI 音声読み上げ",
+  "narrating": "読み上げ中",
+  "pause": "一時停止",
+  "play": "再生",
+  "reveal": "朗読位置を表示",
+  "segment_progress": "{current} / {total}",
+  "stale_warning": "本文が更新済み。朗読は現在の文章と一致しない場合があります",
+  "stop": "停止"
+}

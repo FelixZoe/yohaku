@@ -1,0 +1,20 @@
+{
+  "404_description": "這顆星球還沒有知識哦，去其他地方探索吧",
+  "404_torn_line1": "頁面不見了，",
+  "404_torn_line2": "也許被風吹走了。",
+  "404_torn_todo": "待辦",
+  "404_torn_signature": "— 某個迷路的訪客",
+  "404_backHome": "返回首頁",
+  "500_title": "服務端有恙。",
+  "api_fetchError": "初始數據的獲取失敗，請檢查 API 伺服器是否正常運行。接口請求錯誤信息：",
+  "render_error": "繪頁之時，偶生差池。",
+  "render_error_contact": "多次出現錯誤請聯繫開發者",
+  "render_error_thanks": "，謝謝！",
+  "page_deleted": "此頁面已被刪除",
+  "back_home": "返回首頁",
+  "refresh": "刷新",
+  "biz_error_title": "數據未至。",
+  "biz_error_http_status": "HTTP Status: {status}",
+  "biz_error_message": "錯誤信息：{message}",
+  "share_link_expired": "分享連結已失效"
+}

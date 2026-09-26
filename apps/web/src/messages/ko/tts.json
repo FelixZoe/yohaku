@@ -1,0 +1,12 @@
+{
+  "error": "낭독 로드 실패",
+  "narrate": "이 글 듣기",
+  "narration": "AI 음성 낭독",
+  "narrating": "낭독 중",
+  "pause": "일시정지",
+  "play": "재생",
+  "reveal": "현재 낭독 위치 보기",
+  "segment_progress": "{current} / {total}",
+  "stale_warning": "본문이 수정됨 — 낭독이 현재 글과 다를 수 있음",
+  "stop": "정지"
+}
