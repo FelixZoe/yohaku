@@ -22,6 +22,14 @@ jobs:
       - name: Setup pnpm
         run: corepack enable
 
+      - name: Select newest Xcode
+        run: |
+          XCODE_APP=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE_APP"
+          echo "Using $XCODE_APP"
+          xcodebuild -version
+          swift --version 2>&1 | head -1
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
