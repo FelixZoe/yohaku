@@ -24,7 +24,16 @@ jobs:
 
       - name: Select newest Xcode
         run: |
-          XCODE_APP=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          echo "Available Xcodes:"; ls -d /Applications/Xcode*.app
+          # Expo SDK 57 needs Swift 6.2 (Xcode 26.x); Xcode 26.3's clang errors on
+          # SWIFT_RETURNS_* annotations in expo-modules-jsi vendored RN headers.
+          XCODE_APP=$(ls -d /Applications/Xcode_26.2*.app 2>/dev/null | head -1)
+          if [ -z "$XCODE_APP" ]; then
+            XCODE_APP=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | grep -v "26\.3" | sort -V | tail -1)
+          fi
+          if [ -z "$XCODE_APP" ]; then
+            XCODE_APP=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          fi
           sudo xcode-select -s "$XCODE_APP"
           echo "Using $XCODE_APP"
           xcodebuild -version
