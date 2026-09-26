@@ -42,7 +42,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Patch expo-modules-jsi (upstream bug: SWIFT_RETURNS_RETAINED on constructors)
+      - name: "Patch expo-modules-jsi (upstream bug: SWIFT_RETURNS_RETAINED on constructors)"
         run: |
           FILE=$(find node_modules/.pnpm -path "*expo-modules-jsi*/apple/Sources/ExpoModulesJSI-Cxx/include/RuntimeScheduler.h" | head -1)
           echo "patching $FILE"
