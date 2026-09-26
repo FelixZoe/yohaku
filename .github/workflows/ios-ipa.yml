@@ -42,6 +42,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Patch expo-modules-jsi (upstream bug: SWIFT_RETURNS_RETAINED on constructors)
+        run: |
+          FILE=$(find node_modules/.pnpm -path "*expo-modules-jsi*/apple/Sources/ExpoModulesJSI-Cxx/include/RuntimeScheduler.h" | head -1)
+          echo "patching $FILE"
+          sed -i.bak 's/^  SWIFT_RETURNS_RETAINED RuntimeScheduler/  RuntimeScheduler/' "$FILE"
+          ! grep -n "SWIFT_RETURNS" "$FILE"
+
       - name: Build rich-content css
         run: pnpm --filter @yohaku/rich-content build:css
 
