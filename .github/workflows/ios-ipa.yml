@@ -40,11 +40,13 @@ jobs:
         run: |
           WORKSPACE=$(ls -d ios/*.xcworkspace | head -1)
           echo "workspace=$WORKSPACE" >> "$GITHUB_OUTPUT"
-          SCHEMES=$(xcodebuild -list -workspace "$WORKSPACE" 2>/dev/null | sed -n '/Schemes:/,$p' | tail -n +2 | sed 's/^[[:space:]]*//' | grep -v '^$')
-          SCHEME=$(echo "$SCHEMES" | grep -iv 'notification' | head -1)
-          [ -z "$SCHEME" ] && SCHEME=$(echo "$SCHEMES" | head -1)
+          # Expo names the app scheme after the app, matching the workspace name;
+          # -list output is polluted by dozens of pod schemes.
+          SCHEME=$(basename "$WORKSPACE" .xcworkspace)
+          LISTED=$(xcodebuild -list -workspace "$WORKSPACE" 2>/dev/null | sed -n '/Schemes:/,$p' | tail -n +2 | sed 's/^[[:space:]]*//' | grep -v '^$')
+          echo "$LISTED" | grep -Fxq "$SCHEME" || SCHEME=$(echo "$LISTED" | grep -iv 'notification' | head -1)
           echo "scheme=$SCHEME" >> "$GITHUB_OUTPUT"
-          echo "workspace=$WORKSPACE scheme=$SCHEME (all: $SCHEMES)"
+          echo "workspace=$WORKSPACE scheme=$SCHEME"
 
       - name: Xcode build (unsigned, device)
         working-directory: apps/mobile
