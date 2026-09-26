@@ -1,17 +1,12 @@
 import type { SiteOverlay } from '../mobile/src/site-config'
 
-/** Closed-source App Store overlay. Do not copy this directory to Innei/Yohaku. */
+/** Self-host overlay for root.mom (Felix). Replaces the upstream App Store overlay. */
 export const siteOverlay: SiteOverlay = {
-  apiUrl: 'https://mx.innei.in/api/v3',
-  siteUrl: 'https://innei.in',
-  siteHosts: ['innei.in', 'www.innei.in'],
-  privacyUrl: 'https://innei.in/privacy',
+  apiUrl: 'https://api.root.mom/api/v3',
+  siteUrl: 'https://root.mom',
+  siteHosts: ['root.mom', 'www.root.mom'],
+  privacyUrl: 'https://root.mom/privacy',
   scheme: 'yohaku',
-  bundleId: 'in.innei',
-  bundledOwner: {
-    name: 'Innei',
-    avatarUrl: 'https://avatars.githubusercontent.com/u/41265413?v=4',
-    siteHost: 'innei.in',
-    webUrl: 'https://innei.in',
-  },
+  bundleId: 'app.root.mom',
+  bundledOwner: null,
 }

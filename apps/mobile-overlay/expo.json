@@ -1,45 +1,19 @@
 {
   "scheme": "yohaku",
-  "bundleId": "in.innei",
+  "bundleId": "app.root.mom",
   "version": "1.0.4",
-  "appleTeamId": "KAMM5N88X3",
-  "associatedDomains": [
-    "applinks:innei.in",
-    "applinks:www.innei.in"
-  ],
   "icon": "./assets/images/icon.png",
   "iosIcon": "./assets/expo.icon",
   "eas": {
     "build": {
       "production": {
         "env": {
-          "EXPO_PUBLIC_API_URL": "https://mx.innei.in/api/v3",
-          "EXPO_PUBLIC_PUSH_APP_ID": "yohaku",
-          "EXPO_PUBLIC_PUSH_RELAY_URL": "https://push-relay-production-b0fb.up.railway.app",
-          "EXPO_PUBLIC_APNS_ENV": "production"
-        }
-      }
-    },
-    "submit": {
-      "production": {
-        "ios": {
-          "appleTeamId": "KAMM5N88X3"
+          "EXPO_PUBLIC_API_URL": "https://api.root.mom/api/v3"
         }
       }
     }
   },
   "updates": {
-    "url": "https://ota.innei.in/manifest",
-    "enabled": true,
-    "fallbackToCacheTimeout": 0,
-    "codeSigningCertificate": "./certs/certificate.pem",
-    "codeSigningMetadata": {
-      "keyid": "main",
-      "alg": "rsa-v1_5-sha256"
-    },
-    "requestHeaders": {
-      "expo-channel-name": "production",
-      "expo-app-id": "yohaku"
-    }
+    "enabled": false
   }
 }
