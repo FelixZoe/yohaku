@@ -250,7 +250,9 @@ export class NoteService {
 
   async getLatestNoteId() {
     const note = await this.noteRepository.getLatestVisibleId()
-    if (!note) throw createAppException(AppErrorCode.NOT_FOUND)
+    // Self-host patch: tolerate an empty note collection so the aggregate
+    // endpoint does not 404 for sites without any notes.
+    if (!note) return null
     return { nid: note.nid, id: note.id }
   }
 

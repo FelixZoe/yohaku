@@ -22,7 +22,12 @@ import { type BasicPagerDto, BasicPagerSchema } from '~/shared/dto/pager.dto'
 import { SayRepository } from './say.repository'
 
 export const SayCreateSchema = z.object({
-  text: z.string().min(1),
+  text: z
+    .string()
+    .min(1)
+    .refine((value) => value.trim().length > 0, {
+      message: 'Text cannot be blank',
+    }),
   source: z.string().nullable().optional(),
   author: z.string().nullable().optional(),
 })
