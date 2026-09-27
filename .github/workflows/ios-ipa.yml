@@ -127,7 +127,7 @@ jobs:
           OTA_TOKEN: ${{ secrets.OTA_TOKEN }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
         run: |
-          RV=$(node -p "require('../mobile-overlay/expo.json').version || '1.0.4'")
+          RV=$(node -p "JSON.parse(require('fs').readFileSync(process.env.GITHUB_WORKSPACE + '/apps/mobile-overlay/expo.json','utf8')).version || '1.0.4'")
           echo "runtimeVersion=$RV (policy: appVersion)"
           node - "$RV" <<'NODE' > /tmp/ota_payload.json
           const fs = require('fs')
