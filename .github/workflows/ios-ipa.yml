@@ -49,7 +49,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Patch expo-modules-jsi (upstream bug: SWIFT_RETURNS_RETAINED on constructors)
+      - name: "Patch expo-modules-jsi (upstream bug: SWIFT_RETURNS_RETAINED on constructors)"
         run: |
           COUNT=0
           while IFS= read -r FILE; do
