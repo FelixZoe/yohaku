@@ -134,12 +134,20 @@ jobs:
           const path = require('path')
           const [, rv] = process.argv
           const dist = 'ota-dist'
-          const meta = JSON.parse(fs.readFileSync(path.join(dist, 'metadata.json'), 'utf8'))
-          const ios = meta.fileMetadata && meta.fileMetadata.ios
-          if (!ios) throw new Error('metadata.json has no ios entry')
+          function walk(dir, prefix = '') {
+            const out = []
+            for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+              const rel = prefix ? prefix + '/' + e.name : e.name
+              if (e.isDirectory()) out.push(...walk(path.join(dir, e.name), rel))
+              else out.push(rel)
+            }
+            return out
+          }
           const collect = {}
-          for (const b of ios.bundles || []) collect[b.path] = fs.readFileSync(path.join(dist, b.path)).toString('base64')
-          for (const a of ios.assets || []) collect[a.path] = fs.readFileSync(path.join(dist, a.path)).toString('base64')
+          for (const rel of walk(dist)) {
+            if (rel === 'metadata.json') continue
+            collect[rel] = fs.readFileSync(path.join(dist, rel)).toString('base64')
+          }
           process.stdout.write(JSON.stringify({
             platform: 'ios',
             runtimeVersion: rv,
