@@ -32,6 +32,16 @@ sudo docker compose up -d
 
 ## iOS 未签名 IPA
 
-`apps/mobile` 构建产物为未签名 IPA（bundle id 默认 `dev.yohaku.app`）。
-通过 [爱思助手 / AltStore / TrollStore / Xcode] 等工具自行签名安装。
-如需自定义 bundle id / 站点地址，参考 `apps/mobile/app.config.ts` 的 overlay 机制。
+`apps/mobile` 构建产物为未签名 IPA，通过 [爱思助手 / AltStore / TrollStore / Xcode] 等工具自行签名安装。
+
+站点与身份配置走 `apps/mobile-overlay/`（对应公开仓库指引中的 `src/site-config.ts` / `PUBLIC_*`），
+已配置为本站：apiUrl `https://api.root.mom/api/v3`、siteUrl `https://root.mom`、bundle id `app.root.mom`。
+
+### 自己签名上架（MIT，无需额外授权）
+
+1. **应用名**：`apps/mobile/app.config.ts` 的 `name` 字段。
+2. **图标**：替换 `apps/mobile/assets/images/icon.png`（1024×1024）与 `apps/mobile/assets/expo.icon`。
+3. **推送**（可选）：Apple 开发者后台为 App ID `app.root.mom` 勾选 Push Notifications，
+   prebuild 生成的 entitlements 自带 `aps-environment`；推送需要自建 APNs 中转，不配不影响其余功能。
+4. 本地出包：`pnpm --filter @yohaku/mobile ios` 生成 `ios/`，Xcode 打开 `.xcworkspace` → Archive → Distribute App；
+   或直接用本仓库 Actions 的未签名 IPA 自行签名。
