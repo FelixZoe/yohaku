@@ -185,8 +185,24 @@ export class ContentMigrationCommitService {
       this.lexicalService.lexicalToMarkdown(input.source.content) !==
       input.source.text
     ) {
+      // Self-host debug: surface the projection diff to diagnose migration
+      // round-trip mismatches.
+      const projected = this.lexicalService.lexicalToMarkdown(
+        input.source.content,
+      )
+      const submitted = input.source.text ?? ''
+      let diff = 0
+      while (
+        diff < projected.length &&
+        diff < submitted.length &&
+        projected[diff] === submitted[diff]
+      )
+        diff += 1
       throw new BadRequestException(
-        'Submitted Lexical content and Markdown projection do not match',
+        `Submitted Lexical content and Markdown projection do not match ` +
+          `(projected=${projected.length}, submitted=${submitted.length}, firstDiff@${diff} ` +
+          `projected=${JSON.stringify(projected.slice(Math.max(0, diff - 40), diff + 80))} ` +
+          `submitted=${JSON.stringify(submitted.slice(Math.max(0, diff - 40), diff + 80))})`,
       )
     }
   }
