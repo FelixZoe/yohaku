@@ -33,6 +33,7 @@ interface OverlayExpo {
     url?: string
     enabled?: boolean
     fallbackToCacheTimeout?: number
+    runtimeVersion?: string | { policy: 'nativeVersion' | 'appVersion' | 'fingerprint' }
     codeSigningCertificate?: string
     codeSigningMetadata?: {
       alg: string
@@ -81,6 +82,7 @@ export function updatesForCurrentBuild(
     fallbackToCacheTimeout: updates.fallbackToCacheTimeout,
     requestHeaders: updates.requestHeaders,
     url: updates.url,
+    ...(updates.runtimeVersion ? { runtimeVersion: updates.runtimeVersion } : {}),
   }
 }
 

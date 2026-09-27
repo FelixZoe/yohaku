@@ -2,10 +2,19 @@ name: Build Core Docker Image
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'core/**'
+      - '.github/workflows/core-image.yml'
 
 permissions:
   contents: read
   packages: write
+
+concurrency:
+  group: core-image
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -39,3 +48,16 @@ jobs:
             ${{ steps.img.outputs.name }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new \
+            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
+            "cd /opt/mixspace-yohaku && sudo docker compose pull core migrate && sudo docker compose up -d && sleep 35 && curl -sf http://127.0.0.1:2333/api/v3/ping && echo CORE_DEPLOY_OK"

@@ -2,6 +2,13 @@ name: Build Unsigned iOS IPA
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/mobile/**'
+      - 'apps/mobile-overlay/**'
+      - 'yohaku-oss/**'
+      - '.github/workflows/ios-ipa.yml'
 
 concurrency:
   group: ios-ipa
@@ -18,9 +25,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      - name: Setup pnpm
-        run: corepack enable
 
       - name: Select newest Xcode
         run: |
@@ -39,10 +43,13 @@ jobs:
           xcodebuild -version
           swift --version 2>&1 | head -1
 
+      - name: Setup pnpm
+        run: corepack enable
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: "Patch expo-modules-jsi (upstream bug: SWIFT_RETURNS_RETAINED on constructors)"
+      - name: Patch expo-modules-jsi (upstream bug: SWIFT_RETURNS_RETAINED on constructors)
         run: |
           COUNT=0
           while IFS= read -r FILE; do
@@ -107,3 +114,60 @@ jobs:
           name: Yohaku-unsigned-ipa
           path: apps/mobile/Yohaku-unsigned.ipa
           retention-days: 30
+
+      - name: Export OTA update bundle
+        working-directory: apps/mobile
+        env:
+          EXPO_NO_TELEMETRY: 1
+        run: npx expo export --platform ios --output-dir ota-dist
+
+      - name: Upload OTA update to self-hosted server
+        working-directory: apps/mobile
+        env:
+          OTA_TOKEN: ${{ secrets.OTA_TOKEN }}
+        run: |
+          RV=$(npx expo config --type public --json 2>/dev/null | node -e "
+            let raw='';process.stdin.on('data',d=>raw+=d).on('end',()=>{
+              try { const c=JSON.parse(raw); console.log(c.runtimeVersion || '1.0.4'); }
+              catch { console.log('1.0.4'); }
+            })")
+          echo "runtimeVersion=$RV"
+          node - "$RV" <<'NODE'
+          const fs = require('fs')
+          const path = require('path')
+          const https = require('https')
+          const [, rvArg] = process.argv
+          const rv = rvArg || '1.0.4'
+          const dist = 'ota-dist'
+          const meta = JSON.parse(fs.readFileSync(path.join(dist, 'metadata.json'), 'utf8'))
+          const ios = meta.fileMetadata && meta.fileMetadata.ios
+          if (!ios) throw new Error('metadata.json has no ios entry')
+          const rel = (p) => path.join(dist, p)
+          const collect = {}
+          for (const b of ios.bundles || []) collect[b.path] = fs.readFileSync(rel(b.path)).toString('base64')
+          for (const a of ios.assets || []) collect[a.path] = fs.readFileSync(rel(a.path)).toString('base64')
+          const payload = JSON.stringify({
+            platform: 'ios',
+            runtimeVersion: rv,
+            version: process.env.EXPO_PUBLIC_APP_VERSION || null,
+            files: collect,
+          })
+          const req = https.request('https://api.root.mom/ota/api/update', {
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json',
+              'x-ota-token': process.env.OTA_TOKEN,
+              'content-length': Buffer.byteLength(payload),
+            },
+          }, (res) => {
+            let out = ''
+            res.on('data', (d) => (out += d))
+            res.on('end', () => {
+              console.log('OTA upload:', res.statusCode, out)
+              if (res.statusCode !== 200) process.exit(1)
+            })
+          })
+          req.on('error', (e) => { console.error(e); process.exit(1) })
+          req.write(payload)
+          req.end()
+          NODE

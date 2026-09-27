@@ -14,6 +14,11 @@
     }
   },
   "updates": {
-    "enabled": false
+    "enabled": true,
+    "url": "https://api.root.mom/ota/manifest",
+    "runtimeVersion": { "policy": "appVersion" },
+    "requestHeaders": {
+      "expo-channel-name": "production"
+    }
   }
 }
