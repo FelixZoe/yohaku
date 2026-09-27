@@ -121,53 +121,37 @@ jobs:
           EXPO_NO_TELEMETRY: 1
         run: npx expo export --platform ios --output-dir ota-dist
 
-      - name: Upload OTA update to self-hosted server
+      - name: Upload OTA update via server tunnel
         working-directory: apps/mobile
         env:
           OTA_TOKEN: ${{ secrets.OTA_TOKEN }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
         run: |
-          RV=$(npx expo config --type public --json 2>/dev/null | node -e "
-            let raw='';process.stdin.on('data',d=>raw+=d).on('end',()=>{
-              try { const c=JSON.parse(raw); console.log(c.runtimeVersion || '1.0.4'); }
-              catch { console.log('1.0.4'); }
-            })")
-          echo "runtimeVersion=$RV"
-          node - "$RV" <<'NODE'
+          RV=$(node -p "require('../mobile-overlay/expo.json').version || '1.0.4'")
+          echo "runtimeVersion=$RV (policy: appVersion)"
+          node - "$RV" <<'NODE' > /tmp/ota_payload.json
           const fs = require('fs')
           const path = require('path')
-          const https = require('https')
-          const [, rvArg] = process.argv
-          const rv = rvArg || '1.0.4'
+          const [, rv] = process.argv
           const dist = 'ota-dist'
           const meta = JSON.parse(fs.readFileSync(path.join(dist, 'metadata.json'), 'utf8'))
           const ios = meta.fileMetadata && meta.fileMetadata.ios
           if (!ios) throw new Error('metadata.json has no ios entry')
-          const rel = (p) => path.join(dist, p)
           const collect = {}
-          for (const b of ios.bundles || []) collect[b.path] = fs.readFileSync(rel(b.path)).toString('base64')
-          for (const a of ios.assets || []) collect[a.path] = fs.readFileSync(rel(a.path)).toString('base64')
-          const payload = JSON.stringify({
+          for (const b of ios.bundles || []) collect[b.path] = fs.readFileSync(path.join(dist, b.path)).toString('base64')
+          for (const a of ios.assets || []) collect[a.path] = fs.readFileSync(path.join(dist, a.path)).toString('base64')
+          process.stdout.write(JSON.stringify({
             platform: 'ios',
             runtimeVersion: rv,
-            version: process.env.EXPO_PUBLIC_APP_VERSION || null,
+            version: rv,
             files: collect,
-          })
-          const req = https.request('https://api.root.mom/ota/api/update', {
-            method: 'POST',
-            headers: {
-              'content-type': 'application/json',
-              'x-ota-token': process.env.OTA_TOKEN,
-              'content-length': Buffer.byteLength(payload),
-            },
-          }, (res) => {
-            let out = ''
-            res.on('data', (d) => (out += d))
-            res.on('end', () => {
-              console.log('OTA upload:', res.statusCode, out)
-              if (res.statusCode !== 200) process.exit(1)
-            })
-          })
-          req.on('error', (e) => { console.error(e); process.exit(1) })
-          req.write(payload)
-          req.end()
+          }))
           NODE
+          ls -lh /tmp/ota_payload.json
+          mkdir -p ~/.ssh
+          echo "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          scp -q -o StrictHostKeyChecking=accept-new -i ~/.ssh/deploy_key /tmp/ota_payload.json \
+            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/tmp/ota_payload.json"
+          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/deploy_key "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
+            "sudo curl -sf -X POST http://127.0.0.1:2334/api/update -H 'Content-Type: application/json' -H 'x-ota-token: $OTA_TOKEN' --data-binary @/tmp/ota_payload.json && rm -f /tmp/ota_payload.json && echo OTA_STORED"
