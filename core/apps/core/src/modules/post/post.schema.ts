@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import {
   zArrayUnique,
+  zCoerceDate,
   zCoerceInt,
   zEntityId,
   zLang,
@@ -13,7 +14,9 @@ import {
 import { MarkdownToLexicalMigrationDescriptorSchema } from '~/modules/content-migration/content-migration.schema'
 import { createPagerSchema } from '~/shared/dto/pager.dto'
 import {
+  PartialWriteBaseSchema,
   validateLexicalCreateContentPair,
+  validateLexicalPartialContentPair,
   WriteBaseSchema,
 } from '~/shared/schema'
 import { ImageArraySchema } from '~/shared/schema/image.schema'
@@ -48,11 +51,29 @@ export const PostSchema = PostBaseSchema.superRefine(
 /**
  * Partial post schema for PATCH operations
  * Override fields with .default() to prevent defaults from being applied during partial updates
+ *
+ * Self-host patch: upstream trimmed this to { categoryId, pinAt } when editing
+ * moved to the draft-publish flow, which strips `content`/`text`/`migration`
+ * and makes direct PATCH migration commits a silent no-op. Accept the
+ * editorial field set that `PostService.updateById` already understands.
  */
-export const PartialPostSchema = z.object({
+export const PartialPostSchema = PartialWriteBaseSchema.extend({
   categoryId: zEntityId.optional(),
+  summary: z
+    .preprocess((val) => (val === '' ? null : val), z.string().nullable())
+    .optional(),
+  copyright: z.boolean().optional(),
+  isPublished: z.boolean().optional(),
+  tags: zArrayUnique(z.string().min(1)).optional(),
   pinAt: zPinDate,
-})
+  pinOrder: z.preprocess(
+    (val) => (val === null ? undefined : val),
+    zCoerceInt.min(0).optional(),
+  ),
+  isPremium: z.boolean().optional(),
+  modifiedAt: zCoerceDate.optional(),
+  migration: MarkdownToLexicalMigrationDescriptorSchema.optional(),
+}).superRefine(validateLexicalPartialContentPair)
 
 export type PartialPostDto = z.infer<typeof PartialPostSchema>
 
