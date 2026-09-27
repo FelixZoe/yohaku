@@ -1,0 +1,152 @@
+name: Sync Upstream
+
+# 定时检查上游（mx-space/core + Innei-dev/Yohaku + OSS 子模块），
+# 有更新则 re-vendor 源码、重放 selfhost-patches/*.patch 并推送。
+# 推送使用 PAT（UPSTREAM_TOKEN），因此会自动触发构建/部署/OTA 工作流。
+# 补丁重放失败时不提交，改为开 issue 通知人工处理。
+
+on:
+  schedule:
+    - cron: '0 1 * * *' # 每天 09:00（北京时间）
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.UPSTREAM_TOKEN }}
+          fetch-depth: 0
+
+      - name: Resolve upstream revisions
+        id: upstream
+        env:
+          GH_TOKEN: ${{ secrets.UPSTREAM_TOKEN }}
+        run: |
+          CORE_SHA=$(curl -sf -H "Authorization: Bearer $GH_TOKEN" \
+            https://api.github.com/repos/mx-space/core/commits/master | python3 -c "import json,sys;print(json.load(sys.stdin)['sha'])")
+          YOHAKU_SHA=$(curl -sf -H "Authorization: Bearer $GH_TOKEN" \
+            https://api.github.com/repos/Innei-dev/Yohaku/commits/main | python3 -c "import json,sys;print(json.load(sys.stdin)['sha'])")
+          OSS_SHA=$(curl -sf -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/Innei-dev/Yohaku/contents/yohaku-oss?ref=$YOHAKU_SHA" \
+            | python3 -c "import json,sys;d=json.load(sys.stdin);print(d.get('sha',''))")
+          echo "core_sha=$CORE_SHA" >> "$GITHUB_OUTPUT"
+          echo "yohaku_sha=$YOHAKU_SHA" >> "$GITHUB_OUTPUT"
+          echo "oss_sha=$OSS_SHA" >> "$GITHUB_OUTPUT"
+          echo "core=$CORE_SHA yohaku=$YOHAKU_SHA oss=$OSS_SHA"
+
+      - name: Decide whether to sync
+        id: gate
+        run: |
+          CORE_KNOWN=$(node -p "try{require('./.upstream-state.json').core}catch(e){'none'}")
+          YOHAKU_KNOWN=$(node -p "try{require('./.upstream-state.json').yohaku}catch(e){'none'}")
+          OSS_KNOWN=$(node -p "try{require('./.upstream-state.json').oss}catch(e){'none'}")
+          if [ "$CORE_KNOWN" = "${{ steps.upstream.outputs.core_sha }}" ] \
+             && [ "$YOHAKU_KNOWN" = "${{ steps.upstream.outputs.yohaku_sha }}" ] \
+             && [ "$OSS_KNOWN" = "${{ steps.upstream.outputs.oss_sha }}" ]; then
+            echo "上游无更新，跳过"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Re-vendor upstream sources
+        if: steps.gate.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.UPSTREAM_TOKEN }}
+          CORE_SHA: ${{ steps.upstream.outputs.core_sha }}
+          YOHAKU_SHA: ${{ steps.upstream.outputs.yohaku_sha }}
+          OSS_SHA: ${{ steps.upstream.outputs.oss_sha }}
+        run: |
+          set -euo pipefail
+          curl -sfL -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/Innei-dev/Yohaku/tarball/$YOHAKU_SHA" -o /tmp/yohaku.tar.gz
+          curl -sfL "https://api.github.com/repos/mx-space/core/tarball/$CORE_SHA" -o /tmp/core.tar.gz
+          if [ -n "$OSS_SHA" ]; then
+            curl -sfL "https://api.github.com/repos/Innei/Yohaku/tarball/$OSS_SHA" -o /tmp/oss.tar.gz
+          fi
+
+          mkdir -p /tmp/yohaku-src && tar xzf /tmp/yohaku.tar.gz -C /tmp/yohaku-src --strip-components=1
+          mkdir -p /tmp/core-src && tar xzf /tmp/core.tar.gz -C /tmp/core-src --strip-components=1
+
+          # 清空仓库（保留自管理路径），再灌入上游内容
+          find . -mindepth 1 -maxdepth 1 \
+            ! -name .git ! -name .github ! -name selfhost-patches \
+            ! -name DEPLOY.md ! -name .upstream-state.json \
+            ! -name yohaku-oss ! -name core ! -name .dockerignore \
+            -exec rm -rf {} +
+          cp -a /tmp/yohaku-src/. ./
+          if [ -n "$OSS_SHA" ] && [ -f /tmp/oss.tar.gz ]; then
+            rm -rf yohaku-oss
+            mkdir -p yohaku-oss && tar xzf /tmp/oss.tar.gz -C yohaku-oss --strip-components=1
+          fi
+          rm -rf core && mkdir core && tar xzf /tmp/core.tar.gz -C core --strip-components=1
+
+          # 恢复自管理文件（上游 tarball 里的同名内容以我们为准）
+          git checkout HEAD -- apps/mobile-overlay DEPLOY.md .dockerignore .github 2>/dev/null || true
+
+      - name: Apply self-host patches
+        if: steps.gate.outputs.changed == 'true'
+        id: patches
+        run: |
+          set -e
+          ok=1
+          for PATCH in selfhost-patches/*.patch; do
+            if ! git apply --check "$PATCH" 2> /tmp/patch_err.txt; then
+              ok=0
+              echo "::error::$PATCH 无法应用：$(cat /tmp/patch_err.txt)"
+              FAILED_PATCHES="$FAILED_PATCHES\n- \`$PATCH\`：$(head -c 300 /tmp/patch_err.txt)"
+            fi
+          done
+          if [ "$ok" != "1" ]; then
+            echo "failed=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "上游同步时以下自托管补丁无法应用（上游代码变动导致冲突），请人工处理："
+              echo -e "$FAILED_PATCHES"
+              echo "补丁目录：selfhost-patches/，上游版本：core ${{ steps.upstream.outputs.core_sha }} / yohaku ${{ steps.upstream.outputs.yohaku_sha }} / oss ${{ steps.upstream.outputs.oss_sha }}"
+            } > /tmp/issue_body.md
+            gh issue create -R FelixZoe/yohaku \
+              --title "上游同步失败：补丁冲突需要人工处理" \
+              --body-file /tmp/issue_body.md
+            exit 1
+          fi
+          for PATCH in selfhost-patches/*.patch; do
+            git apply "$PATCH"
+          done
+        env:
+          GH_TOKEN: ${{ secrets.UPSTREAM_TOKEN }}
+
+      - name: Commit and push
+        if: steps.gate.outputs.changed == 'true' && steps.patches.outputs.failed != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.UPSTREAM_TOKEN }}
+          CORE_SHA: ${{ steps.upstream.outputs.core_sha }}
+          YOHAKU_SHA: ${{ steps.upstream.outputs.yohaku_sha }}
+          OSS_SHA: ${{ steps.upstream.outputs.oss_sha }}
+        run: |
+          set -euo pipefail
+          node -e "
+            const fs = require('fs')
+            fs.writeFileSync('.upstream-state.json', JSON.stringify({
+              core: process.env.CORE_SHA,
+              yohaku: process.env.YOHAKU_SHA,
+              oss: process.env.OSS_SHA,
+              syncedAt: new Date().toISOString(),
+            }, null, 2))
+          "
+          git config user.name "upstream-sync"
+          git config user.email "sync@users.noreply.github.com"
+          git add -A
+          git commit -m "chore(sync): upstream core@$CORE_SHA yohaku@$YOHAKU_SHA oss@$OSS_SHA"
+          git push "https://x-access-token:$GH_TOKEN@github.com/FelixZoe/yohaku.git" main
+          echo "已推送，构建/部署/OTA 工作流将自动触发"

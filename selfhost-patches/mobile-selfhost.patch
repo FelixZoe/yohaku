@@ -1,0 +1,117 @@
+diff --git a/yohaku-oss/apps/mobile/app.config.ts b/yohaku-oss/apps/mobile/app.config.ts
+index 191e2dd..9ef2cea 100644
+--- a/yohaku-oss/apps/mobile/app.config.ts
++++ b/yohaku-oss/apps/mobile/app.config.ts
+@@ -33,6 +33,7 @@ interface OverlayExpo {
+     url?: string
+     enabled?: boolean
+     fallbackToCacheTimeout?: number
++    runtimeVersion?: string | { policy: 'nativeVersion' | 'appVersion' | 'fingerprint' }
+     codeSigningCertificate?: string
+     codeSigningMetadata?: {
+       alg: string
+@@ -81,6 +82,7 @@ export function updatesForCurrentBuild(
+     fallbackToCacheTimeout: updates.fallbackToCacheTimeout,
+     requestHeaders: updates.requestHeaders,
+     url: updates.url,
++    ...(updates.runtimeVersion ? { runtimeVersion: updates.runtimeVersion } : {}),
+   }
+ }
+ 
+diff --git a/yohaku-oss/apps/mobile/src/screens/lists/list-shell.tsx b/yohaku-oss/apps/mobile/src/screens/lists/list-shell.tsx
+index f790324..c0ea461 100644
+--- a/yohaku-oss/apps/mobile/src/screens/lists/list-shell.tsx
++++ b/yohaku-oss/apps/mobile/src/screens/lists/list-shell.tsx
+@@ -72,7 +72,10 @@ export function ListShell({
+ 
+   return (
+     <EdgeEffectScrollView
+-      contentContainerStyle={styles.content}
++      contentContainerStyle={[
++        styles.content,
++        isEmpty ? styles.contentFill : null,
++      ]}
+       scrollEventThrottle={16}
+       style={[styles.screen, { backgroundColor: palette.surface.desk }]}
+       refreshControl={
+@@ -99,9 +102,11 @@ export function ListShell({
+         </View>
+       ) : null}
+       {isEmpty ? (
+-        <AppText style={styles.empty} variant="secondary">
+-          {status === 'syncing' ? t('syncing') : t('empty')}
+-        </AppText>
++        <View style={styles.emptyWrap}>
++          <AppText style={styles.empty} variant="secondary">
++            {status === 'syncing' ? t('syncing') : t('empty')}
++          </AppText>
++        </View>
+       ) : (
+         children
+       )}
+@@ -126,8 +131,15 @@ const styles = StyleSheet.create({
+     letterSpacing: 4,
+     textTransform: 'uppercase',
+   },
++  contentFill: {
++    flexGrow: 1,
++  },
++  emptyWrap: {
++    flex: 1,
++    justifyContent: 'center',
++    alignItems: 'center',
++  },
+   empty: {
+-    marginTop: 48,
+     textAlign: 'center',
+   },
+ })
+diff --git a/yohaku-oss/apps/mobile/src/screens/lists/notes-list.tsx b/yohaku-oss/apps/mobile/src/screens/lists/notes-list.tsx
+index 2f39e1e..a9bd9c9 100644
+--- a/yohaku-oss/apps/mobile/src/screens/lists/notes-list.tsx
++++ b/yohaku-oss/apps/mobile/src/screens/lists/notes-list.tsx
+@@ -4,8 +4,9 @@ import { useLiveQuery } from 'drizzle-orm/expo-sqlite'
+ import { Stack, useNavigation, useRouter } from 'expo-router'
+ import { useHeaderHeight } from 'expo-router/react-navigation'
+ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+-import { ActivityIndicator, StatusBar, StyleSheet, View } from 'react-native'
++import { ActivityIndicator, RefreshControl, StatusBar, StyleSheet, View } from 'react-native'
+ 
++import { EdgeEffectScrollView } from '@/components/navigation/edge-effect-scroll-view'
+ import { YohakuList } from '@/components/list/yohaku-list'
+ import { PaperNavigationControl } from '@/components/navigation/paper-navigation-control'
+ import { usePaperTabBarInset } from '@/components/navigation/paper-tab-bar-inset'
+@@ -253,9 +254,16 @@ export function NotesListScreen() {
+       {!usesPaperNavigationControls ? <StatusBar barStyle="default" /> : null}
+       <NotesTrailingToolbar />
+       {isEmpty ? (
+-        <AppText style={styles.empty} variant="secondary">
+-          {status === 'syncing' ? t('syncing') : t('empty')}
+-        </AppText>
++        <EdgeEffectScrollView
++          contentContainerStyle={styles.emptyWrap}
++          refreshControl={
++            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
++          }
++        >
++          <AppText style={styles.empty} variant="secondary">
++            {status === 'syncing' ? t('syncing') : t('empty')}
++          </AppText>
++        </EdgeEffectScrollView>
+       ) : (
+         <YohakuList
+           topEdgeEffectHidden
+@@ -332,8 +340,12 @@ const styles = StyleSheet.create({
+   screen: {
+     flex: 1,
+   },
++  emptyWrap: {
++    flexGrow: 1,
++    justifyContent: 'center',
++    alignItems: 'center',
++  },
+   empty: {
+-    marginTop: 48,
+     textAlign: 'center',
+   },
+   more: {
