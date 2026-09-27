@@ -132,7 +132,7 @@ jobs:
           node - "$RV" <<'NODE' > /tmp/ota_payload.json
           const fs = require('fs')
           const path = require('path')
-          const [, rv] = process.argv
+          const rv = process.argv[2] || '1.0.4'
           const dist = 'ota-dist'
           function walk(dir, prefix = '') {
             const out = []
