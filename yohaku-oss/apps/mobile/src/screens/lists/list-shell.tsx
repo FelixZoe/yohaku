@@ -72,7 +72,10 @@ export function ListShell({
 
   return (
     <EdgeEffectScrollView
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[
+        styles.content,
+        isEmpty ? styles.contentFill : null,
+      ]}
       scrollEventThrottle={16}
       style={[styles.screen, { backgroundColor: palette.surface.desk }]}
       refreshControl={
@@ -99,9 +102,11 @@ export function ListShell({
         </View>
       ) : null}
       {isEmpty ? (
-        <AppText style={styles.empty} variant="secondary">
-          {status === 'syncing' ? t('syncing') : t('empty')}
-        </AppText>
+        <View style={styles.emptyWrap}>
+          <AppText style={styles.empty} variant="secondary">
+            {status === 'syncing' ? t('syncing') : t('empty')}
+          </AppText>
+        </View>
       ) : (
         children
       )}
@@ -126,8 +131,15 @@ const styles = StyleSheet.create({
     letterSpacing: 4,
     textTransform: 'uppercase',
   },
+  contentFill: {
+    flexGrow: 1,
+  },
+  emptyWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   empty: {
-    marginTop: 48,
     textAlign: 'center',
   },
 })

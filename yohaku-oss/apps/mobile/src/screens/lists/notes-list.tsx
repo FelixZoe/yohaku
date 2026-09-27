@@ -4,8 +4,9 @@ import { useLiveQuery } from 'drizzle-orm/expo-sqlite'
 import { Stack, useNavigation, useRouter } from 'expo-router'
 import { useHeaderHeight } from 'expo-router/react-navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, StatusBar, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, RefreshControl, StatusBar, StyleSheet, View } from 'react-native'
 
+import { EdgeEffectScrollView } from '@/components/navigation/edge-effect-scroll-view'
 import { YohakuList } from '@/components/list/yohaku-list'
 import { PaperNavigationControl } from '@/components/navigation/paper-navigation-control'
 import { usePaperTabBarInset } from '@/components/navigation/paper-tab-bar-inset'
@@ -253,9 +254,16 @@ export function NotesListScreen() {
       {!usesPaperNavigationControls ? <StatusBar barStyle="default" /> : null}
       <NotesTrailingToolbar />
       {isEmpty ? (
-        <AppText style={styles.empty} variant="secondary">
-          {status === 'syncing' ? t('syncing') : t('empty')}
-        </AppText>
+        <EdgeEffectScrollView
+          contentContainerStyle={styles.emptyWrap}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          <AppText style={styles.empty} variant="secondary">
+            {status === 'syncing' ? t('syncing') : t('empty')}
+          </AppText>
+        </EdgeEffectScrollView>
       ) : (
         <YohakuList
           topEdgeEffectHidden
@@ -332,8 +340,12 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
   },
+  emptyWrap: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   empty: {
-    marginTop: 48,
     textAlign: 'center',
   },
   more: {
