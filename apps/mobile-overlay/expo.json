@@ -8,7 +8,10 @@
     "build": {
       "production": {
         "env": {
-          "EXPO_PUBLIC_API_URL": "https://api.root.mom/api/v3"
+          "EXPO_PUBLIC_API_URL": "https://api.root.mom/api/v3",
+          "EXPO_PUBLIC_PUSH_APP_ID": "yohaku",
+          "EXPO_PUBLIC_PUSH_RELAY_URL": "https://api.root.mom",
+          "EXPO_PUBLIC_APNS_ENV": "production"
         }
       }
     }
@@ -16,7 +19,9 @@
   "updates": {
     "enabled": true,
     "url": "https://api.root.mom/ota/manifest",
-    "runtimeVersion": { "policy": "appVersion" },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "requestHeaders": {
       "expo-channel-name": "production"
     }

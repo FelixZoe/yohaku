@@ -148,11 +148,22 @@ jobs:
             if (rel === 'metadata.json') continue
             collect[rel] = fs.readFileSync(path.join(dist, rel)).toString('base64')
           }
+          // Full resolved public config -> extra.expoClient. Without it,
+          // expo-constants reads a crippled manifest after the update is
+          // applied and the app can crash on launch.
+          const expoClient = JSON.parse(
+            require('child_process')
+              .execSync('npx expo config --type public --json 2>/dev/null', {
+                maxBuffer: 64 * 1024 * 1024,
+              })
+              .toString(),
+          )
           process.stdout.write(JSON.stringify({
             platform: 'ios',
             runtimeVersion: rv,
             version: rv,
             files: collect,
+            extra: { expoClient },
           }))
           NODE
           ls -lh /tmp/ota_payload.json
