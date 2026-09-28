@@ -112,7 +112,6 @@ export function resolveOverlayUpdates(
     url: updates.url,
     enabled: updates.enabled ?? true,
     fallbackToCacheTimeout: updates.fallbackToCacheTimeout ?? 0,
-    ...(updates.runtimeVersion ? { runtimeVersion: updates.runtimeVersion } : {}),
     ...(codeSigningCertificate
       ? {
           codeSigningCertificate,

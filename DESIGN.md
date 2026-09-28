@@ -192,7 +192,7 @@ CSS variables are the source of truth; JS writes them, CSS responds. Don't gate 
 | `WiderContainer` | `max-w-5xl` / `2xl:max-w-6xl` | `px-2` mobile / `px-0` desktop | Posts list, thinking |
 | `NormalContainer` | `max-w-3xl` / `2xl:max-w-4xl` | same | Note list, friends, timeline |
 | `Paper` | content-driven | `p-8` mobile / `p-[30px_45px]` desktop | Article body with stacked-paper effect |
-| `PaperWithEntrance` | same | same | Paper + anchored unfold entrance |
+| `PaperWithEntrance` | same | same | Paper + stack-shift entrance (next sheet slides forward, text rides with it) |
 
 All containers: `mx-auto`, top margin `mt-14` (mobile) / `lg:mt-[80px]` (desktop), `[&_header.prose]:mb-[80px]`.
 

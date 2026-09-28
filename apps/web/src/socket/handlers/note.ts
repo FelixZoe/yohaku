@@ -1,4 +1,8 @@
-import type { NoteModel, NoteResponseMeta } from '@mx-space/api-client'
+import type {
+  NoteModel,
+  NoteResponseMeta,
+  NoteWrappedPayload,
+} from '@mx-space/api-client'
 import * as React from 'react'
 
 import { buildNotePath } from '~/lib/note-route'
@@ -9,6 +13,7 @@ import {
   getCurrentNoteData,
   setCurrentNoteData,
 } from '~/providers/note/CurrentNoteDataProvider'
+import type { NoteWrappedPayloadWithMeta } from '~/queries/definition/note'
 import { withNotePayloadMeta } from '~/queries/definition/note'
 import { EventTypes } from '~/types/events'
 
@@ -49,21 +54,27 @@ export const noteUpdateHandler = createUpdateHandler<NoteModel>({
     })
   },
   refetchTranslated: async (current, targetLang) => {
-    const fresh = await apiClient.note.getNoteByNid(Number(current.nid), {
-      lang: targetLang,
-      prefer: 'lexical',
-    })
-    const wrapped = withNotePayloadMeta(
-      fresh as Parameters<typeof withNotePayloadMeta>[0],
-    )
-    setCurrentNoteData((draft) => {
-      draft.data = wrapped.data
-      draft.meta = wrapped.meta as NoteResponseMeta | undefined
-      draft.next = wrapped.next
-      draft.prev = wrapped.prev
-    })
+    applyNotePayload(await fetchNoteInLang(current.nid, targetLang))
   },
 })
+
+export const fetchNoteInLang = async (nid: number, lang: string) => {
+  const fresh = await apiClient.note.proxy
+    .nid(nid.toString())
+    .get<NoteWrappedPayload>({
+      params: { lang, prefer: 'lexical', t: Date.now() },
+    })
+  return withNotePayloadMeta(fresh as Parameters<typeof withNotePayloadMeta>[0])
+}
+
+export const applyNotePayload = (wrapped: NoteWrappedPayloadWithMeta) => {
+  setCurrentNoteData((draft) => {
+    draft.data = wrapped.data
+    draft.meta = wrapped.meta as NoteResponseMeta | undefined
+    draft.next = wrapped.next
+    draft.prev = wrapped.prev
+  })
+}
 
 export const noteDeleteHandler: EventHandler = (data, { router }) => {
   const note = data as NoteModel

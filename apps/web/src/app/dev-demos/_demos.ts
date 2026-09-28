@@ -106,6 +106,13 @@ export const devDemos: DevDemo[] = [
   },
   {
     group: 'ambient',
+    href: '/dev-demos/paper-entrance',
+    name: 'Paper entrance',
+    meta: '纸张出场三案并排 · 现状 unfold / 墨迹套准 / 纸堆换页 · 可慢放',
+    tags: ['paper', 'motion', 'enter', 'stack'],
+  },
+  {
+    group: 'ambient',
     href: '/dev-demos/photo-viewer',
     name: 'Photo viewer',
     meta: '缩放 · 手势 · ZoomGroup 联动',

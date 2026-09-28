@@ -118,6 +118,7 @@ export const Paper: Component<{
 
       {/* Content layer — always crisp, no filter */}
       <div
+        data-paper-content
         className={clsxm(
           'relative p-[2rem_1rem] md:p-[30px_45px]',
           contentClassName,

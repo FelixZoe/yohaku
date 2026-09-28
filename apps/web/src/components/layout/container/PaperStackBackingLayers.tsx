@@ -21,8 +21,8 @@ type PaperStackBackLayer = {
 const BACKING_LAYER_HEIGHT = 820
 
 /**
- * Backing sheets own their final stack transform. `usePaperEntrance` temporarily
- * animates each marked layer from a flush position on client-side entrances.
+ * Backing sheets own their final stack transform. `usePaperEntrance` reads it
+ * inline and shifts each marked layer in from the pose one sheet deeper.
  */
 export function PaperStackBackingLayers({
   layers,

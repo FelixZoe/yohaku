@@ -1,3 +1,34 @@
+## [14.14.5](https://github.com/mx-space/core/compare/v14.14.4...v14.14.5) (2026-09-27)
+
+
+### Bug Fixes
+
+* **aggregate:** translate category names on top and latest ([c8cb80b](https://github.com/mx-space/core/commit/c8cb80bc9a13c0ca0081ae5ea47a4458a147d82c))
+
+## [14.14.4](https://github.com/mx-space/core/compare/v14.14.3...v14.14.4) (2026-09-26)
+
+
+### Performance Improvements
+
+* **aggregate:** trim the dashboard payload to what the home renders ([da2fde9](https://github.com/mx-space/core/commit/da2fde916ed8704865c18c6940d8cee54e21bb44))
+
+## [14.14.3](https://github.com/mx-space/core/compare/v14.14.2...v14.14.3) (2026-09-26)
+
+
+### Features
+
+* **aggregate:** serve the dashboard home from one endpoint ([689dcd5](https://github.com/mx-space/core/commit/689dcd5a5953dfcd0c71af16a04de4134e4b1d4a))
+
+## [14.14.2](https://github.com/mx-space/core/compare/v14.14.1...v14.14.2) (2026-09-26)
+
+
+### Bug Fixes
+
+* **migration:** stop superseded branch versions from raising the waterline ([9d34f8c](https://github.com/mx-space/core/commit/9d34f8c7f764f3201301b8a0be19f44b3745e0b3))
+
+## [14.14.1](https://github.com/mx-space/core/compare/v14.14.0...v14.14.1) (2026-09-26)
+
+
 # [14.14.0](https://github.com/mx-space/core/compare/v14.13.0...v14.14.0) (2026-09-26)
 
 

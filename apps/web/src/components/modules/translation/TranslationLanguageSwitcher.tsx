@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import type { FC } from 'react'
 import { useCallback, useMemo } from 'react'
 
+import { swapPaperContentAcrossRoute } from '~/components/layout/container/paper-swap'
 import { LanguageSelector } from '~/components/ui/language-selector'
 import { locales } from '~/i18n/config'
 import { usePathname, useRouter } from '~/i18n/navigation'
@@ -76,7 +77,11 @@ export const TranslationLanguageSwitcher: FC<
 
   const handleLanguageChange = useCallback(
     (lang: string) => {
-      router.push(pathname, { locale: lang as (typeof locales)[number] })
+      const locale = lang as (typeof locales)[number]
+      const swapped = swapPaperContentAcrossRoute(() =>
+        router.push(pathname, { locale, scroll: false }),
+      )
+      if (!swapped) router.push(pathname, { locale })
     },
     [pathname, router],
   )

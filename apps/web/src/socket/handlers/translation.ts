@@ -1,39 +1,49 @@
-import {
-  getTranslation,
-  setTranslation,
-  setTranslationPending,
-} from '~/atoms/translation'
+import { swapPaperContentInPlace } from '~/components/layout/container/paper-swap'
 import { DOMCustomEvents } from '~/constants/event'
+import { articleMetaOf } from '~/lib/api/article-meta'
 import { toast } from '~/lib/toast'
+import { getCurrentNoteData } from '~/providers/note/CurrentNoteDataProvider'
 import { EventTypes } from '~/types/events'
 import type { AITranslation } from '~/types/translation'
 
+import { applyNotePayload, fetchNoteInLang } from './note'
 import type { EventHandler } from './types'
 import { trackerRealtimeEvent } from './types'
+import { shouldSwapInTranslation } from './util-update'
 
-export const translationHandler: EventHandler = (data) => {
-  const translation = data as AITranslation
-  const currentTranslation = getTranslation()
+const createTranslationHandler =
+  (isUpdate: boolean): EventHandler =>
+  async (data) => {
+    const translation = data as AITranslation
+    const current = getCurrentNoteData()
+    if (!current || current.data.id !== translation.refId) return
 
-  if (
-    currentTranslation &&
-    currentTranslation.refId === translation.refId &&
-    currentTranslation.lang === translation.lang
-  ) {
-    setTranslation(translation)
-    setTranslationPending(false)
-    toast.info('译文已更。')
+    const view = articleMetaOf(current.meta).translation
+    const shouldSwap = shouldSwapInTranslation({
+      translationLang: translation.lang,
+      pageLocale: document.documentElement.lang,
+      viewTranslatedLang: view?.isTranslated ? (view.targetLang ?? null) : null,
+    })
+    if (!shouldSwap) return
+
+    let fresh: Awaited<ReturnType<typeof fetchNoteInLang>>
+    try {
+      fresh = await fetchNoteInLang(current.data.nid, translation.lang)
+    } catch {
+      return
+    }
+    if (getCurrentNoteData()?.data.id !== translation.refId) return
+
+    swapPaperContentInPlace(() => applyNotePayload(fresh))
+    if (isUpdate) toast.info('译文已更。')
     trackerRealtimeEvent('Translation Update')
 
-    if (currentTranslation.text !== translation.text) {
-      setTimeout(() => {
-        document.dispatchEvent(new CustomEvent(DOMCustomEvents.RefreshToc))
-      }, 100)
-    }
+    setTimeout(() => {
+      document.dispatchEvent(new CustomEvent(DOMCustomEvents.RefreshToc))
+    }, 100)
   }
-}
 
 export const translationHandlers = {
-  [EventTypes.TRANSLATION_CREATE]: translationHandler,
-  [EventTypes.TRANSLATION_UPDATE]: translationHandler,
+  [EventTypes.TRANSLATION_CREATE]: createTranslationHandler(false),
+  [EventTypes.TRANSLATION_UPDATE]: createTranslationHandler(true),
 } as const

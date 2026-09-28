@@ -3,6 +3,7 @@ import type { NoteResponseMeta, PostResponseMeta } from '@mx-space/api-client'
 import { getTranslation, setTranslationPending } from '~/atoms/translation'
 import { DOMCustomEvents } from '~/constants/event'
 import { articleMetaOf } from '~/lib/api/article-meta'
+import { toAppLocale } from '~/lib/content-locale'
 import { toast } from '~/lib/toast'
 
 import type { EventHandler } from './types'
@@ -69,6 +70,20 @@ export const isViewTranslated = <T>(
     return { targetLang: translation.targetLang }
   }
   return null
+}
+
+export const shouldSwapInTranslation = ({
+  translationLang,
+  pageLocale,
+  viewTranslatedLang,
+}: {
+  translationLang: string
+  pageLocale: string
+  viewTranslatedLang: string | null
+}) => {
+  const target = toAppLocale(translationLang)
+  if (!target || target !== toAppLocale(pageLocale)) return false
+  return !viewTranslatedLang || toAppLocale(viewTranslatedLang) === target
 }
 
 export const shouldApplyLocalizedUpdate = (

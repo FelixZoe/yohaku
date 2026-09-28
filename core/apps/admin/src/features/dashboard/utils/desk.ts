@@ -1,6 +1,5 @@
-import type { DeskScheduledNote } from '~/api/aggregate'
+import type { DeskDraft, DeskScheduledNote } from '~/api/aggregate'
 import { getEditPathForDraft } from '~/features/drafts/utils/draft-edit-path'
-import type { DraftModel } from '~/models/draft'
 import { DraftRefType } from '~/models/draft'
 
 import { deskWritingItemLimit } from '../constants'
@@ -9,7 +8,9 @@ export type DeskWritingStatus = 'modified' | 'scheduled' | 'unpublished'
 
 export interface DeskWritingItem {
   branchCount: number
+  chars: number
   draftId: string | null
+  excerpt: string
   id: string
   refType: DraftRefType
   status: DeskWritingStatus
@@ -19,7 +20,7 @@ export interface DeskWritingItem {
 }
 
 export function buildWritingItems(
-  drafts: DraftModel[],
+  drafts: DeskDraft[],
   scheduledNotes: DeskScheduledNote[],
 ): DeskWritingItem[] {
   const byDocument = new Map<string, DeskWritingItem>()
@@ -33,7 +34,9 @@ export function buildWritingItems(
     }
     byDocument.set(draft.documentId, {
       branchCount: 1,
+      chars: draft.headRevision.chars,
       draftId: draft.id,
+      excerpt: draft.headRevision.excerpt,
       id: draft.documentId,
       refType: draft.document.refType,
       status: draft.document.refId ? 'modified' : 'unpublished',
@@ -44,7 +47,9 @@ export function buildWritingItems(
   }
   const scheduledItems = scheduledNotes.map<DeskWritingItem>((note) => ({
     branchCount: 0,
+    chars: 0,
     draftId: null,
+    excerpt: '',
     id: note.id,
     refType: DraftRefType.Note,
     status: 'scheduled',

@@ -6,6 +6,7 @@ import {
   readPayloadLang,
   readViewLang,
   shouldApplyLocalizedUpdate,
+  shouldSwapInTranslation,
 } from './util-update'
 
 const buildPostMeta = (
@@ -123,5 +124,54 @@ describe('isViewTranslated', () => {
       }),
     ).toBeNull()
     expect(isViewTranslated(null)).toBeNull()
+  })
+})
+
+describe('shouldSwapInTranslation', () => {
+  it('swaps in a new translation for the locale the reader is on', () => {
+    expect(
+      shouldSwapInTranslation({
+        translationLang: 'en',
+        pageLocale: 'en',
+        viewTranslatedLang: null,
+      }),
+    ).toBe(true)
+  })
+
+  it('swaps an updated translation already on screen', () => {
+    expect(
+      shouldSwapInTranslation({
+        translationLang: 'ja',
+        pageLocale: 'ja',
+        viewTranslatedLang: 'ja',
+      }),
+    ).toBe(true)
+  })
+
+  it('ignores translations for other locales', () => {
+    expect(
+      shouldSwapInTranslation({
+        translationLang: 'ja',
+        pageLocale: 'en',
+        viewTranslatedLang: null,
+      }),
+    ).toBe(false)
+    expect(
+      shouldSwapInTranslation({
+        translationLang: 'en',
+        pageLocale: 'en',
+        viewTranslatedLang: 'ja',
+      }),
+    ).toBe(false)
+  })
+
+  it('normalizes locale variants', () => {
+    expect(
+      shouldSwapInTranslation({
+        translationLang: 'zh-Hant',
+        pageLocale: 'zh-TW',
+        viewTranslatedLang: null,
+      }),
+    ).toBe(true)
   })
 })

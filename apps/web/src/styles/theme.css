@@ -119,3 +119,34 @@ video.fit {
 @view-transition {
   navigation: auto;
 }
+
+@property --paper-swap {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+::view-transition-group(paper-content) {
+  animation-duration: 520ms;
+}
+
+::view-transition-old(paper-content),
+::view-transition-new(paper-content) {
+  animation: none;
+}
+
+::view-transition-new(paper-content) {
+  mask-image: linear-gradient(
+    to bottom,
+    #000 calc(var(--paper-swap) - 48px),
+    transparent var(--paper-swap)
+  );
+}
+
+::view-transition-old(paper-content) {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent calc(var(--paper-swap) - 48px),
+    #000 var(--paper-swap)
+  );
+}
