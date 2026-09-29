@@ -4,13 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths-ignore:
-      - 'apps/mobile/**'
-      - 'apps/mobile-overlay/**'
-      - 'yohaku-oss/**'
-      - 'core/**'
-      - 'selfhost-patches/**'
-      - 'DEPLOY.md'
+    # 不设 paths 过滤：上游同步提交会同时触及忽略和非忽略路径，
+    # paths-ignore 的整体跳过语义会导致同步后的 web 漏部署。
 
 permissions:
   contents: read
