@@ -8,10 +8,7 @@
     "build": {
       "production": {
         "env": {
-          "EXPO_PUBLIC_API_URL": "https://api.root.mom/api/v3",
-          "EXPO_PUBLIC_PUSH_APP_ID": "yohaku",
-          "EXPO_PUBLIC_PUSH_RELAY_URL": "https://api.root.mom",
-          "EXPO_PUBLIC_APNS_ENV": "production"
+          "EXPO_PUBLIC_API_URL": "https://api.root.mom/api/v3"
         }
       }
     }
