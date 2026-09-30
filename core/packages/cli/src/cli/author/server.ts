@@ -6,16 +6,11 @@ import {
 } from 'node:http'
 import { extname, join, normalize, relative, sep } from 'node:path'
 
-import type { LexicalState } from '../../services/Lexical'
-import { annotateDiffNotes, resolveDiffNotes } from './diff-note'
-import {
-  applyAuthorBody,
-  type AuthorDocument,
-  type AuthorFs,
-  currentAuthorBody,
-  persistAuthorSave,
-  setAuthorBaseline,
-} from './document'
+import type { OpId } from 'loro-crdt'
+
+import { parseEnvelope } from '../../domain/envelope'
+import type { AuthorDocument } from './document'
+import type { AuthorSelection, AuthorSession } from './session'
 
 export interface AuthorCodec {
   readonly litexmlToLexical: (xml: string) => unknown
@@ -24,23 +19,18 @@ export interface AuthorCodec {
 
 export interface AuthorServerOptions {
   readonly doc: AuthorDocument
+  readonly session: AuthorSession
   readonly spaDir: string
-  readonly codec: AuthorCodec
-  readonly fs: AuthorFs
   readonly port: number
-  readonly base?: LexicalState
   readonly log?: (line: string) => void
 }
 
 export interface AuthorServer {
   readonly port: number
   readonly close: () => Promise<void>
-  readonly pushRevision: (fileText: string) => void
 }
 
 interface LiveState {
-  revision: number
-  lastRemoteText: string | null
   client: ServerResponse | null
 }
 
@@ -51,20 +41,34 @@ const MIME: Record<string, string> = {
   '.json': 'application/json; charset=utf-8',
   '.map': 'application/json; charset=utf-8',
   '.svg': 'image/svg+xml',
+  '.wasm': 'application/wasm',
   '.woff2': 'font/woff2',
 }
 
 export async function startAuthorServer(
   options: AuthorServerOptions,
 ): Promise<AuthorServer> {
-  const { doc, spaDir, codec, fs, base, log = () => undefined } = options
-  const live: LiveState = { revision: 0, lastRemoteText: null, client: null }
+  const { log = () => undefined } = options
+  const live: LiveState = { client: null }
+  const unsubscribe = options.session.subscribe((event) => {
+    if (!live.client) return
+    if (event.type === 'update') {
+      sendEvent(live.client, 'update', {
+        bytes: Buffer.from(event.bytes).toString('base64'),
+      })
+    } else if (event.type === 'cursor') {
+      sendEvent(live.client, 'cursor', { cursor: event.cursor })
+    } else {
+      sendEvent(live.client, 'status', { invalid: event.invalid })
+    }
+  })
   const server = createServer((req, res) => {
-    void handle(
-      req,
-      res,
-      { doc, spaDir, codec, fs, base, log, port: listeningPort },
-      live,
+    handle(req, res, { ...options, log, port: listeningPort }, live).catch(
+      (err: unknown) => {
+        log(`request failed: ${messageOf(err)}`)
+        if (res.headersSent) res.end()
+        else json(res, 500, { error: { message: messageOf(err) } })
+      },
     )
   })
 
@@ -82,36 +86,66 @@ export async function startAuthorServer(
     port: listeningPort,
     close: () =>
       new Promise((resolve, reject) => {
+        unsubscribe()
         live.client?.end()
         server.close((err) => (err ? reject(err) : resolve()))
       }),
-    pushRevision: (fileText) => {
-      if (fileText === doc.lastFileText || fileText === live.lastRemoteText) {
-        return
-      }
-      live.lastRemoteText = fileText
-      let lexical: unknown
-      try {
-        lexical = codec.litexmlToLexical(
-          currentAuthorBody({ ...doc, lastFileText: fileText }),
-        )
-      } catch (err) {
-        log(`revision rejected: ${messageOf(err)}`)
-        return
-      }
-      doc.lastFileText = fileText
-      live.revision += 1
-      if (!live.client) {
-        log(`revision ${live.revision} pending (no editor connected)`)
-        return
-      }
-      sendEvent(live.client, 'revision', { revision: live.revision, lexical })
-    },
   }
 }
 
 const sendEvent = (res: ServerResponse, event: string, data: unknown) => {
   res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
+}
+
+const parseOpId = (value: unknown): OpId => {
+  const { peer, counter } = (value ?? {}) as Record<string, unknown>
+  const count = Number(counter)
+  if (
+    typeof peer !== 'string' ||
+    !/^\d+$/.test(peer) ||
+    !Number.isInteger(count)
+  ) {
+    throw new Error('expected { peer, counter }')
+  }
+  return { peer: peer as OpId['peer'], counter: count }
+}
+
+const titleOf = (doc: AuthorDocument): string | null => {
+  if (doc.kind !== 'envelope') return null
+  try {
+    const { title } = parseEnvelope(
+      doc.lastFileText,
+      doc.variant === 'note' ? 'note' : 'post',
+    ).meta
+    return typeof title === 'string' && title.trim() ? title.trim() : null
+  } catch {
+    return null
+  }
+}
+
+const parseFrontiers = (value: unknown): OpId[] => {
+  if (!Array.isArray(value)) throw new Error('expected [{ peer, counter }]')
+  return value.map(parseOpId)
+}
+
+const parseSelection = (value: unknown): AuthorSelection => {
+  const { collapsed, text, blocks } = (value ?? {}) as Record<string, unknown>
+  if (
+    typeof collapsed !== 'boolean' ||
+    typeof text !== 'string' ||
+    !Array.isArray(blocks) ||
+    !blocks.every(
+      (block) =>
+        typeof block?.id === 'string' && typeof block?.text === 'string',
+    )
+  ) {
+    throw new Error('expected { collapsed, text, blocks: [{ id, text }] }')
+  }
+  return {
+    collapsed,
+    text,
+    blocks: blocks.map(({ id, text }) => ({ id, text })),
+  }
 }
 
 const handle = async (
@@ -132,93 +166,92 @@ const handle = async (
   }
 
   const url = new URL(req.url ?? '/', `http://127.0.0.1:${ctx.port}`)
-  if (url.pathname === '/api/document' && req.method === 'GET') {
-    try {
-      const current = ctx.codec.litexmlToLexical(currentAuthorBody(ctx.doc))
-      const lexical =
-        ctx.base && !ctx.doc.saved
-          ? annotateDiffNotes(ctx.base, current as LexicalState)
-          : current
-      json(res, 200, {
-        lexical,
-        variant: ctx.doc.variant,
-        fileName: ctx.doc.filePath.split(/[/\\]/).pop(),
-        revision: live.revision,
-      })
-    } catch (err) {
-      json(res, 400, { error: { message: messageOf(err) } })
+  const route = `${req.method} ${url.pathname}`
+  try {
+    switch (route) {
+      case 'GET /api/title': {
+        json(res, 200, { title: titleOf(ctx.doc) })
+        return
+      }
+      case 'GET /api/document': {
+        json(res, 200, {
+          snapshot: Buffer.from(ctx.session.snapshot()).toString('base64'),
+          variant: ctx.doc.variant,
+          fileName: ctx.doc.filePath.split(/[/\\]/).pop(),
+          invalid: ctx.session.invalid(),
+          lineage: ctx.session.lineage(),
+        })
+        return
+      }
+      case 'POST /api/update': {
+        ctx.session.importUpdate(new Uint8Array(await readBuffer(req)))
+        json(res, 200, { ok: true })
+        return
+      }
+      case 'POST /api/flush': {
+        await ctx.session.flush()
+        ctx.log(`saved ${ctx.doc.filePath}`)
+        json(res, 200, { ok: true, diffPath: `${ctx.doc.filePath}.diff` })
+        return
+      }
+      case 'POST /api/selection': {
+        await ctx.session.writeSelection(
+          parseSelection(JSON.parse((await readBuffer(req)).toString('utf8'))),
+        )
+        json(res, 200, { ok: true })
+        return
+      }
+      case 'GET /api/history': {
+        json(res, 200, { entries: ctx.session.history() })
+        return
+      }
+      case 'GET /api/history/preview': {
+        const id = parseOpId({
+          peer: url.searchParams.get('peer'),
+          counter: url.searchParams.get('counter'),
+        })
+        const before = url.searchParams.get('before')
+        json(res, 200, {
+          lexical: ctx.session.preview([id]),
+          before:
+            before === null
+              ? null
+              : ctx.session.preview(parseFrontiers(JSON.parse(before))),
+        })
+        return
+      }
+      case 'POST /api/history/restore': {
+        const id = parseOpId(
+          JSON.parse((await readBuffer(req)).toString('utf8')),
+        )
+        await ctx.session.restore(id)
+        ctx.log(`restored ${id.counter}@${id.peer}`)
+        json(res, 200, { ok: true })
+        return
+      }
+      case 'GET /api/events': {
+        live.client?.end()
+        res.writeHead(200, {
+          'content-type': 'text/event-stream',
+          'cache-control': 'no-cache',
+          connection: 'keep-alive',
+        })
+        res.write(': connected\n\n')
+        const cursor = ctx.session.cursor()
+        if (cursor) sendEvent(res, 'cursor', { cursor })
+        live.client = res
+        req.on('close', () => {
+          if (live.client === res) live.client = null
+        })
+        return
+      }
     }
-    return
-  }
-
-  if (url.pathname === '/api/baseline' && req.method === 'PUT') {
-    try {
-      const raw = await readBody(req)
-      const parsed = JSON.parse(raw) as { lexical?: unknown }
-      const body = ctx.codec.lexicalToLitexml(
-        resolveDiffNotes(parsed.lexical, 'original'),
-      )
-      json(res, 200, { ok: true, applied: setAuthorBaseline(ctx.doc, body) })
-    } catch (err) {
-      json(res, 400, { error: { message: messageOf(err) } })
-    }
-    return
-  }
-
-  if (url.pathname === '/api/document' && req.method === 'PUT') {
-    try {
-      const raw = await readBody(req)
-      const parsed = JSON.parse(raw) as { lexical?: unknown }
-      const body = ctx.codec.lexicalToLitexml(
-        resolveDiffNotes(parsed.lexical, 'proposed'),
-      )
-      const applied = applyAuthorBody(ctx.doc, body)
-      await persistAuthorSave(ctx.doc, applied.fileText, applied.diff, ctx.fs)
-      ctx.log(`saved ${ctx.doc.filePath}`)
-      json(res, 200, { ok: true, diffPath: applied.diffPath })
-    } catch (err) {
-      json(res, 400, { error: { message: messageOf(err) } })
-    }
-    return
-  }
-
-  if (url.pathname === '/api/events' && req.method === 'GET') {
-    if (live.client) {
-      json(res, 409, { error: { message: 'another editor is connected' } })
+    if (req.method === 'GET' || req.method === 'HEAD') {
+      serveSpa(res, ctx.spaDir, url.pathname, req.method === 'HEAD')
       return
     }
-    res.writeHead(200, {
-      'content-type': 'text/event-stream',
-      'cache-control': 'no-cache',
-      connection: 'keep-alive',
-    })
-    res.write(': connected\n\n')
-    live.client = res
-    req.on('close', () => {
-      if (live.client === res) live.client = null
-    })
-    return
-  }
-
-  if (url.pathname === '/api/ack' && req.method === 'POST') {
-    try {
-      const raw = await readBody(req)
-      const parsed = JSON.parse(raw) as {
-        revision?: number
-        conflicts?: number
-      }
-      ctx.log(
-        `revision ${parsed.revision ?? '?'} applied, ${parsed.conflicts ?? 0} conflicts`,
-      )
-      json(res, 200, { ok: true })
-    } catch (err) {
-      json(res, 400, { error: { message: messageOf(err) } })
-    }
-    return
-  }
-
-  if (req.method === 'GET' || req.method === 'HEAD') {
-    serveSpa(res, ctx.spaDir, url.pathname, req.method === 'HEAD')
+  } catch (err) {
+    json(res, 400, { error: { message: messageOf(err) } })
     return
   }
 
@@ -256,11 +289,11 @@ const messageOf = (err: unknown): string => {
   return String(err)
 }
 
-const readBody = (req: IncomingMessage): Promise<string> =>
+const readBuffer = (req: IncomingMessage): Promise<Buffer> =>
   new Promise((resolve, reject) => {
     const chunks: Buffer[] = []
     req.on('data', (chunk: Buffer) => chunks.push(chunk))
-    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
+    req.on('end', () => resolve(Buffer.concat(chunks)))
     req.on('error', reject)
   })
 
