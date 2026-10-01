@@ -6,11 +6,16 @@ export interface InlineRun {
   highlight?: boolean
   href?: string
   italic?: boolean
+  lineBreak?: boolean
   math?: boolean
+  mention?: boolean
+  ruby?: string
+  rubyId?: string
   spoiler?: boolean
   strike?: boolean
   sub?: boolean
   sup?: boolean
+  tag?: boolean
   text: string
   underline?: boolean
 }
@@ -32,9 +37,10 @@ export interface RichTextBlock {
 
 export interface RichTextHighlight {
   blockId: string
+  count?: number
   end: number
   id: string
-  kind: 'active' | 'block' | 'comment'
+  kind: 'active' | 'block' | 'block-active' | 'comment'
   start: number
 }
 

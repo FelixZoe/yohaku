@@ -97,8 +97,84 @@ describe('native anchors', () => {
       ],
     })
     expect(highlights).toEqual([
-      { id: 'c1', blockId: 'l1#1', start: 0, end: 3, kind: 'comment' },
+      {
+        id: 'c1',
+        blockId: 'l1#1',
+        start: 0,
+        end: 3,
+        kind: 'comment',
+        count: 1,
+      },
       { id: 'tts', blockId: 'p1', start: 0, end: 11, kind: 'block' },
     ])
+  })
+
+  const rangeAnchor = {
+    mode: 'range' as const,
+    blockId: 'p1',
+    blockType: 'paragraph',
+    blockFingerprint: computeBlockFingerprint('hello world'),
+    snapshotText: 'hello world',
+    quote: 'hello',
+    prefix: '',
+    suffix: ' world',
+    startOffset: 0,
+    endOffset: 5,
+  }
+
+  it('merges comments on the same range into one counted mark', () => {
+    const highlights = buildHighlights({
+      activeAnchor: null,
+      blockComments: [],
+      blockInfos,
+      highlightBlockId: null,
+      map,
+      rangeComments: [
+        { id: 'c1', anchor: rangeAnchor },
+        { id: 'c2', anchor: rangeAnchor },
+      ],
+    })
+    expect(highlights).toEqual([
+      { id: 'c1', blockId: 'p1', start: 0, end: 5, kind: 'comment', count: 2 },
+    ])
+  })
+
+  it('marks an active paragraph comment as a block wash', () => {
+    const highlights = buildHighlights({
+      activeAnchor: {
+        mode: 'block',
+        blockId: 'p1',
+        blockType: 'paragraph',
+        blockFingerprint: computeBlockFingerprint('hello world'),
+        snapshotText: 'hello world',
+      },
+      blockComments: [],
+      blockInfos,
+      highlightBlockId: null,
+      map,
+      rangeComments: [],
+    })
+    expect(highlights.map((h) => h.kind)).toEqual(['block-active'])
+  })
+})
+
+describe('paragraph split around a block image', () => {
+  it('indexes the text after the image as a continuation of the paragraph', () => {
+    const map = indexNativeBlocks([
+      {
+        kind: 'text',
+        blocks: [{ id: 'p1', role: 'paragraph', runs: [{ text: 'before' }] }],
+      },
+      {
+        kind: 'text',
+        blocks: [{ id: 'p1~2', role: 'paragraph', runs: [{ text: 'after' }] }],
+      },
+    ])
+    expect(map.get('p1~2')).toEqual({
+      baseId: 'p1',
+      id: 'p1~2',
+      length: 5,
+      prefixLength: 6,
+    })
   })
 })

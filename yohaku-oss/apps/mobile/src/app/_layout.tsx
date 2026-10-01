@@ -133,6 +133,16 @@ export default function RootLayout() {
             <Stack screenOptions={getStackScreenOptions(palette.surface.desk)}>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen
+                name="reader"
+                options={{
+                  headerTransparent: false,
+                  headerStyle: { backgroundColor: palette.surface.desk },
+                  presentation: 'formSheet',
+                  sheetAllowedDetents: [1],
+                  sheetGrabberVisible: true,
+                }}
+              />
+              <Stack.Screen
                 name="search"
                 options={{
                   animation: 'fade',
@@ -199,6 +209,16 @@ export default function RootLayout() {
                   presentation: 'formSheet',
                   sheetAllowedDetents: [0.72, 1],
                   sheetGrabberVisible: true,
+                }}
+              />
+              <Stack.Screen
+                name="selection-comment"
+                options={{
+                  headerShown: false,
+                  presentation: 'formSheet',
+                  sheetAllowedDetents: [0.5, 1],
+                  sheetGrabberVisible: true,
+                  sheetLargestUndimmedDetentIndex: 0,
                 }}
               />
               <Stack.Screen
