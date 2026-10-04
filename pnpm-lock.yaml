@@ -221,7 +221,7 @@ patchedDependencies:
   '@innei/markdown-to-jsx-yet': 6c431e09c82ed9a259d3726baab0f8a83f0b50a9e498e3433a0d9d572bd87ae9
   expo-image@57.0.2: 8739abd05ab425830d00487dac11600c8b7d37b8c96cb41ab0debc54a235b194
   expo-router@57.0.24: 1d3030293745490d213a8e4f3d1f46b706373b34270b0a221966e38bf6a302e7
-  react-native-enriched-markdown@1.0.2: 6fe44c98a1d2bd9b1c95fb01204e2f817ffe190d635e191f6163b0aa5a0e8536
+  react-native-enriched-markdown@1.0.2: d3db73a1d0df6c2e88a6391395823c2e19378f2d96fd05f56bfc7f63cae204cf
   react-native-screens@4.26.2: 6c8045b4274d914df3de68d5a2669ca9c53bbe828a5ce3b8fb6adf93c478bc1a
   slot-text@0.3.4: 8cf214d0000f11e82ca12a3ed7c45782df2d23a1d61843efc021c27392a4ea92
 
@@ -429,7 +429,7 @@ importers:
         version: 0.86.3(97215b93e9a61066f5f9e2c38407072a)
       react-native-enriched-markdown:
         specifier: ^1.0.2
-        version: 1.0.2(patch_hash=6fe44c98a1d2bd9b1c95fb01204e2f817ffe190d635e191f6163b0aa5a0e8536)(6c464b789fea78a53edf0ac37fe36cee)
+        version: 1.0.2(patch_hash=d3db73a1d0df6c2e88a6391395823c2e19378f2d96fd05f56bfc7f63cae204cf)(6c464b789fea78a53edf0ac37fe36cee)
       react-native-gesture-handler:
         specifier: ~2.32.0
         version: 2.32.0(657870f9f3109323894f29698edddbcb)
@@ -1170,7 +1170,7 @@ importers:
         version: 0.86.3(97215b93e9a61066f5f9e2c38407072a)
       react-native-enriched-markdown:
         specifier: ^1.0.2
-        version: 1.0.2(patch_hash=6fe44c98a1d2bd9b1c95fb01204e2f817ffe190d635e191f6163b0aa5a0e8536)(6c464b789fea78a53edf0ac37fe36cee)
+        version: 1.0.2(patch_hash=d3db73a1d0df6c2e88a6391395823c2e19378f2d96fd05f56bfc7f63cae204cf)(6c464b789fea78a53edf0ac37fe36cee)
       react-native-gesture-handler:
         specifier: ~2.32.0
         version: 2.32.0(657870f9f3109323894f29698edddbcb)
@@ -22606,7 +22606,7 @@ snapshots:
       react-native-reanimated: 4.5.3(2aa43ecfed7127fad784ef98035ed33d)
       use-latest-callback: 0.2.6(react@19.2.3)
 
-  react-native-enriched-markdown@1.0.2(patch_hash=6fe44c98a1d2bd9b1c95fb01204e2f817ffe190d635e191f6163b0aa5a0e8536)(6c464b789fea78a53edf0ac37fe36cee):
+  react-native-enriched-markdown@1.0.2(patch_hash=d3db73a1d0df6c2e88a6391395823c2e19378f2d96fd05f56bfc7f63cae204cf)(6c464b789fea78a53edf0ac37fe36cee):
     dependencies:
       react: 19.2.3
       react-native: 0.86.3(97215b93e9a61066f5f9e2c38407072a)
