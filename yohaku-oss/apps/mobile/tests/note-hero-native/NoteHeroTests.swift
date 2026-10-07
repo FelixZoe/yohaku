@@ -3,6 +3,37 @@ import XCTest
 
 @MainActor
 final class NoteHeroTests: XCTestCase {
+  func testMeasuredTextFitsSingleAndWrappedTitlesWithoutTrailingSpace() {
+    for title in ["Rain, Then Sun", "A longer note title that wraps onto another line"] {
+      for meta in ["", "Today · Happy"] {
+        let hero = YohakuNoteHeroView()
+        var spec = YohakuNoteHeroSpec()
+        spec.title = title
+        spec.meta = meta
+        hero.update(spec: spec, titleColor: nil, metaColor: nil)
+        let size = hero.sizeThatFits(CGSize(width: 320, height: 0))
+        hero.frame = CGRect(origin: .zero, size: size)
+        hero.layoutIfNeeded()
+        let labels = hero.subviews.compactMap { $0 as? UILabel }
+        let last = meta.isEmpty ? labels[0] : labels[1]
+        XCTAssertEqual(last.frame.maxY, hero.bounds.height)
+        XCTAssertLessThanOrEqual(labels[0].frame.height, 72)
+        XCTAssertGreaterThan(size.height, 0)
+        if title == "Rain, Then Sun" {
+          XCTAssertLessThan(size.height, 98)
+        } else {
+          XCTAssertGreaterThan(labels[0].frame.height, 36)
+        }
+
+        spec.coverUri = "https://example.invalid/cover.jpg"
+        hero.update(spec: spec, titleColor: nil, metaColor: nil)
+        hero.frame.size.height = 248
+        hero.layoutIfNeeded()
+        XCTAssertEqual(labels[1].frame.maxY, 248 - 18)
+      }
+    }
+  }
+
   func testListCoverIsSharpAtRestWithAutomaticTopInset() {
     let restingY: CGFloat = 8 + 116
     let layout = YohakuNoteHeroLayout.frame(
@@ -12,6 +43,35 @@ final class NoteHeroTests: XCTestCase {
     XCTAssertEqual(layout.blur, 0)
     // Keep the existing cover/body baseline below the navigation inset.
     XCTAssertEqual(layout.frame.maxY, 372)
+  }
+
+  func testFirstCoveredPushMovesBeforeNavigationCompletes() async throws {
+    let fixture = HeroFixture()
+    fixture.update(.list, y: 0, covered: true, height: 372)
+    let hero = fixture.listSlot.subviews.first!
+    fixture.coordinator.prepareTransition(noteID: "test")
+    let transition = fixture.transition(from: fixture.list, to: fixture.detail)
+    transition.isAnimated = true
+    transition.initiallyInteractive = false
+    // Reproduce UIKit's paused auxiliary animation on the first Fabric mount.
+    transition.pausesAlongsideAnimations = true
+    fixture.update(.detail, y: 0, covered: true, height: 248)
+    try await Task.sleep(for: .milliseconds(180))
+    let visibleHeight = hero.layer.presentation()?.bounds.height ?? hero.bounds.height
+    XCTAssertLessThan(visibleHeight, 371, "The cover must move during the push, not jump on completion")
+    let gradient = try XCTUnwrap(
+      hero.layer.sublayers?.compactMap { $0 as? CAGradientLayer }.first
+        ?? hero.subviews.compactMap { $0.layer as? CAGradientLayer }.first
+    )
+    XCTAssertEqual(
+      gradient.presentation()?.bounds.height ?? gradient.bounds.height,
+      visibleHeight, accuracy: 1,
+      "The title's dark background must resize with the cover"
+    )
+    try await Task.sleep(for: .milliseconds(250))
+    transition.finish(cancelled: false)
+    XCTAssertTrue(hero.superview === fixture.detailSlot)
+    XCTAssertEqual(hero.bounds.height, 248)
   }
 
   func testListCoverBlurTracksOnlyAdditionalPullAndClearsOnScroll() {
@@ -43,6 +103,7 @@ final class NoteHeroTests: XCTestCase {
     XCTAssertEqual(hero.frame.minY, -80)
 
     // A subsequent real detail host must still be able to own a push.
+    fixture.update(.list, y: 124)
     fixture.coordinator.prepareTransition(noteID: "test")
     let transition = fixture.transition(from: fixture.list, to: fixture.detail)
     fixture.update(.detail, y: 20)
@@ -86,8 +147,57 @@ final class NoteHeroTests: XCTestCase {
     checkPop(cancelled: true)
   }
 
+  func testPushUsesDestinationInsetSettledBeforeAnimationWithoutCompletionJump() {
+    let fixture = HeroFixture()
+    fixture.update(.list, y: 124)
+    let hero = fixture.listSlot.subviews.first!
+    fixture.coordinator.prepareTransition(noteID: "test")
+    fixture.detail.view.transform = CGAffineTransform(translationX: 402, y: 0)
+    let transition = fixture.transition(from: fixture.list, to: fixture.detail)
+    // The detail slot first mounts before UIKit applies the navigation inset.
+    transition.beforeAnimation = { fixture.update(.detail, y: 124) }
+    fixture.update(.detail, y: 0)
+    let animatedFrame = hero.frame
+    XCTAssertEqual(animatedFrame.minX, 0)
+    XCTAssertEqual(animatedFrame.minY, 174)
+    transition.finish(cancelled: false)
+    fixture.detail.view.transform = .identity
+    XCTAssertEqual(hero.convert(hero.bounds, to: fixture.container), animatedFrame)
+  }
+
   func testCompletedPopReturnsHeroToListAndResumesScrolling() {
     checkPop(cancelled: false)
+  }
+
+  func testHiddenListTitleStaysInNativeScreenDuringPushAndPop() {
+    for listY: CGFloat in [-140, -48, 80] {
+      for pushing in [true, false] {
+        for cancelled in [true, false] {
+          let fixture = HeroFixture()
+          fixture.list.additionalSafeAreaInsets.top = 116
+          fixture.container.layoutIfNeeded()
+          let fromRole: YohakuNoteHeroSlotRole = pushing ? .list : .detail
+          let toRole: YohakuNoteHeroSlotRole = pushing ? .detail : .list
+          fixture.update(fromRole, y: pushing ? listY : 20)
+          let hero = (pushing ? fixture.listSlot : fixture.detailSlot).subviews.first!
+          fixture.coordinator.prepareTransition(noteID: "test")
+          let transition = fixture.transition(
+            from: pushing ? fixture.list : fixture.detail,
+            to: pushing ? fixture.detail : fixture.list
+          )
+          fixture.update(toRole, y: pushing ? 20 : listY)
+          // The detail title travels with the native screen instead of flying
+          // through navigation chrome from/to the hidden list title.
+          XCTAssertTrue(hero.superview === fixture.detailSlot)
+          transition.finish(cancelled: cancelled)
+          let role = cancelled ? fromRole : toRole
+          let slot = role == .list ? fixture.listSlot : fixture.detailSlot
+          XCTAssertTrue(hero.superview === slot)
+          fixture.update(role, y: 124)
+          XCTAssertEqual(hero.frame.minY, 124)
+        }
+      }
+    }
   }
 
   private func checkPop(cancelled: Bool) {
@@ -143,14 +253,18 @@ private final class HeroFixture {
     detail.view.addSubview(detailSlot)
   }
 
-  func update(_ role: YohakuNoteHeroSlotRole, y: CGFloat, slot: UIView? = nil) {
+  func update(
+    _ role: YohakuNoteHeroSlotRole, y: CGFloat, slot: UIView? = nil,
+    covered: Bool = false, height: CGFloat = 98
+  ) {
     var spec = YohakuNoteHeroSpec()
     spec.id = "test"
     spec.title = "Shared note title"
+    spec.coverUri = covered ? "https://example.invalid/cover.jpg" : nil
     coordinator.update(
       slot: slot ?? (role == .list ? listSlot : detailSlot),
       role: role, spec: spec, titleColor: nil, metaColor: nil,
-      frame: CGRect(x: 0, y: y, width: 402, height: 98), blur: 0
+      frame: CGRect(x: 0, y: y, width: 402, height: height), blur: 0
     )
   }
 
@@ -168,9 +282,12 @@ private final class TestTransition: NSObject, UIViewControllerTransitionCoordina
   let to: UIViewController
   let containerView: UIView
   var completion: ((UIViewControllerTransitionCoordinatorContext) -> Void)?
-  let isAnimated = true
+  var beforeAnimation: (() -> Void)?
+  var pausesAlongsideAnimations = false
+  private var pausedAnimator: UIViewPropertyAnimator?
+  var isAnimated = false
   let presentationStyle = UIModalPresentationStyle.none
-  let initiallyInteractive = true
+  var initiallyInteractive = true
   let isInterruptible = true
   let isInteractive = true
   var isCancelled = false
@@ -197,7 +314,15 @@ private final class TestTransition: NSObject, UIViewControllerTransitionCoordina
     completion: ((UIViewControllerTransitionCoordinatorContext) -> Void)?
   ) -> Bool {
     self.completion = completion
-    animation?(self)
+    beforeAnimation?()
+    if pausesAlongsideAnimations {
+      let animator = UIViewPropertyAnimator(duration: transitionDuration, curve: .linear) { animation?(self) }
+      pausedAnimator = animator
+      animator.startAnimation()
+      if animator.state == .active { animator.pauseAnimation() }
+    } else {
+      animation?(self)
+    }
     return true
   }
   func animateAlongsideTransition(
@@ -210,6 +335,8 @@ private final class TestTransition: NSObject, UIViewControllerTransitionCoordina
   func notifyWhenInteractionChanges(_ handler: @escaping (UIViewControllerTransitionCoordinatorContext) -> Void) {}
   func finish(cancelled: Bool) {
     isCancelled = cancelled
+    if pausedAnimator?.state == .active { pausedAnimator?.stopAnimation(true) }
+    pausedAnimator = nil
     completion?(self)
     (from as? HeroController)?.testTransition = nil
     (to as? HeroController)?.testTransition = nil
