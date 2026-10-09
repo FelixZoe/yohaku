@@ -45,7 +45,7 @@ it('attaches X-Session-Uuid to a relative (site API) path', async () => {
     return new Response(JSON.stringify({}), { status: 200 })
   }) as typeof fetch
 
-  await webFetchJSON('/proxy/polls/p1')
+  await webFetchJSON('/polls/p1')
 
   expect(capturedHeaders?.has('x-session-uuid')).toBe(true)
 })
@@ -60,6 +60,6 @@ it('prefixes a relative path with API_URL but leaves an absolute URL untouched',
   await webFetchJSON('https://gallery.example.com/api/manifest')
   expect(String(capturedInput)).toBe('https://gallery.example.com/api/manifest')
 
-  await webFetchJSON('/proxy/polls/p1')
-  expect(String(capturedInput)).toBe(`${API_URL}/proxy/polls/p1`)
+  await webFetchJSON('/polls/p1')
+  expect(String(capturedInput)).toBe(`${API_URL}/polls/p1`)
 })

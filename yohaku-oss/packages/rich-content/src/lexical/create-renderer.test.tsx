@@ -163,14 +163,16 @@ describe('poll adapter wiring (I-1)', () => {
     const host: HostCapabilities = {
       ...mobileHost,
       fetchJSON: async (url) => {
-        if (String(url).includes('/proxy/polls/')) {
+        if (String(url).includes('/polls/')) {
           return {
-            canVote: false,
-            closed: false,
-            status: 'success',
-            tallies: { o1: 3, o2: 1 },
-            totalVotes: 4,
-            userVote: ['o1'],
+            data: {
+              can_vote: false,
+              closed: false,
+              status: 'ready',
+              tallies: { o1: 3, o2: 1 },
+              total_votes: 4,
+              user_vote: ['o1'],
+            },
           } as never
         }
         return {} as never

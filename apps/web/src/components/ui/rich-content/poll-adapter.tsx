@@ -5,8 +5,9 @@ import type {
   PollState,
 } from '@haklex/rich-compose/modules/poll'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { parsePollState } from '@yohaku/rich-content/src/lexical/biz/poll/parse-state.ts'
 
-import { apiClient } from '~/lib/request'
+import { webFetchJSON } from '~/hooks/common/use-web-host'
 
 const pollKey = (pollId: string) => ['poll', pollId] as const
 
@@ -18,14 +19,20 @@ const fallbackState: PollState = {
   canVote: false,
 }
 
-const fetchState = (pollId: string): Promise<PollState> =>
-  apiClient.proxy.polls(pollId).get<PollState>({ transformResponse: false })
+const fetchState = async (pollId: string): Promise<PollState> =>
+  parsePollState(await webFetchJSON<unknown>(`/polls/${pollId}`))
 
-const castVote = (pollId: string, optionIds: string[]): Promise<PollState> =>
-  apiClient.proxy.polls(pollId).vote.post<PollState>({
-    data: { optionIds },
-    transformResponse: false,
-  })
+const castVote = async (
+  pollId: string,
+  optionIds: string[],
+): Promise<PollState> =>
+  parsePollState(
+    await webFetchJSON<unknown>(`/polls/${pollId}/vote`, {
+      body: JSON.stringify({ optionIds }),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }),
+  )
 
 export const yohakuPollAdapter: PollDataAdapter = {
   usePollState: (pollId) => {
