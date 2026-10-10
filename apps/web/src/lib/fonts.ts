@@ -1,13 +1,15 @@
 import {
-  Instrument_Sans,
   Noto_Serif_JP,
   Noto_Serif_SC,
   Zen_Kaku_Gothic_New,
 } from 'next/font/google'
+import localFont from 'next/font/local'
 
-const sansFont = Instrument_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500'],
+// Yohaku Sans is a Manrope fork (OFL, see assets/fonts/OFL.txt): 103% width,
+// softened corners, and an avar remap so CSS 400/500 match MiSans stroke weight.
+const sansFont = localFont({
+  src: '../assets/fonts/YohakuSans-VF.woff2',
+  weight: '200 800',
   variable: '--app-font-sans',
   display: 'swap',
 })

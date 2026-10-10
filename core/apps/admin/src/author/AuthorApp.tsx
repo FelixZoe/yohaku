@@ -1,4 +1,5 @@
 import { AgentDiffEditNode } from '@haklex/rich-ext-ai-agent'
+import { ExcalidrawConfigProvider } from '@haklex/rich-ext-excalidraw'
 import { LoroDoc } from 'loro-crdt'
 import { useCallback, useEffect, useState } from 'react'
 
@@ -42,6 +43,21 @@ const uploadAsset = async (file: File): Promise<{ src: string }> => {
 const uploadTrack = async (file: File) => ({
   url: (await uploadAsset(file)).src,
 })
+
+const saveScene = async (snapshot: object, existingRef?: string) => {
+  const stem = existingRef
+    ?.split('/')
+    .pop()
+    ?.replace(/(-[\da-f]{8})?\.excalidraw$/, '')
+  const file = new File(
+    [JSON.stringify(snapshot)],
+    `${stem || 'scene'}.excalidraw`,
+    {
+      type: 'application/json',
+    },
+  )
+  return (await uploadAsset(file)).src
+}
 
 const isMac =
   typeof navigator !== 'undefined' &&
@@ -87,6 +103,7 @@ export function AuthorApp() {
     null,
   )
   const [title, setTitle] = useState<string | null>(null)
+  const [scroller, setScroller] = useState<HTMLDivElement | null>(null)
 
   useEffect(() => {
     // ponytail: polls a tiny local endpoint because <meta> lives outside the Loro doc; push it over /api/events if meta edits need to be instant
@@ -221,31 +238,36 @@ export function AuthorApp() {
         </button>
       </header>
       <div className="flex min-h-0 flex-1">
-        <div className="min-h-0 flex-1 overflow-auto pt-10 pb-24">
+        <div
+          ref={setScroller}
+          className="relative min-h-0 flex-1 overflow-auto pt-10 pb-24"
+        >
           {title ? (
             <h1 className="mx-auto mb-2 max-w-[700px] px-4 text-2xl font-semibold leading-snug">
               {title}
             </h1>
           ) : null}
-          <RichEditor
-            theme={theme}
-            variant={meta.variant}
-            extraNodes={extraNodes}
-            imageUpload={uploadAsset}
-            videoUpload={uploadAsset}
-            fileUpload={uploadAsset}
-            trackUpload={uploadTrack}
-          >
-            <DiffNotePlugin />
-            <LoroSyncPlugin
-              doc={doc}
-              onStatus={setStatus}
-              onInvalid={setInvalid}
-              onAgentCursor={setAgentCursor}
-            />
-            <SelectionSyncPlugin />
-            <AgentCursor cursor={agentCursor} />
-          </RichEditor>
+          <ExcalidrawConfigProvider saveSnapshot={saveScene}>
+            <RichEditor
+              theme={theme}
+              variant={meta.variant}
+              extraNodes={extraNodes}
+              imageUpload={uploadAsset}
+              videoUpload={uploadAsset}
+              fileUpload={uploadAsset}
+              trackUpload={uploadTrack}
+            >
+              <DiffNotePlugin />
+              <LoroSyncPlugin
+                doc={doc}
+                onStatus={setStatus}
+                onInvalid={setInvalid}
+                onAgentCursor={setAgentCursor}
+              />
+              <SelectionSyncPlugin />
+              <AgentCursor cursor={agentCursor} container={scroller} />
+            </RichEditor>
+          </ExcalidrawConfigProvider>
         </div>
         {historyOpen ? (
           <HistoryPanel

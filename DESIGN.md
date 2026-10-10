@@ -87,13 +87,37 @@ Light mode carries a warm parchment undertone (R > G > B); dark mode is pure neu
 
 | Variable | Stack head | Use |
 |---|---|---|
-| `--font-sans` | Inter (var) → Noto Sans SC → PingFang SC → system-ui | UI default, body |
+| `--font-sans` | Yohaku Sans (var) → locale CJK stack (zh: MiSans → PingFang SC → Noto Sans SC; ja: Zen Kaku Gothic New) → system-ui | UI default, body |
 | `--font-serif` | Noto Serif CJK SC → Source Han Serif → SongTi SC | Headings, prose, marginalia |
 | `--font-mono` | OperatorMonoSSmLig → JetBrains Mono → Fira Code | Code, tabular numerals |
 | `--font-logo-cjk` | Noto Serif JP → Source Han Serif | **Wordmark only** |
 | `--font-logo-latin` | EB Garamond → GT Sectra → Tiempos | **Wordmark only** |
 
 **Mandatory**: any font rendering CJK has `Noto Serif CJK SC` (or sans equivalent) in fallback. Hardcoding `font-family` outside `var(--font-*)` is a lint failure.
+
+### 4.1.1 Yohaku Sans
+
+Latin-only variable font (`wght` 200–800), a fork of [Manrope](https://github.com/googlefonts/manrope) under the SIL OFL 1.1. Shipped as `apps/web/src/assets/fonts/YohakuSans-VF.woff2` (~30 KB, one file for every weight) and loaded through `next/font/local` in `apps/web/src/lib/fonts.ts` as `--app-font-sans`. The license travels with it in `OFL.txt` next to the font.
+
+Changes from Manrope:
+
+| Change | Why |
+|---|---|
+| Width 103% (outlines and kerning scaled horizontally) | Manrope is semi-condensed; 103% sits closer to MiSans' Latin width without looking stretched |
+| Convex corners softened (radius = 0.15 × stem) | Takes the edge off stroke ends and E F T / A V / 1 4 7 corners; inner corners and bowls untouched |
+| `l` with a tail (borrowed from Manrope's `t`) | `I` and `l` were identical in Manrope |
+| Round dots on `i j . : ! ?` | Softer than the original square dots |
+| `avar` weight remap | CSS weights land on the stroke thickness of MiSans' CJK strokes, so mixed lines read as one weight |
+
+Weight remap — use normal Tailwind weights; the font does the mapping:
+
+| CSS `font-weight` | Rendered Manrope-design weight | Vertical stem (/1000 em) | MiSans CJK stroke |
+|---|---|---|---|
+| 400 | 455 | 84 | 83–87 |
+| 500 | 535 | 97 | 95–97 |
+| 300 / 600 / 700 | 365 / 620 / 710 | — | not measured |
+
+Do not set fractional weights (`font-[455]`) to compensate; that double-applies the remap. Tabular figures exist via `tabular-nums`; default figures are proportional.
 
 ### 4.2 Scale (root `14px`)
 
@@ -112,7 +136,7 @@ Light mode carries a warm parchment undertone (R > G > B); dark mode is pure neu
 
 | Context | Weight |
 |---|---|
-| Body | `font-normal` (400) |
+| Body | `font-normal` (400; Yohaku Sans renders it at Manrope 455, see 4.1.1) |
 | Heading | `font-medium` (500) — **never `font-bold` on CJK** (faux-stroke artifacts) |
 | English uppercase eyebrow | `font-semibold` (600) acceptable |
 | Line-height body | `1.5` |
