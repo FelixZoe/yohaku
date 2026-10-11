@@ -191,6 +191,34 @@ const loadAdditionalAsset = (code: string, segment: string) => {
   return cached
 }
 
+const srgbToLinear = (channel: number) => {
+  const c = channel / 255
+  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+}
+
+export async function measureLowerHalfLuminance(
+  imageHref: string,
+  backdrop: string,
+): Promise<number | null> {
+  await ensureResvgWasm()
+  try {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="63"><rect width="120" height="63" fill="${backdrop}"/><image href="${imageHref}" width="120" height="63" preserveAspectRatio="xMidYMid slice"/></svg>`
+    const { pixels } = new Resvg(svg).render()
+    let sum = 0
+    let count = 0
+    for (let i = 120 * 32 * 4; i < pixels.length; i += 4) {
+      sum +=
+        0.2126 * srgbToLinear(pixels[i]) +
+        0.7152 * srgbToLinear(pixels[i + 1]) +
+        0.0722 * srgbToLinear(pixels[i + 2])
+      count++
+    }
+    return count ? sum / count : null
+  } catch {
+    return null
+  }
+}
+
 export interface RenderOgImageOptions {
   fonts: OgFontBundle['fonts']
   height: number

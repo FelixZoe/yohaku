@@ -138,3 +138,19 @@ export const seededWash = (seed: string) => {
   const hue2 = (hue + 140) % 360
   return `radial-gradient(ellipse 70% 90% at 88% 12%, hsla(${hue}, 42%, 55%, 0.12), transparent 60%), radial-gradient(ellipse 60% 80% at 8% 100%, hsla(${hue2}, 38%, 52%, 0.07), transparent 55%)`
 }
+
+// satori fetches remote <img> sources itself with no timeout, so a stalled
+// image host hangs the whole OG response; hand it data URIs only.
+export async function fetchImageDataUri(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(4000) })
+    if (!res.ok) return null
+    const type = res.headers.get('content-type') || 'image/jpeg'
+    if (!type.startsWith('image/')) return null
+    const buf = Buffer.from(await res.arrayBuffer())
+    if (buf.byteLength > 8 * 1024 * 1024) return null
+    return `data:${type};base64,${buf.toString('base64')}`
+  } catch {
+    return null
+  }
+}

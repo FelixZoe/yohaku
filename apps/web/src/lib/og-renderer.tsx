@@ -12,8 +12,9 @@ import { defaultLocale } from '~/i18n/config'
 import { getArticleTranslation } from '~/lib/api/meta'
 import { cachePolicy, toHeaderRecord } from '~/lib/cache-policy.mjs'
 import { resolveOgAvatar } from '~/lib/og-avatar'
-import { renderOgImage } from '~/lib/og-image.server'
+import { measureLowerHalfLuminance, renderOgImage } from '~/lib/og-image.server'
 import {
+  fetchImageDataUri,
   FILL,
   INK,
   INK_SOFT,
@@ -48,21 +49,33 @@ export type OgTarget =
   | { type: 'note'; nid: string | number }
   | { type: 'page'; slug: string }
 
-const PAPER_VEIL = `linear-gradient(to right, rgba(249,248,245,0.99) 0%, rgba(249,248,245,0.97) 44%, rgba(249,248,245,0.72) 60%, rgba(249,248,245,0.24) 80%, rgba(249,248,245,0.02) 94%, rgba(249,248,245,0) 100%)`
-
-async function fetchCoverDataUri(url: string): Promise<string | null> {
-  try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(4000) })
-    if (!res.ok) return null
-    const type = res.headers.get('content-type') || 'image/jpeg'
-    if (!type.startsWith('image/')) return null
-    const buf = Buffer.from(await res.arrayBuffer())
-    if (buf.byteLength > 8 * 1024 * 1024) return null
-    return `data:${type};base64,${buf.toString('base64')}`
-  } catch {
-    return null
-  }
+const OG_TONES = {
+  light: {
+    rgb: '249,248,245',
+    ink: INK,
+    name: INK_SOFT,
+    accent: UME,
+    meta: TEXT_SECONDARY,
+    faint: TEXT_FAINT,
+    ring: FILL,
+  },
+  dark: {
+    rgb: '20,19,18',
+    ink: '#ffffff',
+    name: PAPER,
+    accent: '#eaa3ae',
+    meta: 'rgba(249,248,245,0.78)',
+    faint: 'rgba(249,248,245,0.6)',
+    ring: 'rgba(255,255,255,0.4)',
+  },
 }
+
+// White and INK text reach equal WCAG contrast at this backdrop luminance.
+const LIGHT_COVER_LUMINANCE = 0.195
+
+// 0.86 at the text baseline keeps ≥10:1 contrast even if the tone guess is wrong.
+const coverScrim = (rgb: string) =>
+  `linear-gradient(to top, rgba(${rgb},0.86) 0%, rgba(${rgb},0.5) 42%, rgba(${rgb},0) 72%), linear-gradient(to bottom, rgba(${rgb},0.45) 0%, rgba(${rgb},0) 22%)`
 
 const enMonths = [
   'Jan',
@@ -217,15 +230,22 @@ export async function renderOg(
       isLatinOnly(title) && isLatinOnly(subtitle) && isLatinOnly(seo.title)
     const { fontFamily, fonts } = await loadOgFonts(useGeist)
 
-    const ogAvatar = resolveOgAvatar(
-      theme?.config.module?.og?.avatar || avatar,
-      48,
-    )
-
     const coverUrl =
       typeof document.meta?.cover === 'string' ? document.meta.cover : null
-    const coverDataUri = coverUrl ? await fetchCoverDataUri(coverUrl) : null
+    const [ogAvatar, coverDataUri] = await Promise.all([
+      fetchImageDataUri(
+        resolveOgAvatar(theme?.config.module?.og?.avatar || avatar, 48),
+      ),
+      coverUrl ? fetchImageDataUri(coverUrl) : null,
+    ])
     const hasCover = Boolean(coverDataUri)
+    const coverLuminance = coverDataUri
+      ? await measureLowerHalfLuminance(coverDataUri, PAPER)
+      : null
+    const tone =
+      hasCover && (coverLuminance ?? 0) <= LIGHT_COVER_LUMINANCE
+        ? OG_TONES.dark
+        : OG_TONES.light
 
     let ogCacheSet = cachePolicy.og.primary
     if (locale) {
@@ -239,9 +259,9 @@ export async function renderOg(
     }
 
     const titleFontSize = hasCover
-      ? title.length > 22
+      ? title.length > 40
         ? 48
-        : 58
+        : 54
       : title.length > 30
         ? 56
         : 68
@@ -282,7 +302,7 @@ export async function renderOg(
             right: 0,
             bottom: 0,
             background: hasCover
-              ? PAPER_VEIL
+              ? coverScrim(tone.rgb)
               : seededWash(document.id || title),
           }}
         />
@@ -296,21 +316,23 @@ export async function renderOg(
             alignItems: 'center',
           }}
         >
-          <img
-            height={44}
-            src={ogAvatar}
-            width={44}
-            style={{
-              borderRadius: '50%',
-              marginRight: '16px',
-              border: `1px solid ${FILL}`,
-            }}
-          />
+          {ogAvatar ? (
+            <img
+              height={44}
+              src={ogAvatar}
+              width={44}
+              style={{
+                borderRadius: '50%',
+                marginRight: '16px',
+                border: `1px solid ${tone.ring}`,
+              }}
+            />
+          ) : null}
           <span
             style={{
               fontSize: '26px',
               fontFamily,
-              color: INK_SOFT,
+              color: tone.name,
               letterSpacing: '0.02em',
             }}
           >
@@ -322,11 +344,11 @@ export async function renderOg(
           style={{
             position: 'absolute',
             left: '80px',
-            bottom: '128px',
+            bottom: hasCover ? '108px' : '128px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'flex-start',
-            width: hasCover ? '560px' : '980px',
+            width: hasCover ? '1040px' : '980px',
           }}
         >
           {subtitle ? (
@@ -334,7 +356,7 @@ export async function renderOg(
               style={{
                 fontSize: '17px',
                 letterSpacing: '0.16em',
-                color: UME,
+                color: tone.accent,
                 fontWeight: 600,
                 marginBottom: '20px',
               }}
@@ -348,7 +370,7 @@ export async function renderOg(
               fontWeight: 600,
               letterSpacing: '-0.01em',
               lineHeight: 1.22,
-              color: INK,
+              color: tone.ink,
               wordBreak: 'break-word',
             }}
           >
@@ -367,15 +389,13 @@ export async function renderOg(
             alignItems: 'center',
           }}
         >
-          <span style={{ fontSize: '19px', color: TEXT_SECONDARY }}>
-            {dateText}
-          </span>
+          <span style={{ fontSize: '19px', color: tone.meta }}>{dateText}</span>
           {domain ? (
             <span
               style={{
                 fontSize: '19px',
                 fontFamily,
-                color: TEXT_FAINT,
+                color: tone.faint,
                 letterSpacing: '0.04em',
               }}
             >

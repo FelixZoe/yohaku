@@ -2,6 +2,7 @@ import { cachePolicy, toHeaderRecord } from '~/lib/cache-policy.mjs'
 import { resolveOgAvatar } from '~/lib/og-avatar'
 import { renderOgImage } from '~/lib/og-image.server'
 import {
+  fetchImageDataUri,
   FILL,
   INK,
   INK_SOFT,
@@ -60,9 +61,8 @@ export async function renderSkillOg(name: string): Promise<Response> {
       isLatinOnly(seo.title)
     const { fontFamily, fonts } = await loadOgFonts(useGeist)
 
-    const ogAvatar = resolveOgAvatar(
-      theme?.config.module?.og?.avatar || avatar,
-      48,
+    const ogAvatar = await fetchImageDataUri(
+      resolveOgAvatar(theme?.config.module?.og?.avatar || avatar, 48),
     )
 
     const png = await renderOgImage(
@@ -97,16 +97,18 @@ export async function renderSkillOg(name: string): Promise<Response> {
             alignItems: 'center',
           }}
         >
-          <img
-            height={44}
-            src={ogAvatar}
-            width={44}
-            style={{
-              borderRadius: '50%',
-              marginRight: '16px',
-              border: `1px solid ${FILL}`,
-            }}
-          />
+          {ogAvatar ? (
+            <img
+              height={44}
+              src={ogAvatar}
+              width={44}
+              style={{
+                borderRadius: '50%',
+                marginRight: '16px',
+                border: `1px solid ${FILL}`,
+              }}
+            />
+          ) : null}
           <span
             style={{
               fontSize: '26px',
