@@ -118,8 +118,8 @@ const Colophon = ({
   const buildTime = process.env.BUILD_TIME
 
   return (
-    <div className="mt-5 flex flex-col gap-2 font-mono text-label-12 text-neutral-6 md:flex-row md:items-baseline md:justify-between md:gap-8">
-      <div className="flex flex-wrap items-baseline">
+    <div className="mt-5 flex flex-col gap-2 font-sans text-label-12 text-neutral-6 md:grid md:grid-cols-[minmax(0,1fr)_max-content] md:items-baseline md:gap-x-8 md:gap-y-0.5">
+      <div className="flex flex-wrap items-baseline md:col-start-1 md:row-start-1">
         <span>
           © {copyrightDate} <OwnerName />
         </span>

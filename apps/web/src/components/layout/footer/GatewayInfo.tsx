@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 
 import { useOnlineCount } from '~/atoms'
 import { useSocketIsConnect } from '~/atoms/hooks/socket'
+import { buildRoomName } from '~/components/modules/activity/utils'
 import { PeekLink } from '~/components/modules/peek/PeekLink'
 import { Divider } from '~/components/ui/divider'
 import { FloatPopover } from '~/components/ui/float-popover'
@@ -27,13 +28,12 @@ const useReadingRooms = (enabled: boolean) =>
     refetchInterval: 1000 * 30,
     queryFn: async () => {
       const data = (await apiClient.activity.getRoomsInfo()).$serialized
-      const roomName = (id: string) => `article_${id}`
       const result = [] as { path: string; title: string; count: number }[]
       data.objects.notes.forEach((note) => {
         result.push({
           path: routeBuilder(Routes.Note, { ...getNoteRouteParams(note) }),
           title: note.title,
-          count: data.roomCount[roomName(note.id)],
+          count: data.roomCount[buildRoomName(note.id)],
         })
       })
       data.objects.posts.forEach((post) => {
@@ -43,14 +43,14 @@ const useReadingRooms = (enabled: boolean) =>
             slug: post.slug,
           }),
           title: post.title,
-          count: data.roomCount[roomName(post.id)],
+          count: data.roomCount[buildRoomName(post.id)],
         })
       })
       data.objects.pages.forEach((page) => {
         result.push({
           path: routeBuilder(Routes.Page, { slug: page.slug }),
           title: page.title,
-          count: data.roomCount[roomName(page.id)],
+          count: data.roomCount[buildRoomName(page.id)],
         })
       })
       return result.filter((r) => r.count > 0).sort((a, b) => b.count - a.count)
@@ -101,16 +101,16 @@ export const Heartbeat = () => {
   const reading = count > 0 ? rooms?.[index % Math.max(roomsLength, 1)] : null
 
   return (
-    <FloatPopover
-      asChild
-      mobileAsSheet
-      as="div"
-      offset={10}
-      placement="top-end"
-      trigger="both"
-      triggerElement={
-        <div className="flex cursor-pointer flex-col gap-0.5 whitespace-nowrap md:items-end">
-          <span className="inline-flex items-baseline gap-1.5">
+    <div className="flex flex-col gap-0.5 whitespace-nowrap md:contents">
+      <FloatPopover
+        asChild
+        mobileAsSheet
+        as="div"
+        offset={10}
+        placement="top-end"
+        trigger="both"
+        triggerElement={
+          <span className="inline-flex cursor-pointer items-baseline gap-1.5 md:col-start-2 md:row-start-1 md:justify-self-end">
             <Pulse className="self-center" connected={connected} />
             <SlotText
               className="text-neutral-8"
@@ -119,47 +119,50 @@ export const Heartbeat = () => {
             />
             <span>{t('reading_now')}</span>
           </span>
-          <span className="block h-[1.6em] max-w-[22em] truncate text-neutral-8">
-            {reading && <SlotText text={reading.title} />}
-          </span>
-        </div>
-      }
-    >
-      <div className="w-72 space-y-2 text-copy-13 leading-relaxed text-neutral-7">
-        <p className="flex items-center justify-between">
-          <span>{connected ? t('connected') : t('disconnected')}</span>
-          <Pulse className="size-1.5" connected={connected} />
-        </p>
-        <Divider />
-        {rooms && rooms.length > 0 ? (
-          <>
-            <p className="font-medium text-neutral-8">{t('popular_content')}</p>
-            <ul className="space-y-1">
-              {rooms.map((room) => (
-                <li
-                  className="flex items-center justify-between gap-5"
-                  key={room.path}
-                >
-                  <PeekLink
-                    className="truncate text-neutral-8 hover:underline hover:decoration-current/30 hover:underline-offset-2"
-                    href={room.path}
+        }
+      >
+        <div className="w-72 space-y-2 text-copy-13 leading-relaxed text-neutral-7">
+          <p className="flex items-center justify-between">
+            <span>{connected ? t('connected') : t('disconnected')}</span>
+            <Pulse className="size-1.5" connected={connected} />
+          </p>
+          <Divider />
+          {rooms && rooms.length > 0 ? (
+            <>
+              <p className="font-medium text-neutral-8">
+                {t('popular_content')}
+              </p>
+              <ul className="space-y-1">
+                {rooms.map((room) => (
+                  <li
+                    className="flex items-center justify-between gap-5"
+                    key={room.path}
                   >
-                    {room.title}
-                  </PeekLink>
-                  <span className="inline-flex shrink-0 items-center gap-1 text-neutral-6 tabular-nums">
-                    <i className="i-mingcute-user-visible-line" />
-                    {room.count}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </>
-        ) : (
-          <p>{t('no_readers')}</p>
-        )}
-        <Divider />
-        <p className="text-label-12 text-neutral-6">{t('websocket_intro')}</p>
-      </div>
-    </FloatPopover>
+                    <PeekLink
+                      className="truncate text-neutral-8 hover:underline hover:decoration-current/30 hover:underline-offset-2"
+                      href={room.path}
+                    >
+                      {room.title}
+                    </PeekLink>
+                    <span className="inline-flex shrink-0 items-center gap-1 text-neutral-6 tabular-nums">
+                      <i className="i-mingcute-user-visible-line" />
+                      {room.count}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p>{t('no_readers')}</p>
+          )}
+          <Divider />
+          <p className="text-label-12 text-neutral-6">{t('websocket_intro')}</p>
+        </div>
+      </FloatPopover>
+
+      <span className="block h-[1.6em] truncate text-neutral-8 md:col-span-2 md:row-start-2 md:min-w-0 md:max-w-full md:justify-self-end">
+        {reading && <SlotText text={reading.title} />}
+      </span>
+    </div>
   )
 }
