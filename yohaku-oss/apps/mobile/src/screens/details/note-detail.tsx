@@ -7,7 +7,7 @@ import { and, eq } from 'drizzle-orm'
 import { Stack, useNavigation } from 'expo-router'
 import { useHeaderHeight } from 'expo-router/react-navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { ScrollView } from 'react-native'
+import type { ScrollViewInstance } from 'react-native'
 import { StyleSheet, useWindowDimensions, View } from 'react-native'
 
 import { translatedBodyNeedsRefresh } from '@/api/article-meta'
@@ -84,7 +84,7 @@ export function NoteDetailScreen({
   const reservedBodyHeight = useReservedBodyHeight()
   const headerHeight = useHeaderHeight()
   const { width } = useWindowDimensions()
-  const scrollRef = useRef<ScrollView>(null)
+  const scrollRef = useRef<ScrollViewInstance>(null)
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
 

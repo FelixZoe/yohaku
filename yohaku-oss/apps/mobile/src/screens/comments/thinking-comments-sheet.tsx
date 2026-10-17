@@ -1,6 +1,11 @@
 import { eq } from 'drizzle-orm'
 import { useRef } from 'react'
-import { ScrollView, StyleSheet, View } from 'react-native'
+import {
+  ScrollView,
+  type ScrollViewInstance,
+  StyleSheet,
+  View,
+} from 'react-native'
 
 import { db } from '@/db'
 import { thinkings } from '@/db/schema'
@@ -13,7 +18,7 @@ import { CommentSection } from './comment-section'
 
 export function ThinkingCommentsSheet({ refId }: { refId: string }) {
   const palette = usePalette()
-  const scrollRef = useRef<ScrollView>(null)
+  const scrollRef = useRef<ScrollViewInstance>(null)
   const { snapshot: item, updatesEnabled } = useDatabaseSnapshot({
     identity: `thinking-comments:${refId}`,
     read: async () => {

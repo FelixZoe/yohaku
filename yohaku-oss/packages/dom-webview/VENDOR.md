@@ -1,6 +1,6 @@
 # Vendored from `@expo/dom-webview`
 
-Source: `@expo/dom-webview@57.0.1` from the `expo@57.0.11` release line (upstream
+Source: `@expo/dom-webview@58.0.2` from the `expo@58.0.13` release line (upstream
 [`expo/expo`](https://github.com/expo/expo), `packages/@expo/dom-webview`).
 
 This package used to be installed normally and patched via
@@ -14,7 +14,7 @@ nested upstream copy — see `DomWebViewModule.swift`'s `vendor` constant and
 `apps/mobile/src/lib/assert-vendored-dom-webview.ts` for the `__DEV__` check
 that catches a resolution regression.
 
-## Changes vs. upstream 57.0.1
+## Changes vs. upstream 58.0.2
 
 - `ios/DomWebView.swift`: `SharedReaderWebView` retains one article
   `DomWKWebView` and moves it between detail-screen hosts. The `shared` prop is
@@ -24,7 +24,7 @@ that catches a resolution regression.
   offscreen, screen-sized parking view so layout is not 0×0. There is no pool,
   backfill, replay log, or generic injection retry queue.
 - `ios/DomWebView.swift`: `resetupScripts()` re-registers the script message
-  handler only when ownership changes. A reused document asks Expo's SDK 57 DOM
+  handler only when ownership changes. A reused document asks Expo's SDK 58 DOM
   wrapper to resend current props through its existing `$$dom_ready` contract.
 - `ios/DomWebViewModule.swift`: `Constants(["vendor": "yohaku"])`, purely for
   the resolution self-check above.
@@ -69,7 +69,8 @@ that catches a resolution regression.
   describes the dialect the sources are written in, but `tsc` cannot run against
   it — the peers are not installed here, and installing them would recreate the
   duplicate-copy hazard above.
-- **`build/*.d.ts` is upstream's, frozen at 57.0.1.** Nothing regenerates it, so
+- **`build/*.d.ts` is upstream's, frozen at 57.0.1** (identical to 58.0.2 apart
+  from sourcemap comments). Nothing regenerates it, so
   it no longer describes this fork's public types — it has no `shared` prop.
   `package.json`'s `types` still points at it; `main` points at `src/`, which is
   what Metro and this repo actually consume.

@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm'
 import { Stack, useIsPreview, useRouter } from 'expo-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { ScrollView } from 'react-native'
+import type { ScrollViewInstance } from 'react-native'
 import { StyleSheet, View } from 'react-native'
 
 import { translatedBodyNeedsRefresh } from '@/api/article-meta'
@@ -77,7 +77,7 @@ export function PostDetailScreen({
   const isMember = useIsActiveMember()
   const { data: plans } = useMembershipPlans()
   const reservedBodyHeight = useReservedBodyHeight()
-  const scrollRef = useRef<ScrollView>(null)
+  const scrollRef = useRef<ScrollViewInstance>(null)
   const unlockInflightRef = useRef(false)
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)

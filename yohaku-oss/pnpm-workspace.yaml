@@ -13,8 +13,8 @@ allowBuilds:
 
 overrides:
   '@expo/dom-webview': link:./packages/dom-webview
-  react: 19.2.3
-  react-dom: 19.2.3
+  react: 19.3.0
+  react-dom: 19.3.0
   # expo lists this so autolinking ships ExpoFileSystem.framework; Yohaku
   # never calls FileSystem APIs. Drop the package so it cannot re-enter the IPA.
   expo-file-system: '-'
@@ -47,7 +47,8 @@ overrides:
   "@lexical/yjs": 0.52.0
 
 patchedDependencies:
-  expo-image@57.0.2: patches/expo-image@57.0.2.patch
-  expo-router@57.0.24: patches/expo-router@57.0.24.patch
+  '@react-native-menu/menu@2.0.0': patches/@react-native-menu__menu@2.0.0.patch
+  expo-image@58.0.15: patches/expo-image@58.0.15.patch
+  expo-router@58.0.22: patches/expo-router@58.0.22.patch
   react-native-enriched-markdown@1.0.2: patches/react-native-enriched-markdown@1.0.2.patch
-  react-native-screens@4.26.2: patches/react-native-screens@4.26.2.patch
+  react-native-screens@4.30.0: patches/react-native-screens@4.30.0.patch

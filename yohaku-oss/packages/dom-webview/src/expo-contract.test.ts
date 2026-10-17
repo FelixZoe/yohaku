@@ -15,9 +15,15 @@ const appDir = path.resolve(packageDir, '../../apps/mobile')
 // Resolved from the app rather than from here: the app's `expo` is the one
 // whose wrapper actually renders this view, and this package deliberately
 // declares no `expo` dependency of its own to install a second copy of.
-const wrapperPath = createRequire(import.meta.url).resolve(
-  'expo/src/dom/webview-wrapper.tsx',
-  { paths: [appDir] },
+// expo's `exports` map sends `expo/src/*` to `build/*.js`, so locate the
+// package root and read the shipped source directly.
+const wrapperPath = path.join(
+  path.dirname(
+    createRequire(import.meta.url).resolve('expo/package.json', {
+      paths: [appDir],
+    }),
+  ),
+  'src/dom/webview-wrapper.tsx',
 )
 
 // Passed by expo, satisfied by what `DomWebViewProps` extends — react-native's

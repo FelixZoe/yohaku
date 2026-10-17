@@ -2,7 +2,12 @@ import { type as typeScale } from '@yohaku/design-system/tokens'
 import { useRouter } from 'expo-router'
 import { SymbolView } from 'expo-symbols'
 import { useEffect, useMemo, useRef } from 'react'
-import { ScrollView, StyleSheet, View } from 'react-native'
+import {
+  ScrollView,
+  type ScrollViewInstance,
+  StyleSheet,
+  View,
+} from 'react-native'
 
 import { useSession } from '@/auth/session-store'
 import { AppText, NativePressable } from '@/components/ui'
@@ -77,7 +82,7 @@ function SelectionCommentContent({
   const palette = usePalette()
   const serifFont = useNativeSerifFontStyle()
   const session = useSession()
-  const scrollRef = useRef<ScrollView>(null)
+  const scrollRef = useRef<ScrollViewInstance>(null)
   const anchorsQuery = useCommentAnchorsQuery(refId)
   const roots = useMemo(
     () =>

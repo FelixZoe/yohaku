@@ -9,7 +9,7 @@ import { useCallback, useRef } from 'react'
 import type {
   NativeScrollEvent,
   NativeSyntheticEvent,
-  ScrollView,
+  ScrollViewInstance,
   ScrollViewProps,
 } from 'react-native'
 import { Platform, StyleSheet } from 'react-native'
@@ -34,7 +34,7 @@ import { topBlurOverlayHeight } from './top-edge-blur'
 type ReanimatedScrollHandler = ReturnType<typeof useAnimatedScrollHandler>
 type EdgeEffectScrollViewProps = ScrollViewProps & {
   headerTitleProgress?: SharedValue<number>
-  ref?: Ref<ScrollView>
+  ref?: Ref<ScrollViewInstance>
 }
 
 const SCROLL_EDGE_TRANSITION_DISTANCE = 32

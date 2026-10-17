@@ -14,9 +14,10 @@ import {
   findNodeHandle,
   Keyboard,
   Pressable,
-  type ScrollView,
+  type ScrollViewInstance,
   StyleSheet,
   View,
+  type ViewInstance,
 } from 'react-native'
 
 import { api } from '@/api/client'
@@ -35,8 +36,8 @@ export type ReplyTo = { id: string; name: string }
 interface CommentComposeValue {
   composeRoot: () => void
   composing: boolean
-  edit: (comment: ApiComment, anchor?: View | null) => void
-  reply: (comment: ApiComment, anchor?: View | null) => void
+  edit: (comment: ApiComment, anchor?: ViewInstance | null) => void
+  reply: (comment: ApiComment, anchor?: ViewInstance | null) => void
   scrollBottomInset: number
 }
 
@@ -67,7 +68,7 @@ export function CommentComposeHost({
   refId: string
   refType: CommentRefType
   resetKey?: string
-  scrollRef?: RefObject<ScrollView | null>
+  scrollRef?: RefObject<ScrollViewInstance | null>
 }) {
   return (
     <CommentComposeProvider key={resetKey ?? 'compose'} {...props}>
@@ -85,15 +86,12 @@ function CommentComposeHostInner({
 }
 
 function scrollAnchorIntoView(
-  scrollRef: RefObject<ScrollView | null> | undefined,
-  anchor: View | null | undefined,
+  scrollRef: RefObject<ScrollViewInstance | null> | undefined,
+  anchor: ViewInstance | null | undefined,
 ) {
   const scroll = scrollRef?.current
   if (!scroll || !anchor) return
-  const innerGetter = (
-    scroll as ScrollView & { getInnerViewRef?: () => View }
-  ).getInnerViewRef
-  const inner = innerGetter?.()
+  const inner = scroll.getInnerViewRef()
   const relative = findNodeHandle(inner ?? scroll)
   if (typeof relative !== 'number') return
   anchor.measureLayout(
@@ -122,7 +120,7 @@ export function CommentComposeProvider({
   onRootSent?: () => void
   refId: string
   refType: CommentRefType
-  scrollRef?: RefObject<ScrollView | null>
+  scrollRef?: RefObject<ScrollViewInstance | null>
 }) {
   const t = useTranslations('comment')
   const tc = useTranslations('common')
@@ -211,7 +209,7 @@ export function CommentComposeProvider({
   }, [allowComment, session])
 
   const reply = useCallback(
-    (comment: ApiComment, anchorView?: View | null) => {
+    (comment: ApiComment, anchorView?: ViewInstance | null) => {
       if (!allowComment || session === null) return
       setReplyTo({ id: comment.id, name: commentDisplayName(comment) })
       setEditingId(null)
@@ -224,7 +222,7 @@ export function CommentComposeProvider({
   )
 
   const edit = useCallback(
-    (comment: ApiComment, anchorView?: View | null) => {
+    (comment: ApiComment, anchorView?: ViewInstance | null) => {
       if (!allowComment || session === null) return
       setReplyTo(null)
       setEditingId(comment.id)

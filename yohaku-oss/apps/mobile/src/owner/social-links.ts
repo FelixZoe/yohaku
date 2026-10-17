@@ -1,8 +1,6 @@
-import type { ImageSourcePropType } from 'react-native'
-
 export interface SocialLink {
   href: string
-  icon: ImageSourcePropType
+  icon: number
   label: string
   schemePrefix?: string
   schemeUrl?: string
@@ -22,7 +20,7 @@ const SOCIAL: Record<
   string,
   {
     href: (id: string) => string
-    icon: ImageSourcePropType
+    icon: number
     label: string
     scheme?: (id: string) => SocialScheme
   }

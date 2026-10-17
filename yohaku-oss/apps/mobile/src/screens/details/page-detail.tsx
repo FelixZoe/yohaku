@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Stack, useRouter } from 'expo-router'
 import type { ReactNode } from 'react'
 import { useEffect, useMemo, useRef } from 'react'
-import type { ScrollView } from 'react-native'
+import type { ScrollViewInstance } from 'react-native'
 import { Dimensions, StyleSheet, View } from 'react-native'
 
 import { api } from '@/api/client'
@@ -39,7 +39,7 @@ export function PageDetailScreen({ slug }: { slug: string }) {
   const owner = useOwner()
   const { host: printHost, print } = useArticlePrint()
   const palette = usePalette()
-  const scrollRef = useRef<ScrollView>(null)
+  const scrollRef = useRef<ScrollViewInstance>(null)
   const reservedBodyHeight = useReservedBodyHeight()
 
   const query = useQuery({

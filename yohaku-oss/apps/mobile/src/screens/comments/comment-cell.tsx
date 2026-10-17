@@ -2,7 +2,7 @@ import { type MenuAction, MenuView } from '@react-native-menu/menu'
 import { type as typeScale } from '@yohaku/design-system/tokens'
 import * as Clipboard from 'expo-clipboard'
 import { useRef } from 'react'
-import { Alert, StyleSheet, View } from 'react-native'
+import { Alert, StyleSheet, View, type ViewInstance } from 'react-native'
 
 import { api } from '@/api/client'
 import type { ApiComment } from '@/api/types'
@@ -36,7 +36,7 @@ export function CommentCell({
   replyTargetName?: string | null
   showQuote?: boolean
   showReply: boolean
-  onReply: (comment: ApiComment, anchor?: View) => void
+  onReply: (comment: ApiComment, anchor?: ViewInstance) => void
 }) {
   const t = useTranslations('comment')
   const ta = useTranslations('auth')
@@ -44,7 +44,7 @@ export function CommentCell({
   const locale = useLocale()
   const palette = usePalette()
   const serifFont = useNativeSerifFontStyle()
-  const rowRef = useRef<View>(null)
+  const rowRef = useRef<ViewInstance>(null)
   const session = useSession()
   const compose = useOptionalCommentCompose()
   const avatar = commentAvatar(comment)

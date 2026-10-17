@@ -88,8 +88,9 @@ function TabIcon({
 export function PaperTabBar({
   avatar,
   descriptors,
+  emitter,
   insets,
-  navigation,
+  navigateToTab,
   onMeLongPress,
   state,
 }: BottomTabBarProps & {
@@ -160,14 +161,14 @@ export function PaperTabBar({
             (typeof options.title === 'string' ? options.title : route.name)
 
           const onPress = () => {
-            const event = navigation.emit({
+            const event = emitter.emit({
               canPreventDefault: true,
               target: route.key,
               type: 'tabPress',
             })
 
             if (!focused && !event.defaultPrevented) {
-              navigation.navigate(route.name, route.params)
+              navigateToTab(route.key)
             }
           }
 

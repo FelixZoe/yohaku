@@ -7,7 +7,7 @@ import {
 import type { SerializedEditorState } from 'lexical'
 import type { RefObject } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { ScrollView as ScrollViewType } from 'react-native'
+import type { ScrollViewInstance } from 'react-native'
 import {
   Modal,
   Pressable,
@@ -77,7 +77,7 @@ export function ArticleBody({
   queriesEnabled?: boolean
   refId: string
   refType: CommentRefType
-  scrollRef: RefObject<ScrollViewType | null>
+  scrollRef: RefObject<ScrollViewInstance | null>
   variant: 'article' | 'note'
   webUrl: string
 }) {

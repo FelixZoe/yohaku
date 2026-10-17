@@ -4,66 +4,88 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import {
-  patchAppDelegate,
+  assertSceneTemplate,
   sceneDelegateSource,
 } from './with-ios-scene-lifecycle.cjs'
 
-describe('iOS scene lifecycle generation', () => {
-  it('moves React Native startup from AppDelegate into SceneDelegate', () => {
-    const legacy = `before
-#if os(iOS) || os(tvOS)
-    window = UIWindow(frame: UIScreen.main.bounds)
-    factory.startReactNative(
-      withModuleName: "main",
-      in: window,
-      launchOptions: launchOptions)
-#endif
-after`
+const expoAppDelegate =
+  'class AppDelegate: ExpoAppDelegate, ExpoReactNativeFactoryProvider {}'
+const expoSceneDelegate = `internal import Expo
 
-    expect(patchAppDelegate(legacy)).not.toContain('window = UIWindow(frame:')
-    expect(patchAppDelegate(legacy)).toContain(
-      'created and React Native is started by SceneDelegate',
+@objc(SceneDelegate)
+class SceneDelegate: ExpoAppSceneDelegate {
+  // Extension point for config plugins.
+}
+`
+
+describe('iOS scene lifecycle generation', () => {
+  it('extends the Expo scene delegate instead of starting React Native itself', () => {
+    expect(sceneDelegateSource).toContain(
+      'class SceneDelegate: ExpoAppSceneDelegate',
     )
+    expect(sceneDelegateSource).not.toContain('startReactNative')
+  })
+
+  it('accepts the Expo SDK 58 template and its own output', () => {
+    expect(() =>
+      assertSceneTemplate(expoAppDelegate, expoSceneDelegate),
+    ).not.toThrow()
+    expect(() =>
+      assertSceneTemplate(expoAppDelegate, sceneDelegateSource),
+    ).not.toThrow()
+  })
+
+  it('rejects a template without the Expo scene delegate', () => {
+    expect(() =>
+      assertSceneTemplate('class AppDelegate: ExpoAppDelegate {}', ''),
+    ).toThrow(/ExpoReactNativeFactoryProvider/)
+    expect(() =>
+      assertSceneTemplate(
+        expoAppDelegate,
+        'class SceneDelegate: UIResponder {}',
+      ),
+    ).toThrow(/ExpoAppSceneDelegate/)
   })
 
   it('restores the scene route only when no incoming link takes priority', () => {
     expect(sceneDelegateSource).toContain('session.stateRestorationActivity')
-    expect(sceneDelegateSource).toContain(
-      'incomingURL == nil && notificationURL == nil && browsingWebActivity == nil',
+    const urlContexts = sceneDelegateSource.indexOf(
+      'if !connectionOptions.urlContexts.isEmpty',
     )
-    expect(sceneDelegateSource).toContain(
-      'let initialURL = incomingURL ?? notificationURL ?? restorationURL',
+    const notification = sceneDelegateSource.indexOf(
+      'if let notificationURL = notificationURL(',
     )
+    const browsingWeb = sceneDelegateSource.indexOf('if browsingWebActivity')
+    const restoration = sceneDelegateSource.indexOf(
+      'return SceneRestoration.restorationURL',
+    )
+
+    expect(urlContexts).toBeGreaterThan(-1)
+    expect(urlContexts).toBeLessThan(notification)
+    expect(notification).toBeLessThan(browsingWeb)
+    expect(browsingWeb).toBeLessThan(restoration)
   })
 
-  it('primes Expo Linking before React reads the restored initial URL', () => {
-    const routeRestoration = sceneDelegateSource.indexOf(
-      'Self.route(url: restorationURL)',
+  it('primes Expo Linking before the Expo scene delegate starts React Native', () => {
+    const prime = sceneDelegateSource.indexOf(
+      'ExpoAppDelegateSubscriberManager.application(',
     )
-    const startReactNative = sceneDelegateSource.indexOf(
-      'factory.startReactNative(',
+    const superConnect = sceneDelegateSource.indexOf(
+      'super.scene(scene, willConnectTo: session, options: connectionOptions)',
     )
 
-    expect(routeRestoration).toBeGreaterThan(-1)
-    expect(routeRestoration).toBeLessThan(startReactNative)
+    expect(prime).toBeGreaterThan(-1)
+    expect(prime).toBeLessThan(superConnect)
   })
 
   it('opens a cold-start notification target as the initial Expo route', () => {
-    const startReactNative = sceneDelegateSource.indexOf(
-      'factory.startReactNative(',
-    )
-    const routeNotification = sceneDelegateSource.indexOf(
-      'if let notificationURL {',
-    )
-
-    expect(routeNotification).toBeGreaterThan(startReactNative)
     expect(sceneDelegateSource).toContain('userInfo["target_path"]')
     expect(sceneDelegateSource).toContain('$0 == Bundle.main.bundleIdentifier')
   })
 
   it('archives committed routes in the scene session', () => {
     expect(sceneDelegateSource).toContain(
-      'func stateRestorationActivity(for scene: UIScene) -> NSUserActivity?',
+      '@objc func stateRestorationActivity(for scene: UIScene) -> NSUserActivity?',
     )
     expect(sceneDelegateSource).toContain('scene.userActivity')
     expect(sceneDelegateSource).toContain('YohakuRestorableRouteDidChange')

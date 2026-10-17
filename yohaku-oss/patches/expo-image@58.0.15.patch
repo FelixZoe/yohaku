@@ -1,5 +1,5 @@
 diff --git a/ios/ExpoImage.podspec b/ios/ExpoImage.podspec
-index e74c9d9..89dfa44 100644
+index ea72ce8..dacf731 100644
 --- a/ios/ExpoImage.podspec
 +++ b/ios/ExpoImage.podspec
 @@ -29,10 +29,8 @@ Pod::Spec.new do |s|
@@ -14,7 +14,7 @@ index e74c9d9..89dfa44 100644
    # Swift/Objective-C compatibility
    s.pod_target_xcconfig = {
 diff --git a/ios/ImageModule.swift b/ios/ImageModule.swift
-index fc21410..854c95d 100644
+index c480af3..47a4324 100644
 --- a/ios/ImageModule.swift
 +++ b/ios/ImageModule.swift
 @@ -2,7 +2,6 @@
@@ -25,11 +25,11 @@ index fc21410..854c95d 100644
  internal import SDWebImageSVGCoder
  
  public final class ImageModule: Module {
-@@ -352,7 +351,6 @@ public final class ImageModule: Module {
+@@ -370,7 +369,6 @@ public final class ImageModule: Module {
    static func registerCoders() {
      SDImageCodersManager.shared.addCoder(WebPCoder.shared)
      SDImageCodersManager.shared.addCoder(PSDCoder.shared)
 -    SDImageCodersManager.shared.addCoder(SDImageAVIFCoder.shared)
-     SDImageCodersManager.shared.addCoder(SDImageSVGCoder.shared)
+     SDImageCodersManager.shared.addCoder(SVGCoder.shared)
      SDImageCodersManager.shared.addCoder(SDImageHEICCoder.shared)
    }

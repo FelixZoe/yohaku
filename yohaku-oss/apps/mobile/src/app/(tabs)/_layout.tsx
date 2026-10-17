@@ -150,7 +150,6 @@ function PaperTabsLayout() {
     <PaperTabBarInsetProvider>
       <Tabs
         backBehavior="history"
-        initialRouteName="(posts)"
         screenOptions={{
           animation: 'none',
           headerShown: false,

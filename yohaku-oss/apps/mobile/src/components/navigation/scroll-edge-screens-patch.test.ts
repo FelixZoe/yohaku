@@ -22,7 +22,7 @@ describe('react-native-screens scroll-edge patch', () => {
     // The workspace root is this repo in the public checkout and its parent
     // when this repo is a submodule, so resolve the configured patch path
     // instead of hardcoding the submodule prefix.
-    const entry = /react-native-screens@4\.26\.2:\s*(\S+)/.exec(workspace)
+    const entry = /react-native-screens@4\.30\.0:\s*(\S+)/.exec(workspace)
     expect(entry).not.toBeNull()
 
     const patch = readFileSync(path.resolve(workspaceRoot, entry![1]), 'utf8')

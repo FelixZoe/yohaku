@@ -2,7 +2,13 @@ import { type as typeScale } from '@yohaku/design-system/tokens'
 import { GlassView, isGlassEffectAPIAvailable } from 'expo-glass-effect'
 import type { ReactNode } from 'react'
 import { useEffect, useRef } from 'react'
-import { StyleSheet, TextInput, View, type ViewStyle } from 'react-native'
+import {
+  StyleSheet,
+  TextInput,
+  type TextInputInstance,
+  View,
+  type ViewStyle,
+} from 'react-native'
 import Animated, {
   interpolateColor,
   useAnimatedStyle,
@@ -95,7 +101,7 @@ function SendCapsule({
         <Animated.View
           pointerEvents="none"
           style={[
-            StyleSheet.absoluteFillObject,
+            StyleSheet.absoluteFill,
             { backgroundColor: palette.accent },
             washStyle,
           ]}
@@ -143,7 +149,7 @@ export function CommentComposer({
   const t = useTranslations('comment')
   const palette = usePalette()
   const insets = useSafeAreaInsets()
-  const inputRef = useRef<TextInput>(null)
+  const inputRef = useRef<TextInputInstance>(null)
   const length = value.length
   const canSend = !busy && value.trim().length > 0
   const softwareKeyboard = keyboardHeight > 0

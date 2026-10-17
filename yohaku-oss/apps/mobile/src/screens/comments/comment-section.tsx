@@ -1,6 +1,12 @@
 import { type as typeScale } from '@yohaku/design-system/tokens'
 import { useMemo, useState } from 'react'
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  View,
+  type ViewInstance,
+} from 'react-native'
 
 import { api } from '@/api/client'
 import type { ApiComment, CommentRefType } from '@/api/types'
@@ -74,7 +80,7 @@ export function CommentSection({
     }
   }
 
-  const onReply = (comment: ApiComment, anchor?: View) => {
+  const onReply = (comment: ApiComment, anchor?: ViewInstance) => {
     compose?.reply(comment, anchor)
   }
 
